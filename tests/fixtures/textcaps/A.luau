@@ -42,7 +42,6 @@ return {
 		["hud.lure"] = { surface = "hudTip", chars = 55, reason = "hudTip pl 55 > 48 chars" },
 		["hud.mail"] = { surface = "hudTip", chars = 37, reason = "hudTip pl control kliknij" },
 		["hud.skillSlot"] = { surface = "hudLine", chars = 34, reason = "hudLine en 34 > 32 chars" },
-		["hud.worldboss.collapsed"] = { surface = "hudLine", chars = 39, reason = "hudLine pl 39 > 32 chars" },
 		["hud.worldboss.line"] = { surface = "hudLine", chars = 51, reason = "hudLine pl 51 > 32 chars" },
 		["login.button"] = { surface = "hudLine", chars = 38, reason = "hudLine pl 38 > 32 chars" },
 		["login.buttonDone"] = { surface = "hudLine", chars = 54, reason = "hudLine pl 54 > 32 chars" },

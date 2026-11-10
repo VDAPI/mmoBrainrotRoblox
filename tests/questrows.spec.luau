@@ -103,3 +103,19 @@ describe("QuestRows.newlyDone", function()
 		expect(#QuestRows.newlyDone(seen, "main:q1", QuestRows.build(OBJECTIVES, { 0, 0, 0 }))).toBe(0)
 	end)
 end)
+
+-- Owner 2026-11-10 ("too much text"; UI plan package A): an objective is one tracker line of at most 32 characters.
+describe("QuestRows.short", function()
+	it("keeps a short line and cuts a long one to 32 characters with an ellipsis", function()
+		expect(QuestRows.short("• Pokonaj: Szary wilk 3/8")).toBe("• Pokonaj: Szary wilk 3/8")
+		local long = "• Pokonaj: Zgniłozęby Strażnik Kurhanu 3/8 (Pole Wron)"
+		local cut = QuestRows.short(long)
+		expect(utf8.len(cut) <= QuestRows.LINE_MAX).toBe(true)
+		expect(string.sub(cut, -3)).toBe("…")
+		expect(string.sub(long, 1, #cut - 3)).toBe(string.sub(cut, 1, #cut - 3))
+		-- no space before the ellipsis, and an exact fit stays whole
+		expect(string.find(QuestRows.short("abc defgh", 5), " …", 1, true)).toBeNil()
+		expect(QuestRows.short(string.rep("ą", 32))).toBe(string.rep("ą", 32))
+		expect(utf8.len(QuestRows.short(string.rep("ą", 40)))).toBe(32)
+	end)
+end)

@@ -6,6 +6,9 @@
 -- portrait, below the party frames in a party): world events never run during the Blood Moon. Owner 2026-10-21: the
 -- column's order and places come from UI/HudSlots (Logic/HudStack), round the elements the player moved.
 -- Reads UI/BloodMoonView (attributes, clock), `character.bloodMoon`, `bloodMoonBoard` and `zone.map` only.
+-- Owner 2026-11-10 (UI plan package A): the header is Hud/PanelHeader ("☾ Blood Moon" and the time); a click folds the
+-- panel to that line on the account (Section.state "hudBloodMoon", Data/Folds/Hud: open on PC, folded on a phone), and
+-- the column folds it there too while it has no room (UI/HudSlots.forced).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +20,8 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local PanelHeader = require(script.Parent.PanelHeader)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -35,7 +40,6 @@ local WIDTH_PC = 280
 local WIDTH_TOUCH = 240
 local PAD = 8
 local GAP = 3
-local TITLE = 22
 local LINE = 20
 local INFO = 40 -- two lines: the points and the place, or the city hint
 local BUTTON_PC = 34
@@ -55,13 +59,29 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 	local active = scope:Computed(function(use): boolean
 		return use(phase) == "active"
 	end)
+	-- folded by the player (on the account) or by the column (no room)
+	local open = Section.state(scope, "hudBloodMoon")
+	local forced = HudSlots.forced(scope, "bloodMoon")
+	local folded = scope:Computed(function(use): boolean
+		return not use(open) or use(forced)
+	end)
+	local unfolded = scope:Computed(function(use): boolean
+		return not use(folded)
+	end)
+	local header = PanelHeader.Height(scope)
 	local height = scope:Computed(function(use): number
+		if use(folded) then
+			return use(header)
+		end
 		local button = if use(touch) then BUTTON_TOUCH else BUTTON_PC
-		local h = PAD * 2 + TITLE + LINE + button + GAP * 2
+		local h = use(header) + PAD + LINE + button + GAP * 2
 		if use(active) then
 			h += INFO + GAP
 		end
 		return h
+	end)
+	local activeOpen = scope:Computed(function(use): boolean
+		return use(active) and not use(folded)
 	end)
 	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
 	local handle = HudDrag.new(scope, "bloodMoon", function(use)
@@ -77,6 +97,7 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 				shown = use(shown),
 				w = w,
 				h = h,
+				line = use(header),
 				custom = HudSlots.moved(use(handle.corner), w, h, use(handle.scale)),
 			}
 		end)
@@ -90,6 +111,12 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 		end
 		local starts = use(BloodMoonView.Next)
 		return Text.get(use, "hud.bloodmoon.startsIn", { time = Time.format((tonumber(starts) or t) - t) })
+	end)
+	-- the header's value: the time alone
+	local value = scope:Computed(function(use): string
+		local t = use(BloodMoonView.Now)
+		local at = if use(phase) == "active" then use(BloodMoonView.EndsAt) else use(BloodMoonView.Next)
+		return Time.format(math.max(0, (tonumber(at) or t) - t))
 	end)
 	local infoText = scope:Computed(function(use): string
 		if not use(active) then
@@ -142,28 +169,38 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({ Color = BLOOD, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, PAD),
-				PaddingBottom = UDim.new(0, PAD),
+				PaddingBottom = scope:Computed(function(use): UDim
+					return UDim.new(0, if use(folded) then 0 else PAD)
+				end),
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10),
 			}),
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, GAP) }),
-			label(
-				1,
-				TITLE,
-				scope:Computed(function(use): string
+			PanelHeader.new(scope, {
+				LayoutOrder = 1,
+				Title = scope:Computed(function(use): string
 					return `☾ {Text.get(use, "bloodmoon.name")}`
 				end),
-				Theme.Iron.Danger,
-				Theme.TextSize.Small,
-				Theme.Fonts.BodyBold
-			),
-			label(2, LINE, timeText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.BodyMedium),
-			label(3, INFO, infoText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.Body, active),
+				Value = value,
+				Color = Theme.Iron.Danger,
+				Open = unfolded,
+				OnClick = function()
+					if Fusion.peek(forced) then
+						-- the column folded it: it stays open in the column before the others
+						HudSlots.bring("bloodMoon")
+						Section.set("hudBloodMoon", true)
+						return
+					end
+					Section.set("hudBloodMoon", not Fusion.peek(open))
+				end,
+			}),
+			label(2, LINE, timeText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.BodyMedium, unfolded),
+			label(3, INFO, infoText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.Body, activeOpen),
 			Button(scope, {
 				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				Name = "Results",
 				LayoutOrder = 4,
+				Visible = unfolded,
 				Text = Text.T(scope, "hud.bloodmoon.results"),
 				Variant = "secondary",
 				TextSize = Theme.TextSize.Small,
@@ -181,7 +218,8 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
 		end),
-		Visible = shown,
+		-- package A: not while it waits behind the column's '+N' chip
+		Visible = HudSlots.visible(scope, slot, shown, handle.corner),
 		Content = body,
 	})
 end

@@ -76,6 +76,21 @@ function QuestRows.line(row: Row): string
 	return `{if row.done then QuestRows.DONE_MARK else QuestRows.OPEN_MARK} {row.text}`
 end
 
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the tracker shows an objective on one line of at most this
+-- many characters (Logic/TextCaps hudLine), cut with "…"; the whole line goes into its tooltip.
+QuestRows.LINE_MAX = 32
+function QuestRows.short(text: string, max: number?): string
+	local limit = max or QuestRows.LINE_MAX
+	local n = utf8.len(text)
+	if n == nil or n <= limit then
+		return text
+	end
+	-- limit - 1 characters and the ellipsis, without a space before it
+	local cut = utf8.offset(text, limit) or (#text + 1)
+	local head = string.gsub(string.sub(text, 1, cut - 1), "%s+$", "")
+	return head .. "…"
+end
+
 -- Owner 2026-10-21 (the tracker too tall): the progress of a quest on one tracker line: the mark when complete, the
 -- count of a single counted objective ("3/8"), else the finished objectives of all ("1/3"); "" for one uncounted
 -- objective that is still open ("Talk to ...").
