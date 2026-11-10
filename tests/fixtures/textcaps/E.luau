@@ -20,6 +20,9 @@ return {
 		{ pattern = "^quest%.[%w_]+%.say%.[%w_]+%.reply$", surface = "dialogPage" },
 		{ pattern = "^tip%.", surface = "loadingTip" },
 		{ pattern = "^cutscene%.", surface = "cutscene" },
+		-- the arena's 3v3 queue button: ArenaWindow's team3 picks the key at run time (review 2026-11-10)
+		{ pattern = "^arena%.queue3%.solo$", surface = "button" },
+		{ pattern = "^arena%.queue3%.team$", surface = "button" },
 		{ pattern = "%.short$", surface = "line" },
 		{ pattern = "%.info$", surface = "infoTip" },
 	},
