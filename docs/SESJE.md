@@ -14967,3 +14967,55 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Data/Localization/pl|en`, `UI/Components/Toast`, `UI/Notify`, `Controllers/NotificationController`,
   `Screens/ArenaOffer`, `Screens/BossReward`, `tests/fixtures/textcaps/B.luau`, `tests/bosscast.spec.luau`,
   `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|bosses|meta.json`.
+
+### Plan UI 2026-11-10, pakiet B: poprawki po przeglądzie (2026-11-10)
+- Przegląd pakietu B: 24 zgłoszenia i uwaga o kompletności, wszystkie prawdziwe; dwie części propozycji poprawek
+  odrzucone (niżej). Poprawki w kodzie mają notatki „Review 2026-11-10”.
+- Układ (e9b5bef9): pas liczy się w rozmiarze warstwy komunikatów (`TopBand.context`: rozmiar jej korzenia przez skalę,
+  pasek Robloxa przez skalę), więc na telefonie z wcięciami strefa M zgadza się z `PhoneHud.area`, a nie z całym ekranem
+  (na 844×390 linia zasłaniała minimapę i PvP, a karta albo zaproszenie pocztę i łuk umiejętności). Kontekst niesie
+  liczbę innych członków drużyny (`PhoneLayout.Others`, kwestia NPC na PC staje pod ramkami drużyny), powrót z areny
+  (`TopBand.arenaState`: pas pod panelem powrotu, póki `returnAt` trwa) i otwarte okienko potwierdzenia
+  (`HudCover.SetModal` z jednej linii w `WindowManager`, plik pakietu C; `HudCover.Modals`, `TopBand.slots` czeka z
+  komunikatem, który by na nie trafił). Pasek bossa lochu na telefonie to pasek 20 w szerokości M
+  (`TopBand.PHONE_BOSS_H`; `DungeonController`: nazwa, życie bez liczb, ⌛ z czasem), a M zaczyna się 4 pod nim;
+  komunikat telefonu nie jest wyższy niż M, a M ma co najmniej linię HUD (`TopBand.PHONE_M.line`).
+- Kolejka (be81579b): `Notify.alert` daje alarmowi termin (`deadline` = jego sekundy), więc odsunięty alarm przepada po
+  czasie; alarm `danger` (cios do uniknięcia) idzie przed innymi alarmami, ten sam alarm połączony w „×N” przedłuża
+  termin, a `DungeonController.showAnnouncement` zamyka swój poprzedni komunikat. Zaproszenie z `penalty` (propozycja
+  meczu areny, `Screens/ArenaOffer`) idzie przed innymi zaproszeniami (`NoticeQueue.effectiveRank`).
+- Widoki (e0da7740): grupa komunikatu (`CanvasGroup`) jest o 8 większa z każdej strony, a `UIPadding` oddaje widokowi
+  jego miejsce, bo grupa ucinała obrys rysowany na zewnątrz (brzegi toastów w kolorze rodzaju, ramka banera, brzeg
+  alarmu, kart i zaproszeń). Pełny widok stoi nad komunikatami (ZIndex 3 nad 2) i pod paskiem Robloxa; arkusz telefonu
+  jest wysoki jak jego treść (dotknięcie pod nim zamyka), a na PC widok stoi na środku pod paskiem. Zasłona jest jedna:
+  `LegendReveal.backdrop` (mityczny łup czerwony) idzie do `Notify.details`, a odsłonięcie oddaje sam panel. Wysokość i
+  wygląd banera biorą rozmiar z `Notify.bannerTextSize` (telefon Small, mityczny i boss świata Title, reszta Large + 2),
+  a tekst mierzy się w szerokości, w jakiej stoi; toast i baner, które się nie mieszczą, kończą się „…”. Na telefonie
+  zaproszenie i karta to jedna linia ze znakiem ▸ i ✕: dotknięcie otwiera arkusz (`Prompt` `sheetOf`: cała linia,
+  „Więcej ▸”, ✓ i ✕; karta: jej pełny widok albo `cardSheet` z tytułem, linią, polem `note` i „Załóż” lepszego
+  przedmiotu), a arkusz zaproszenia znika razem z nim. Zaproszenie na PC ma 520 szerokości (jak toast), bo przy Small
+  linia z „Więcej ▸” miała trzy linie. Napisy pasa mają rozmiar Small zamiast Caption (zaproszenie, karta, oferta areny,
+  gotowość, kwestia NPC, baner strefy, toast osiągnięcia).
+- Teksty (8622981b): `bonus.leg_lastStand` i `bonus.myth_lastStand` „-{v}% otrzymanych obrażeń (HP <30%)”,
+  `skills.error.resetNeedsScroll` z Nauczycielem (pl i en), `dungeon.reward.next` „Następne: …” (en z przecinkiem jak
+  pl), `items.toast.legendRework.info` bez powtórki linii toastu, `loot.announceLuck` „⚜ {player}: {item}!” (pl i en,
+  bez `{cleric}`; `LootService` dalej go podaje), `dungeon.reward.legendary` i `.mythic` „… czeka w worku!”,
+  `quest.dailyBonus` i `quest.weeklyBonus` z „+ ◆ {shards}”, zaproszenia z „Cię” i „Twoje”. Po angielsku
+  `bonus.res_elemental` to „Resistance to elementals/demons {v}%”, a nie proponowane „Elemental and demon resistance”,
+  bo dymek przedmiotu ma też „Fire resistance” i inne odporności na żywioły, więc „elemental resistance” czytałoby się
+  jak one. Wiki i `docs/PRZEDMIOTY.md` wygenerowane na nowo.
+- Odrzucone: krótkie warianty `.phone` zaproszeń („{name}: pojedynek”), bo linia telefonu ucina się na końcu, a
+  dotknięcie pokazuje całą linię w arkuszu, więc nic nie ginie; sprawdzanie szerokości telefonu dla zaproszeń i kart w
+  `Logic/TextCaps`, bo to pliki pakietu F, a linia telefonu ma się ucinać i otwierać w całości.
+- Testy: `noticequeue.spec` (kontekst klienta równy ekranom spec, telefony 844×390 i 932×430 z wcięciami, powrót z
+  areny, kwestia NPC przy 0 do 4 rzędach drużyny, telefony z paskiem bossa przy pasku Robloxa 0, 36 i 58, okienko
+  potwierdzenia, terminy alarmów i odliczanie 3, 2, 1, „Walcz!”, propozycja meczu przy zaproszeniu do drużyny i
+  gotowości na PC i telefonie), `topband.spec` (sprawdzenia źródeł: kontekst, pasek bossa, napisy co najmniej Small,
+  miejsce na obrys, jedna zasłona, rozmiar banera). Nieobejrzane w Studio.
+- Po scaleniu z pakietem A: `TopBand.phoneZone` liczy M z miejsc `PhoneHud` tak samo jak `PhoneHud.mZone` pakietu A,
+  więc po scaleniu powinien go czytać (na 667×375 M ma wtedy 286 szerokości).
+- **Pliki:** `Logic/TopBand`, `Logic/NoticeQueue`, `UI/Notify`, `UI/HudCover`,
+  `UI/Components/Prompt|Toast|Announcement`, `Screens/ArenaOffer|ReadyCheck|LegendReveal`,
+  `Screens/Hud/AchievementToast|BarkToast|ZoneBanner`, `Controllers/Dungeon|Loot|LootComfortController`,
+  `Controllers/WindowManager` (jedna linia, pakiet C), `Data/Localization/pl|en`, `tests/noticequeue.spec.luau`,
+  `tests/topband.spec.luau`, `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|meta.json`.
