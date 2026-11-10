@@ -1764,9 +1764,11 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   „Wybierz”, zasada zmian raz, pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
   nagłówek kierunków „Punkty kierunków: N”, „Prowadzi: …” albo „Prowadzi: brak” (zasada za (i)), zwieńczenie dopiero,
   gdy jest; opis węzła dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym
-  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź +N”), szczegóły co najmniej 260 px,
-  przełom wybierany na karcie. Usługi (kowal, aukcja, alchemik, wygląd, plecakarz): przycisk główny przypięty pod
-  treścią, długa treść przewija się w swoim miejscu, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą.
+  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź +N”), szczegóły co najmniej 260 px
+  także pod pełnym paskiem Robloxa, przełom wybierany na karcie; na dotyku plecak ma sloty 56 px (także obok usługi),
+  a sortowanie, akcje plecaka, przyciski statystyk i Zwój Ochrony 44 px. Usługi (kowal, aukcja, alchemik, wygląd,
+  plecakarz): przycisk główny przypięty pod treścią, długa treść przewija się w swoim miejscu, telefon jedną kolumną
+  tylko tam, gdzie dwie się nie mieszczą.
   Teksty tych okien (część tekstowa pakietu D) mieszczą się w limitach `docs/UI-ZASADY.md` §2: krótki opis
   umiejętności i krótka linia węzła najwyżej 60 znaków, przełom najwyżej 48 i zawsze z liczbami („Rozprysk: 13%
   obrażeń do 4 st. od celu”), linia okna 60, przycisk 18, zakładka 12; reszta zostaje w pełnym opisie pod „Więcej ▸”.

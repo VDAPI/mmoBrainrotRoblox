@@ -14906,6 +14906,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   zostaje kartami 84 px do `ListRow` pakietu C; filtry plecaka i alchemika czekają na przewijane `Tabs` pakietu C;
   `Avoid` tooltipu z paska akcji plecaka czeka na właściwość pakietu C. Poprawki w `TooltipModel`: linia „+N
   więcej” z jawnym typem `Line`, a komentarz nie cytuje zmyślonego klucza w cudzysłowie (czyta go `data.spec`).
+- **Po przeglądzie (2026-11-10):** specy liczyły pasek Robloxa (58 px) jako px wirtualne, a okno bierze go
+  podzielonego przez skalę UI (68,5 px na telefonie): arkusz umiejętności miał na 844×390 tylko 251,5 px szczegółów,
+  a plecak obok usługi (sloty 64) jeden pełny rząd. Specy liczą teraz paski 0, 36 i 58 px prawdziwych
+  (`bar / PhoneHud.SCALE`), arkusz sięga w dolny margines okna (`GearLayout.sheetOverhang`, 261,5 px), plecak ma na
+  dotyku zawsze sloty 56 (`BackpackPanel`), a sortowanie i akcje plecaka, „Anuluj”, „Zatwierdź” i „Rozdaj wg ścieżki”
+  oraz Zwój Ochrony 44 px (`GearLayout.backpack(..., touch)`). Okna mierzą treść nowym `UI/ViewSize` (linijka 100 px
+  pod tymi samymi skalami, odczyt po ułożeniu, całe px), bo `AbsoluteSize` przez `Scale.Value` zawierało animację
+  otwierania okna: okno plecaka na telefonie budowało się od nowa w prawie każdej jej klatce, a przyciski usług się
+  przesuwały. Okno plecaka buduje się teraz od nowa tylko przy zmianie rodzaju układu, kolumny telefonu przesuwają się
+  same. Nazwa statystyki bez wolnych punktów stała 116 px od krawędzi; teraz zajmuje to, co zostawiają przyciski
+  (`CharacterSections.statControls`). Zwinięta linia „Koszt i odnowienie” jest bez zasięgu i procentu skrócenia
+  (`SkillInfo.costSummary`, `skills.cooldown.short`), bo z nimi nie mieściła się w panelu 326 px dla żadnej
+  umiejętności z zasięgiem; spec mierzy ją dla każdej umiejętności i rangi (278 px, `sectionSummary`). Spec panelu PC
+  liczy jego wnętrze po marginesie (`GearLayout.skillPanelArea`, liczby okna sprawdzane w źródle): przy podglądzie i
+  dwóch rzędach przycisków 142 px linii, próg 140. Pliki: `UI/ViewSize`, `UI/SkillInfo`, `Logic/GearLayout`,
+  `Logic/CharacterSections`, okna z listy niżej, `tests/gearlayout.spec`, `tests/charactersections.spec`.
 - **Pliki:** `Logic/GearLayout`, `Logic/CharacterSections`, `Logic/NodeText`, `Logic/TooltipModel`,
   `Data/Folds/Gear`, `Data/Localization/pl|en`, `Screens/CharacterWindow/init|DerivedList|StatAllocator`,
   `Screens/BackpackPanel`, `Screens/SkillsWindow/init|Details|Breakpoints|Sheet|Header|PathTab|PoolTree`,
@@ -14941,6 +14957,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   jej nie ma, a nic innego nie uczy skrótu); w przełomach Wiru Ostrzy i Gniewu Tytana odpadło „na 10. randze”, liczby
   zostały („4 × 48%”); notka o Smoczej Walucie zostaje na końcu zakładki waluty. Stare specy krótkich tekstów
   (`shorttext3`, `shopshort`, `socialshort`) przechodzą bez zmian.
+- **Po przeglądzie (2026-11-10):** linie węzłów Inwokacji i Strumienia Arkanów mówią zmianę („Kanał Inwokacji:
+  {archmage} s”, nie ujemny czas), Egzekucja premię, nie dobijanie, Koło Fortuny „wrogowie częściej chybiają”;
+  angielskie teksty węzłów piszą punkty procentowe jako „pt” (było „+1 points”), liczbę fal i promień bez liczby
+  mnogiej po liczbie, Pękająca Tarcza po angielsku leczy częścią tarczy, nie procentem życia; „Breakthroughs” zamiast
+  „Breakpoints”; pytanie zakupu Kupić „{name}”? (barwniki i tytuły mają w nazwie dwukropek); przełomy Rozdarcia i
+  Wyroku wzorem „Fala ciosu”, Strzału w Serce „Rozprysk”; „30 min” w (i) sklepu kamieni i w opisach wiecznych
+  kamieni; zakładka alchemika „Podróż” jak w sklepie areny. Nazwa zakładki błogosławieństw czeka na właściciela
+  (DECYZJE); nazwy sekcji w `docs/UI-ZASADY.md` §4 poprawi scalenie (plik pakietu F). Wiki przegenerowana (`skills`,
+  `items`, `recipes`, `meta`, `docs/PRZEDMIOTY.md`).
 - **Pliki:** `Data/Localization/pl|en`, `Screens/HuntShopWindow`, `Screens/WanderingMerchantWindow`,
   `Screens/BlacksmithWindow/Reroll`, `Screens/PremiumShop/Currency`, `tests/fixtures/textcaps/D.luau`,
   `wiki/src/data/*.json`, `docs/PRZEDMIOTY.md`, `docs/DESIGN.md` §23, `docs/DECYZJE.md`, `docs/PROGRESS.md`,
