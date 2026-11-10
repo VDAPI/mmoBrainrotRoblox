@@ -58,6 +58,7 @@ export type Spec = {
 	hold: (number | boolean)?,
 	w: number?, -- its width in virtual pixels, else its kind's
 	h: number?, -- its height, else its kind's
+	inset: number?, -- a toast: the text's line is this much narrower than the toast (its drawn "i")
 	height: ((phone: boolean) -> number)?, -- its height by device (a prompt that opens 'Więcej ▸')
 	build: (scope: Scope, live: Live) -> Instance, -- its look, filling the place Notify gives it
 	shown: (() -> ())?, -- once, when it first comes on the screen (the achievement's sound)
@@ -149,13 +150,14 @@ local function sizeOf(e: NoticeQueue.Entry, phone: boolean, zoneWidth: number): 
 	local spec = specs[e.id]
 	local w = spec and spec.w
 	local h = spec and (if spec.height then spec.height(phone) else spec.h)
+	local inset = spec and spec.inset or 0
 	if phone then
 		w = zoneWidth
 		if h == nil then
 			h = if e.kind == "toast"
 					or e.kind == "bark"
 					or e.kind == "banner"
-				then Notify.textHeight(e.text or "", zoneWidth, true)
+				then Notify.textHeight(e.text or "", zoneWidth - inset, true)
 				else Theme.Size.HudLine
 		end
 		return w :: number, h :: number
@@ -174,7 +176,7 @@ local function sizeOf(e: NoticeQueue.Entry, phone: boolean, zoneWidth: number): 
 		return w or HudZones.BARK.w, h or HudZones.BARK.h
 	end
 	local width = w or TopBand.TOAST_WIDTH
-	return width, h or Notify.textHeight(e.text or "", width, false)
+	return width, h or Notify.textHeight(e.text or "", width - inset, false)
 end
 
 local function cardKind(e: NoticeQueue.Entry): HudZones.CardKind

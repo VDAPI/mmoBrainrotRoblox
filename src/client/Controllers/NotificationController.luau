@@ -5,11 +5,14 @@
 -- goes through UI/Notify's one queue (Components/Toast, Components/Announcement); another server's announcement
 -- (a key ending in "Global", AnnounceService.Global) waits up to 30 s in combat, then drops (owner question 5). It also
 -- hands UI/Notify the player's attack (TargetController, read only) for its combat signal.
+-- UI plan package B, texts: a toast is one short line; when its key has a ".info" text (contract.ready.info), that
+-- text, with the same arguments, waits behind the toast's "i" (Components/Toast).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 
 local ItemText = require(script.Parent.Parent.UI.ItemText)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Text = require(script.Parent.Parent.UI.Text)
 local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
@@ -94,7 +97,11 @@ function NotificationController.Start()
 	end)
 	Net.On("Toast", function(key: string, args: any, kind: any)
 		local safeKind: Toast.Kind = if type(kind) == "string" and KINDS[kind] then kind :: Toast.Kind else "info"
-		Toast.push(Text.now(key, escapeArgs(args)), safeKind)
+		local resolved = escapeArgs(args)
+		local info = if type(key) == "string" and Locale.has(key .. ".info")
+			then Text.now(key .. ".info", resolved)
+			else nil
+		Toast.push(Text.now(key, resolved), safeKind, nil, info)
 	end)
 	Net.On("SystemMessage", function(key: string, args: any)
 		NotificationController.System(Text.now(key, escapeArgs(args)))
