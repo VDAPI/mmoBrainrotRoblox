@@ -14690,6 +14690,8 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
      wyglądy dostają swoje siatki), zwłoki znikają jak dotąd.
   7. Strojenie bez kodu: `Data/RigidRigs` pole `gaze` (szukanie: `rise`, `mid`, `floor`, `side`, `seek`, `neck`,
      `blend`, `pivot`; ruch: `yaw`, `up`, `down`, `glance`, `tilt`, `sniff`, `nod`, `flinch`, `steady`, `rate`).
+- **Po przeglądzie:** głowa płynnie rusza ze spoczynku zamiast skakać do celu, na niskiej jakości nic się nie buduje,
+  zwłoki od razu oddają miejsce w budżecie głów, a żywa głowa nie zmienia kliknięć (kolizja wyglądu, nie pudło).
 - **Pliki:** `client/Anim/MeshHead`, `client/Anim/RigidRig`, `Logic/NeckBend`, `Logic/HeadGaze`, `Logic/HeadBudget`,
   `Data/RigidRigs`, `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`,
   `tests/headbudget.spec.luau`, `tests/NeckBendMesh.luau`, `docs/ANIM-WZORCE.md` §6.5.
