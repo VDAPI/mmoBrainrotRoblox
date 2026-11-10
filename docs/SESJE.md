@@ -14547,3 +14547,26 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Logic/TeleportStone`, `TravelService`, `DepositService`, `PortalShopService`, `ItemController`,
   `StonePicker`, `ItemTooltip`, `TooltipModel`, `PortalShopWindow`, `Localization/pl|en`, `tests/teleportstone.spec`,
   `tests/arenaqueue.spec`, `tests/shopshort.spec`, `docs/DESIGN.md` §13 i §13a.
+
+### Dynamika umiejętności (2026-11-10)
+
+- Prośba właściciela: umiejętności każdej klasy mają mieć „większą dynamikę: dźwięk, wybuch, partikle”.
+- Audyt (dlaczego statycznie): 47 ze 105 aktywnych bez niczego przy rzuceniu (Wojownik i Kapłan zwykle tylko smuga
+  broni, pomijana daleko i na `low`), 94 bez dźwięku rzucenia, błysk trafienia 0,08–0,12 s ze światłem 0,1 s, iskry
+  około 8 drobin po 0,2 st., wstrząs kamery ±0,5 × siła st. przez 0,12 s (z odległości kamery prawie niewidoczny),
+  pociski bez wstrząsu, około 18 plików dźwięku (bass.wav w ponad 20 umiejętnościach).
+- Dodane: `Data/SkillJuice` (style klas i żywiołów, ruchy drobin, wagi, głosy), `Logic/SkillJuice` (styl, waga, punkt i
+  chwila błysku, nasz wstrząs, liczby drobin, światło, wstrząs z odległości, głos rzucenia), `Vfx/Juice` (`flare`,
+  `punch`), `Logic/CameraShake` i `Vfx/CameraShake` (płynne drganie, jedyne miejsce, które pisze `CameraOffset`),
+  `Config.Vfx.juice` i `Config.Vfx.shake`. `Data/Sfx` tworzy `skill.<id>.voice` (105) i `skill.impact.<styl>` (6) z
+  plików S111 w innej wysokości. `VfxController`: błysk przy rzuceniu (czar zbierany przy wypuszczeniu), głos rzucenia,
+  uderzenie przy trafieniu, dolocie pocisku, ogniwach łańcucha, pułapkach, burzach, meteorach, detonacji, roztrzaskaniu,
+  finale kuli piorunów i ocaleniach; dźwięk i wstrząs przy dolocie pocisku; nasze ciosy trzęsą według wagi, jeden
+  wstrząs na zdarzenie. `CombatFxController.shake` (bossowie, ciężkie trafienia) przez `Vfx/CameraShake`.
+- Test `skilljuice.spec`: dane stylów (tekstury wgrane, ruchy, kolory, wagi), każda aktywna umiejętność czterech klas ma
+  styl swojej klasy, wagę, punkt błysku i dźwięk rzucenia oraz uderzenia; tożsamość klas, głosy różne w klasie i tylko z
+  ID z `docs/ASSETS.md`, budżety drobin, światła i wstrząsu, krzywa i limit drgania kamery. `skillmotion.spec` zna
+  przyrostek `voice` i klucze `skill.impact.*`.
+- **Pliki:** `Data/SkillJuice`, `Data/Sfx`, `Logic/SkillJuice`, `Logic/CameraShake`, `Config`, `Vfx/Juice`,
+  `Vfx/CameraShake`, `VfxController`, `CombatFxController`, `tools/balance_reasons.luau`, `tests/skilljuice.spec`,
+  `tests/skillmotion.spec`, `docs/ANIMACJE.md` §16, `docs/ASSETS.md`.

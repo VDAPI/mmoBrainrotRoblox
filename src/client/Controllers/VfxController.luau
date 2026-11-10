@@ -51,6 +51,12 @@
 -- when the cast starts (following the gathering hand / tip until the release), releaseFx when the shot leaves (a
 -- projectile skill's event, else the motion's release / hit), flight replaces the projectile's own flight (arcane
 -- missiles), lmOpts tunes a piece; an lm piece marked `immediate` shows at once when the blow lands `d` later.
+-- Owner 2026-11-10 (skill juice, Data/SkillJuice, Logic/SkillJuice, Vfx/Juice): on top of its own pieces every active
+-- skill flares at the hand or the weapon (when the cast starts, a gathered spell when it is let go) with its cast voice
+-- skill.<id>.voice (when it has no wind-up sound and the blow does not follow at once), and punches where the blow
+-- lands (later waves, further targets and chain links one step lighter; a projectile on arrival with its spell's blow
+-- sound skill.impact.<style>; trap triggers, storm strikes, detonations, shatters too). Our own blows kick the camera by
+-- their weight (Logic/SkillJuice.ownShake, also projectiles on arrival); others' big skills nearby half as much.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -60,6 +66,7 @@ local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
+local Juice = require(script.Parent.Parent.Vfx.Juice)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local LmPieces = require(script.Parent.Parent.Vfx.LmPieces)
 local LmVfxPieces = require(ReplicatedStorage.Shared.Data.LmVfxPieces)
@@ -74,6 +81,7 @@ local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
 local SkillFxWave = require(ReplicatedStorage.Shared.Logic.SkillFxWave)
 local SkillGeom = require(ReplicatedStorage.Shared.Logic.SkillGeom)
+local SkillJuice = require(ReplicatedStorage.Shared.Logic.SkillJuice)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local VfxTextures = require(ReplicatedStorage.Shared.Data.VfxTextures)
@@ -195,9 +203,8 @@ local function handOf(model: Model, name: string): BasePart?
 	return if part and part:IsA("BasePart") then part else nil
 end
 
--- S115: where a projectile leaves the caster: SkillVfx launch, else the glow's hand, else the weapon's tip.
-local function launchPoint(caster: Model, entry: SkillVfx.Entry?): Vector3
-	local where = if entry then entry.launch or (if entry.glow then entry.glow.hand else nil) else nil
+-- S115: a point of the caster: "l" / "r" / "both" hands, else (also "weapon") the weapon's tip.
+local function pointAt(caster: Model, where: string?): Vector3
 	if where == "l" or where == "r" then
 		local hand = handOf(caster, if where == "l" then "LeftHand" else "RightHand")
 		if hand then
@@ -210,6 +217,11 @@ local function launchPoint(caster: Model, entry: SkillVfx.Entry?): Vector3
 		end
 	end
 	return weaponTip(caster)
+end
+
+-- S115: where a projectile leaves the caster: SkillVfx launch, else the glow's hand, else the weapon's tip.
+local function launchPoint(caster: Model, entry: SkillVfx.Entry?): Vector3
+	return pointAt(caster, if entry then entry.launch or (if entry.glow then entry.glow.hand else nil) else nil)
 end
 
 -- W30: plays a registered piece (Vfx/LmPieces) of `phase` with its context; false when no such piece exists.
@@ -318,8 +330,16 @@ local function simpleAt(at: Vector3?, caster: Model?): boolean
 	return (camera.CFrame.Position - at).Magnitude > Config.Vfx.simpleBeyond
 end
 
-local function shakeNear(at: Vector3?, strength: number?)
-	if not strength or strength <= 0 or not shakeCamera or not at then
+-- Owner 2026-11-10: whether a caster's effect is in the world (not the skills-window preview's ViewportFrame, whose
+-- points are viewport coordinates); no caster counts as the world.
+local function inWorld(caster: Model?): boolean
+	return caster == nil or caster:IsDescendantOf(Workspace)
+end
+
+-- A blow of `strength` landing at `at` shakes our camera (Logic/SkillJuice.shakeAt: fading with the distance; our own
+-- blows at least ownFloor of it wherever they land, others' half as much).
+local function shakeNear(at: Vector3?, strength: number?, caster: Model?)
+	if not strength or strength <= 0 or not shakeCamera or not at or not inWorld(caster) then
 		return
 	end
 	local character = player.Character
@@ -327,10 +347,43 @@ local function shakeNear(at: Vector3?, strength: number?)
 	if not root then
 		return
 	end
-	local distance = (root.Position - at).Magnitude
-	if distance < 40 then
-		(shakeCamera :: (number) -> ())(strength * (1 - distance / 40))
+	local own = caster ~= nil and caster == character
+	local kick = SkillJuice.shakeAt(strength, (root.Position - at).Magnitude, own)
+	if kick > 0.01 then
+		(shakeCamera :: (number) -> ())(kick)
 	end
+end
+
+-- Owner 2026-11-10 (skill juice, Vfx/Juice): the shared punch of a skill's blow at `at` (one step lighter when
+-- `lighter`): the style and weight of Logic/SkillJuice.plan, steel sparks flying on away from the caster.
+local function punch(
+	skill: SkillData.SkillDef,
+	entry: SkillVfx.Entry?,
+	data: { [string]: any },
+	at: Vector3?,
+	caster: Model?,
+	color: Color3,
+	simple: boolean,
+	lighter: boolean?
+)
+	if not at or not inWorld(caster) then
+		return
+	end
+	local plan = SkillJuice.plan(skill, entry, data.el)
+	local origin = if caster then centre(caster) else nil
+	local away = if origin and Library.flat(at - origin).Magnitude > 0.5
+		then Library.flat(at - origin).Unit + Vector3.new(0, 0.5, 0)
+		else nil
+	Juice.punch(at, {
+		style = plan.style,
+		weight = if lighter then SkillJuice.lighter(plan.weight) else plan.weight,
+		color = color,
+		simple = simple,
+		own = caster ~= nil and caster == player.Character,
+		support = plan.support,
+		radius = tonumber(data.r) or skill.radius,
+		dir = away,
+	})
 end
 
 -- Cast ---------------------------------------------------------------------------------------------------------
@@ -501,6 +554,11 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 	local simple = simpleAt(centre(caster), caster)
 	-- S114: the wind-up sound of a skill that has one (skill.<id>.cast), at the caster
 	phaseSound(skill, "cast", nil, caster, data)
+	-- owner 2026-11-10 (skill juice): the cast voice of every other skill whose blow or shot does not follow at once
+	local firstAt = if motion then tonumber(data.ct) or motion.release or motion.hit else nil
+	if SkillJuice.voiced(skill.id, firstAt, Sfx.playable) then
+		phaseSound(skill, "voice", nil, caster, data)
+	end
 	-- S115: the waves of this cast for impacts that do not carry them (Volley's fan)
 	local id = casterKey(data)
 	if id then
@@ -510,6 +568,27 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 		return
 	end
 	Pool.done(1.5)
+	-- owner 2026-11-10 (skill juice, Vfx/Juice): the flare at the hand or the weapon's tip, when the cast starts or (a
+	-- gathered spell, SkillVfx castFx) when it is let go
+	local plan = SkillJuice.plan(skill, entry, data.el)
+	local flareDelay = if plan.flareAt == "release" and motion then firstAt or 0 else 0
+	local function flare()
+		if caster.Parent and inWorld(caster) then
+			Juice.flare(pointAt(caster, plan.anchor), {
+				style = plan.style,
+				weight = plan.weight,
+				color = color,
+				simple = simple,
+				own = caster == player.Character,
+				support = plan.support,
+			})
+		end
+	end
+	if flareDelay > 0 then
+		Clock.after(flareDelay, flare)
+	else
+		flare()
+	end
 	if entry and motion then
 		if entry.trail and motion.trail and not simple then
 			Library.weaponTrail(caster, color, motion.trail.from, motion.trail.to)
@@ -1090,6 +1169,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			end
 			if n == 1 then
 				playSound(skill, entry, at, caster, data)
+				punch(skill, entry, data, centre(target), caster, color, simple, true) -- owner 2026-11-10
 			end
 		end
 		return
@@ -1103,10 +1183,23 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 		local from = launchPoint(caster, entry)
 		-- S80: Arcane Discharge grows with the charges it spent
 		local size = (entry.size or 1) + (entry.chargeSize or 0) * (tonumber(data.ch) or 0)
+		local own = caster == player.Character
 		local function arrive()
 			for _, name in entry.impact do
 				piece(name, skill, entry, data, color, caster, target, simple)
 			end
+			-- owner 2026-11-10 (skill juice): the punch, the spell's blow sound and the camera kick where the shot lands
+			local landAt = if target and target.Parent
+				then centre(target)
+				elseif typeof(aimAt) == "Vector3" then aimAt
+				else nil
+			punch(skill, entry, data, landAt, caster, color, simple)
+			local plan = SkillJuice.plan(skill, entry, data.el)
+			local blow = SkillJuice.impactKey(plan.style, Sfx.playable)
+			if blow and landAt and inWorld(caster) then
+				SfxController.Play(blow, landAt, SfxController.WhoOf(caster), casterKey(data))
+			end
+			shakeNear(landAt, if own then plan.shake else entry.shake, caster)
 		end
 		-- W30: the release pieces where the shot leaves (SkillVfx releaseFx) and a flight of its own (flight): the
 		-- same speed and cap as the server's (Offense.projectile), so the pieces land with the damage
@@ -1154,6 +1247,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 						for _, name in entry.impact do
 							piece(name, skill, entry, data, color, a, b, simple)
 						end
+						punch(skill, entry, data, centre(b), caster, color, simple, i > 1) -- owner 2026-11-10
 					end)
 				end
 			end
@@ -1224,6 +1318,17 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			end
 		end
 	end
+	-- Owner 2026-11-10 (skill juice): the shared punch where the blow lands, with the core (coreDelay) and the landing
+	-- (landsAfter); later waves and further targets one step lighter
+	if at then
+		local punchWait = linkDelay + landDelay + coreDelay
+		local lighter = wave > 1 or info.target > 1
+		if punchWait > 0 then
+			Clock.after(punchWait, punch, skill, entry, data, at, caster, color, simple, lighter)
+		else
+			punch(skill, entry, data, at, caster, color, simple, lighter)
+		end
+	end
 	-- Area outline where the blow lands.
 	if entry.telegraph and wave == 1 and at then
 		if entry.telegraph == "circle" and data.r then
@@ -1249,12 +1354,16 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			stop()
 		end
 	end
-	-- S115: later waves shake half as hard; a storm with leadStrike shakes (and sounds) with its first strike
-	local shake = if entry.leadStrike then nil elseif entry.shake and wave > 1 then entry.shake * 0.5 else entry.shake
+	-- S115: later waves shake half as hard; a storm with leadStrike shakes (and sounds) with its first strike. Owner
+	-- 2026-11-10: our own blows kick by their weight (Logic/SkillJuice.ownShake); one kick per event, not per target
+	local base = if caster ~= nil and caster == player.Character
+		then SkillJuice.plan(skill, entry, data.el).shake
+		else entry.shake
+	local shake = if entry.leadStrike or info.target > 1 then nil elseif base and wave > 1 then base * 0.5 else base
 	if landDelay > 0 then
-		Clock.after(landDelay, shakeNear, at, shake)
+		Clock.after(landDelay, shakeNear, at, shake, caster)
 	else
-		shakeNear(at, shake)
+		shakeNear(at, shake, caster)
 	end
 	if wave > 1 then
 		-- S115: a later wave's own sound (skill.<id>.wave), when it has one
@@ -1395,12 +1504,14 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		if Sfx.playable("skill.guardianAngel.save") and (not caster or caster:IsDescendantOf(Workspace)) then
 			SfxController.Play("skill.guardianAngel.save", at, SfxController.WhoOf(caster), casterKey(data))
 		end
+		punch(skill, entry, data, at, caster, HOLY, simple) -- owner 2026-11-10
 	elseif v == "detonate" then
 		-- S140 (Combustion): the caster's burns on the target burst, bigger with more stacks (`n`)
 		local stacks = math.clamp(tonumber(data.n) or 1, 1, 5)
 		Library.burst(at, 3 + 2 * stacks, color, nil, simple)
 		Library.shockwave(at, radius, color, 0.4, simple)
-		shakeNear(at, 0.15 + 0.1 * stacks)
+		punch(skill, entry, data, at, caster, color, simple, stacks < 3) -- owner 2026-11-10: full from 3 stacks
+		shakeNear(at, 0.15 + 0.1 * stacks, caster)
 	elseif v == "phoenixSave" then
 		-- S140 (Phoenix Heart): a fire pillar and ring on the saved Mage and the passive's own sound
 		Library.burst(at, 6, color, nil, simple)
@@ -1409,13 +1520,15 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		if Sfx.playable("skill.phoenixHeart") and (not caster or caster:IsDescendantOf(Workspace)) then
 			SfxController.Play("skill.phoenixHeart", at, SfxController.WhoOf(caster), casterKey(data))
 		end
+		punch(skill, entry, data, at, caster, color, simple) -- owner 2026-11-10
 	elseif v == "shatter" then
 		-- S141 (Shatter): the freeze (or a boss's Deep Chill) breaks: ice sparks, cracks and a short ring
 		if at then
 			Library.sparks(at, color, { simple = simple, count = 12 })
 			Library.cracks(at, 4, color, 0.8, simple)
 			Library.shockwave(at, 5, color, 0.3, simple)
-			shakeNear(at, 0.2)
+			punch(skill, entry, data, at, caster, color, simple) -- owner 2026-11-10
+			shakeNear(at, 0.2, caster)
 		end
 	elseif v == "finale" then
 		-- S142 (Ball Lightning): the ball bursts: a flash, a ring and sparks
@@ -1423,7 +1536,8 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			local burstRadius = tonumber(data.r) or 4
 			Library.sparks(at, color, { simple = simple, count = 14 })
 			Library.shockwave(at, burstRadius + 2, color, 0.3, simple)
-			shakeNear(at, 0.25)
+			punch(skill, entry, data, at, caster, color, simple) -- owner 2026-11-10
+			shakeNear(at, 0.25, caster)
 		end
 	elseif v == "lightningBurst" then
 		local strike = entry and entry.strike
@@ -1433,6 +1547,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 			for _, name in strike do
 				piece(name, skill, entry, data, color, caster, nil, simple)
 			end
+			punch(skill, entry, data, at, caster, color, simple, true) -- owner 2026-11-10: every strike, lighter
 			phaseSound(skill, "wave", at, caster, data)
 		else
 			Library.lightning(at + Vector3.new(0, 28, 0), at, ELEMENT_COLORS.lightning, 0.5, simple)
@@ -1456,17 +1571,20 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 				for _, name in strike do
 					piece(name, skill, entry, data, color, caster, nil, simple)
 				end
+				punch(skill, entry, data, at, caster, color, simple, not first) -- owner 2026-11-10
 				if first then
-					shakeNear(at, entry.shake or 0.3)
+					local own = caster ~= nil and caster == player.Character
+					local lead = if own then SkillJuice.plan(skill, entry, data.el).shake else entry.shake
+					shakeNear(at, lead or 0.3, caster)
 					playSound(skill, entry, at, caster, data)
 				else
-					shakeNear(at, 0.3)
+					shakeNear(at, 0.3, caster)
 					phaseSound(skill, "wave", at, caster, data)
 				end
 			end)
 		else
 			Library.meteor(at, radius, 0.5, color, simple)
-			shakeNear(at, 0.3)
+			shakeNear(at, 0.3, caster)
 		end
 	elseif v == "trapSet" then
 		-- S115: the breakpoint trap of a blink (Disengage, Blink 10B) lies as a snare too
@@ -1477,6 +1595,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 		-- S115: the snare of this trap goes, the trap's own sound plays
 		springSnare(casterKey(data), at, radius)
 		phaseSound(skill, "trigger", at, caster, data)
+		punch(skill, entry, data, at, caster, color, simple) -- owner 2026-11-10: the trap springs
 		local trigger = entry and entry.trigger
 		if entry and trigger then
 			-- S77: the trap's own pieces (Venom Snare's cloud, Snarefield's cracks)
@@ -1495,7 +1614,7 @@ local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caste
 	elseif v == "echo" then
 		Library.shockwave(at, radius, color, 0.5, simple)
 		Library.cracks(at, radius * 0.6, color, 0.9, true)
-		shakeNear(at, 0.3)
+		shakeNear(at, 0.3, caster)
 	elseif v == "splash" then
 		Library.shockwave(at, radius, color, 0.3, true)
 	elseif v == "stunBurst" then
