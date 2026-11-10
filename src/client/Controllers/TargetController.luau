@@ -23,7 +23,9 @@
 -- or the mobile attack button is the player taking over (the `manual` callback stops the hunt first).
 -- Review 2026-11-10: another player is an enemy (hover, engage on click, IsEnemy for tapped skills) only when
 -- PvpService.CanAttack would let us hit them (Logic/PvpRules.hostile): party members and guild members under the
--- guild's protection never are outside our own duel (DuelId) or arena match, whatever PvP flag or zone they show.
+-- guild's protection never are outside our own duel (DuelId) or arena match, whatever PvP flag or zone they show. A
+-- click or tap straight on such a teammate (or a fighter of our side in a match) selects them without attacking, even
+-- with an enemy drawn right next to them (the tank in front of the boss), and the hover outline shows that pick.
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -435,9 +437,8 @@ local function nearestAttacker(range: number): Model?
 	return best
 end
 
--- Enemy at a viewport position (GetMouseLocation coordinates, top bar included): the ray hit first, then
--- the model drawn closest to the point.
-local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
+-- The living model the ray through a viewport position (GetMouseLocation coordinates, top bar included) hits first.
+local function rayModel(screenPosition: Vector2): Model?
 	local camera = Workspace.CurrentCamera
 	if not camera then
 		return nil
@@ -458,12 +459,17 @@ local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
 	params.FilterDescendantsInstances = exclude
 	local hit = Workspace:Raycast(ray.Origin, ray.Direction * 500, params)
 	local model = entityModel(hit and hit.Instance)
-	if model and isAlive(model) and (not hostileOnly or isHostile(model)) then
-		return model
-	end
+	return if model and isAlive(model) then model else nil
+end
 
-	-- Forgiving pick: placeholder models are thin, so accept a click near the drawn model. Bigger (and
-	-- closer) models get a bigger click area: half their on-screen height on top of PICK_RADIUS.
+-- Forgiving pick: placeholder models are thin, so accept a click near the drawn model. Bigger (and closer) models get a
+-- bigger click area: half their on-screen height on top of PICK_RADIUS. The model (an enemy with `hostileOnly`) drawn
+-- closest to the viewport position.
+local function drawnNear(screenPosition: Vector2, hostileOnly: boolean): Model?
+	local camera = Workspace.CurrentCamera
+	if not camera then
+		return nil
+	end
 	local best: Model? = nil
 	local bestDistance = math.huge
 	for _, candidate in candidates(true) do
@@ -482,6 +488,38 @@ local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
 		end
 	end
 	return best
+end
+
+-- Enemy at a viewport position (GetMouseLocation coordinates, top bar included; holding LMB picks the next one): the
+-- ray hit first, then the enemy drawn closest to the point.
+local function enemyAt(screenPosition: Vector2): Model?
+	local model = rayModel(screenPosition)
+	if model and isHostile(model) then
+		return model
+	end
+	return drawnNear(screenPosition, true)
+end
+
+-- Review 2026-11-10: a player we fight beside (Logic/PvpRules.teammate: party, protected guild, our side of an arena
+-- match). They are no enemies, so S16's enemies-first pick passed them over and took the boss they stand in front of.
+local function teammate(model: Model): boolean
+	return not isMonster(model) and Players:GetPlayerFromCharacter(model) ~= nil and PvpRules.teammate(seen(model))
+end
+
+-- What a click or a tap at a viewport position selects: what the ray hits when it is an enemy or a teammate (a healer
+-- clicks the tank on purpose, right in front of the boss), else the enemy drawn nearest the point (S16: enemies win over
+-- other players under the cursor and near misses), else, with `anyone`, whatever living model the ray hits or is drawn
+-- nearest. The hover outline shows the same without that last step.
+local function pickAt(screenPosition: Vector2, anyone: boolean): Model?
+	local hit = rayModel(screenPosition)
+	if hit and (isHostile(hit) or teammate(hit)) then
+		return hit
+	end
+	local enemy = drawnNear(screenPosition, true)
+	if enemy or not anyone then
+		return enemy
+	end
+	return hit or drawnNear(screenPosition, false)
 end
 
 -- Mobile attack button: a second tap while attacking stops; otherwise attack the current target or pick
@@ -505,9 +543,10 @@ function TargetController.AttackNearest()
 	end
 end
 
--- Enemies win over friendly players under the cursor; a click on empty ground clears the target.
+-- Enemies win over other players under the cursor, except a teammate hit straight on (pickAt); a click on empty ground
+-- clears the target.
 local function click(screenPosition: Vector2)
-	local model = enemyAt(screenPosition, true) or enemyAt(screenPosition, false)
+	local model = pickAt(screenPosition, true)
 	if model then
 		manualTakeover()
 		TargetController.SetTarget(model)
@@ -570,7 +609,7 @@ local function retarget()
 	end
 	if holding and not Fusion.peek(Device.Touch) then
 		local mouse = UserInputService:GetMouseLocation()
-		local found = enemyAt(mouse, true)
+		local found = enemyAt(mouse)
 		local root = myRoot()
 		if found and root and (found:GetPivot().Position - root.Position).Magnitude <= HOLD_PICK_RANGE + 20 then
 			TargetController.SetTarget(found, true)
@@ -681,7 +720,8 @@ local function hoverStep()
 		end
 		return
 	end
-	local model = enemyAt(UserInputService:GetMouseLocation(), true)
+	-- what a click here selects (a teammate hit straight on too), short of its fallback to any living model
+	local model = pickAt(UserInputService:GetMouseLocation(), false)
 	if model == Fusion.peek(TargetController.Target) then
 		model = nil
 	end

@@ -82,6 +82,17 @@ function PvpRules.hostile(seen: Seen): boolean
 	return allowed
 end
 
+-- Review 2026-11-10: a player we fight beside, whom a click on their body selects over an enemy drawn next to them
+-- (TargetController): a fighter of our side in an arena match we fight in (the server's help group), else a party
+-- member or a guild member under the guild's protection. The caller asks `hostile` first (a party member we duel is an
+-- enemy).
+function PvpRules.teammate(seen: Seen): boolean
+	if seen.mySide ~= nil then
+		return seen.side == seen.mySide
+	end
+	return seen.sameParty == true or (seen.sameGuild == true and seen.guildProtection ~= false)
+end
+
 -- True when the player's own PvP toggle matters in this zone (only yellow zones).
 function PvpRules.toggleMatters(zone: Zone): boolean
 	return zone == "yellow"
