@@ -14902,17 +14902,37 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `mapShop` na karcie NPC), gildia (`guildLog`, `guildBanner`, `guildRights`), ustawienia (`setSound`, `setGraphics`,
   `setCombat`, `setUi` otwarte; `setLoot`, `setSocial`, `setKeys` zwinięte, skróty klawiszowe niewidoczne na dotyku).
   Tabele zwinięte decyzjami z 2026-10-21 (opisy pod „Więcej ▸”) zostają zwinięte.
-- Testy: nowy `tests/worldlayout.spec.luau` (13 testów: liczby z `Section` i `Theme`, każde okno pakietu na ekranach
+- Teksty, druga część (`5c5873fa`): linie questów mówione u NPC (`line` celu `talk` albo `deliver`) nie wchodziły do
+  skanu `TextCaps`, a ramka linii w `NpcDialog` mieści 140 znaków; siedem miało więcej (do 195, Brat Kaspar w spalonej
+  świątyni, znalezisko audytu 3) i wchodziło na wybory. Skrócone przez wycięcie powtórzeń, ostatnie zdanie Kaspara za
+  (i) linii (`quest.burntTemple.kaspar.info`). Strona zlecenia łowieckiego (`contract.text`) miała z przykładowym
+  obszarem i potworem 166 znaków, teraz 137. „Questy” jeszcze w czterech kluczach (osiągnięcia questów pobocznych, cel
+  gildii, pusta zakładka poboczna dziennika), klawisz szczegółów przedmiotu znów „Szczegóły” (było „Detale (trzymaj)”).
+  Powitania: Brat Anzelm odzyskał „twoje kroki” (te same słowa mówi w przeddzień bitwy) i wiosenną modlitwę, skald,
+  koniuszy i zielarka swój żart. Dwie dzielone strony rozłożone równiej (`side_fp_howl.done`, `side_fp_treatise.p1`);
+  wszystkie 129 dzielonych stron łączy się w PL i EN słowo w słowo w tekst sprzed podziału. „Więcej ▸” przepustki
+  nie powtarza już swojej krótkiej linii (było do 478 znaków, teraz do 296; szczegóły okna mają 300). Długie myślniki
+  zostały tylko w kluczach z list B (10) i D (2).
+- Podpowiedzi pól tekstowych (`5c5873fa`, `c2e91534`): skan nie czyta `Placeholder`, więc kilka miało ponad 20 znaków
+  i na telefonie się ucinało. Teraz zakładanie gildii „Nazwa gildii (3–20)”, „Tag gildii (2–4)” (dozwolone znaki mówi
+  linia błędu pod polem), wyszukiwarka mapy „NPC, mapa, potwór…” obok lupy, zaproszenie do gildii „Imię (ten serwer)”
+  (komunikat „Nie ma takiego gracza na tym serwerze” zostaje), ignorowanie „Imię postaci” obok „Ignoruj”, angielskie
+  imię postaci „3–16 letters, digits”; `worldlayout.spec` czyta podpowiedzi z plików pakietu i pilnuje 20 znaków.
+- Testy: nowy `tests/worldlayout.spec.luau` (14 testów: liczby z `Section` i `Theme`, każde okno pakietu na ekranach
   `uiframe.spec` przy pasku 0, 36 i 58: bez ujemnych rozmiarów, na telefonie 2–3 wiersze, na PC 5, przypięte przyciski,
   „Graj” na ekranie, koło emotek bez nakładania, panel łowienia z dala od kolumn telefonu, każde id sekcji okien E w
-  `Data/Folds/World` albo `Menu`), rozszerzony `dialogue.spec`, własne wpisy w `shorttext3.spec`. Bramka zielona:
-  10249 testów, `wikidump --check` aktualny.
+  `Data/Folds/World` albo `Menu`, podpowiedzi pól do 20 znaków), rozszerzony `dialogue.spec` (też linie questów u NPC
+  z `.info` w obu językach i strony zlecenia łowieckiego do 140), własne wpisy w `shorttext3.spec`. Bramka zielona:
+  10249 testów po części kodu, 10252 po tekstach, `wikidump --check` aktualny.
 - Wybory w miejscach, które plan zostawił otwarte: na PC bestiariusz z otwartymi regionami pokazuje co najmniej 2
   wiersze wpisów, nie 5 (regiony zajmują górę okna, gracz może je zwinąć); panel łowienia na telefonie może stać w paśmie celu (w czasie
   łowienia nic nie jest celem, `WorldLayout.FISHING_FREE`); „Anuluj” na telefonie znika na czas brania (branie kończy się
   samo), a podpowiedź dotyku jest nowym kluczem; sztandar gildii zwinięty także dla lidera; legenda mapy ma nowy tytuł
   „Legenda” (`worldmap.legend`), a „Twój poziom” jest jej pierwszym wierszem; ukończone wątki poboczne w jednej sekcji
-  zamiast osobnego id na wątek. Nie zrobione: napis w pasku tytułu okna (pytanie UI 8, decyzja 2026-10-31 zostaje) i
+  zamiast osobnego id na wątek. W tekstach: polecenia admina (`admin.*`, teksty dla dewelopera) i słowa wyszukiwarki
+  mapy (`worldmap.search.*`, gracz może wpisać „zadanie”) zostają przy „zadanie”; zasady grupy w (i) mają 238 znaków,
+  pod limitem 240; ostatnie zdanie Kaspara poszło za (i), nie na drugą stronę, bo linia u NPC nie ma stron.
+  Nie zrobione: napis w pasku tytułu okna (pytanie UI 8, decyzja 2026-10-31 zostaje) i
   przejście okien dialogowych pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego, Wkrótce) na stopkę i przewijanie
   okna pakietu C, które jeszcze nie weszły.
 - **Pliki:** `Logic/WorldLayout`, `Logic/Dialogue`, `Data/Folds/World|Menu`, `Data/Localization/pl|en`, okna

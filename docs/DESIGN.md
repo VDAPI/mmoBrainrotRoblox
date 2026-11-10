@@ -1759,11 +1759,12 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   linią. Osiągnięcia: zwarte podsumowanie na dotyku; bestiariusz: regiony jako sekcja (na telefonie zwinięta, nagłówek
   nazywa wybrany region). Tablica zleceń: blok łowów jako sekcja (na telefonie zwinięta), zasady za (i). Rozmowa z
   questem: strona do 140 znaków, dalej „Dalej ▸”, 3 linie nad jednym rzędem wyboru nagrody; rozmowa z NPC: powitanie
-  do 60 znaków z (i), linia nie wchodzi na wybory. Przepustka: zwarty nagłówek na telefonie. Grupa: bonus jedną linią
-  z (i); znajomi jednym rzędem z przyciskami po prawej. Wybór postaci: „Graj” i „Usuń” przypięte do dołu karty, na
-  telefonie mniejszy nagłówek i herb. Koło emotek: promień z wysokości ekranu poniżej paska Robloxa, koło szersze niż
-  wysokie. Łowienie: panel nie wchodzi pod pasek Robloxa; na telefonie stoi między kolumnami HUD, z podpowiedzią dotyku,
-  „Anuluj” w czasie czekania.
+  do 60 znaków z (i), linia (także linia questu u tego NPC) do 140 znaków, reszta za (i), linia nie wchodzi na wybory.
+  Przepustka: zwarty nagłówek na telefonie. Grupa: bonus jedną linią z (i); znajomi jednym rzędem z przyciskami po
+  prawej. Wybór postaci: „Graj” i „Usuń” przypięte do dołu karty, na telefonie mniejszy nagłówek i herb. Koło emotek:
+  promień z wysokości ekranu poniżej paska Robloxa, koło szersze niż wysokie. Łowienie: panel nie wchodzi pod pasek
+  Robloxa; na telefonie stoi między kolumnami HUD, z podpowiedzią dotyku, „Anuluj” w czasie czekania. Pole tekstowe w
+  tych oknach ma podpowiedź do 20 znaków; dozwolone znaki i powód odmowy mówi linia błędu pod polem albo komunikat.
 - **Zwijanie w oknach świata (plan UI 2026-11-10, pakiet E)**: sekcje zapisane na koncie (`Data/Folds/World`, `Menu`; w
   ustawieniach i gildii zamiast `Details` ze stanem na sesję z Opisy-3). Zwinięte: historia i ukończone wątki w
   dzienniku, sklep NPC na karcie mapy, kronika, sztandar i uprawnienia rang w gildii, a w ustawieniach Łup i handel,

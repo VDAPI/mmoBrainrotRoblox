@@ -303,4 +303,7 @@
   `Data/Folds/World` (ustawienia: `Menu`), a plik okna na liście testu sekcji. Kwestia dłuższa niż 140 znaków (strona
   rozmowy `quest.<id>.p1`, `.done`): dalszy ciąg pod kluczem ciągu (`p1` → `p1b`, `p1c`; `done` → `done2`;
   `Logic/Dialogue.partKey`, najwyżej 4 części), PL i EN z tymi samymi znacznikami; `QuestDialog` pokazuje go po
-  „Dalej ▸”, dziennik i wiki czytają całość (`Dialogue.whole`), test `tests/dialogue.spec`.
+  „Dalej ▸”, dziennik i wiki czytają całość (`Dialogue.whole`), test `tests/dialogue.spec`. Linia questu mówiona u NPC
+  (`line` celu `talk` / `deliver`, np. `quest.<id>.<npc>`) nie ma stron: najwyżej 140 znaków, reszta w
+  `<klucz linii>.info` (PL i EN), którą `NpcDialog` pokazuje za (i); podpowiedź pola tekstowego do 20 znaków
+  (`tests/worldlayout.spec` czyta je z plików pakietu).
