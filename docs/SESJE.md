@@ -15122,6 +15122,26 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Screens/LookWindow`, `Screens/BackpackShop`, `Screens/DepositWindow`, `Screens/PremiumShop/init|Items|Cosmetics`,
   `UI/PremiumConfirm`, `UI/SeasonPassBuy`, `tests/gearlayout.spec`, `tests/tooltip.spec`,
   `tests/charactersections.spec`, `tests/shopshort.spec`, `tests/sectionfold.spec`.
+- **Etap przyjęcia po pakiecie C (2026-11-10):** główne przyciski usług w stopce okna (`Window.Parts.Footer`): widoki
+  kowala (sześć zakładek) i aukcji (trzy) zwracają `{ View, Footer }`, okno składa stopkę z wybranej zakładki; alchemik
+  („Odbierz wszystko”), wygląd (koszt i „Zmień wygląd”) i handel („Akceptuj”, „Potwierdź”, strony handlu w `Scroll` nad
+  stopką). Kolejka alchemika w wierszach `ListRow` 64, lista tytułów w wierszach z drugą linią; lista przedmiotów w
+  zakładkach Przemiana, Efekt i Wygląd kowala zostaje kolumną także na telefonie (pas nad kowadłem zostawiał mu ok.
+  50 px). Miejsce pod paskiem zakładek z `GearLayout.tabsTop` (`WindowFrame.tabStrip`), `Tabs` garderoby, wędrownego
+  kupca i sklepu łowów bez własnej wysokości. `BackpackPanel` zgłasza pasek akcji (`ItemTooltip.avoid`) i zostaje przy
+  nim (wspólny z oknem postaci; stopka zabrałaby drugi rząd slotów na 844×390 pod paskiem 58 px). `PremiumConfirm`: cena
+  raz, na przycisku; doładowanie przepustki z linią ceny (`describe(spec, "topUp")`). Zadania dodatkowe: zakładka
+  „Błogosławieństwa” wraca (`TextCaps.TERMS.tab`, test w `textcaps.spec`, `docs/UI-ZASADY.md` §2, wiki przegenerowana),
+  miary `GearLayout` z `WindowFrame` i `Theme` (porównuje `gearlayout.spec`), usunięte nieużywane
+  `skills.section.rankMax`, `skills.full.show|hide`, `skills.tree.capstoneNone`. `gearlayout.spec`: widoki usług w ciele
+  nad stopką, przyciski w rzędzie stopki, zakładki alchemika i filtry plecaka bez przewijania (pl i en, PC i telefony),
+  handel na PC i telefonie. Bez zmian (powody w DECYZJE): sklep, Smoczy Sklep, sklep łowów, wędrowny kupiec, statystyki
+  pochodne, kolumny okna postaci i szczegóły umiejętności, „Wróć” arkusza. Pliki: `Logic/GearLayout`, `Logic/TextCaps`,
+  `Data/Localization/pl|en`, `Screens/BlacksmithWindow/*`, `Screens/AuctionWindow/*`, `Screens/AlchemyWindow`,
+  `Screens/LookWindow`, `Screens/TradeWindow`, `Screens/BackpackPanel`, `Screens/CharacterWindow/TitleChooser`,
+  `Screens/Wardrobe`, `Screens/WanderingMerchantWindow`, `Screens/HuntShopWindow`, `UI/PremiumConfirm`,
+  `UI/SeasonPassBuy`, `tests/gearlayout.spec`, `tests/textcaps.spec`, `wiki/src/data/meta|recipes.json`,
+  `docs/PRZEDMIOTY.md`.
 
 ### Plan UI 2026-11-10, pakiet D, część tekstowa: teksty plecaka, umiejętności, usług i sklepów (2026-11-10)
 - Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się

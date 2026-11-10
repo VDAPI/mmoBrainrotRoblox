@@ -329,11 +329,11 @@
   zaraz po jej utworzeniu, w `Computed` `use(view.size)` (nil przed pierwszym pomiarem: wtedy rozmiar treści na PC) i
   `UDim2.fromOffset` z prostokątów. `UI/ViewSize` mierzy w px wirtualnych bez animacji otwierania okna (samo
   `AbsoluteSize` przez `Scale.Value` ją zawiera); widok buduje się od nowa tylko przy zmianie rodzaju układu, a
-  przesunięcia idą przez `Computed` `UDim2`. Przycisk główny w pasie stopki (`GearLayout.BUTTON` od dołu), na dotyku
-  44 px (`GearLayout.TOUCH`), długa treść przewija się w swoim prostokącie, telefon jedną kolumną tylko tam, gdzie dwie
-  się nie mieszczą. Nowy widok: funkcja w `GearLayout`, przypadek w `tests/gearlayout.spec` (PC i trzy telefony
-  `PhoneHud.DEVICES` przy pasku Robloxa 0, 36 i 58 px prawdziwych, w oknie `bar / PhoneHud.SCALE`: w obszarze, bez
-  nakładania, przyciski w stopce, co najmniej 2 rzędy listy na telefonie i 5 na PC) i plik widoku na liście
+  przesunięcia idą przez `Computed` `UDim2`. Przycisk główny w stopce okna (`Window.Parts.Footer`, przepis niżej), na
+  dotyku 44 px (`GearLayout.TOUCH`), długa treść przewija się w swoim prostokącie, telefon jedną kolumną tylko tam,
+  gdzie dwie się nie mieszczą. Nowy widok: funkcja w `GearLayout`, przypadek w `tests/gearlayout.spec` (PC i trzy
+  telefony `PhoneHud.DEVICES` przy pasku Robloxa 0, 36 i 58 px prawdziwych, w oknie `bar / PhoneHud.SCALE`: w obszarze,
+  bez nakładania, przyciski w stopce, co najmniej 2 rzędy listy na telefonie i 5 na PC) i plik widoku na liście
   czytelników w tym teście.
 - **Tekst okna plecaka, umiejętności i usług w limicie** (plan UI 2026-11-10, pakiet D, część tekstowa; właściciel:
   „bardzo dużo napisów, zbyt szczegółowe opisy”): krótki opis umiejętności `skill.<id>.short` ma najwyżej 60 znaków i
@@ -348,3 +348,19 @@
   „przeciągnij”; Smocza Waluta pełną nazwą raz na ekranie, dalej ◆. Liczy `Logic/TextCaps` po wstawieniu przykładów
   (`{n}` 6 znaków, `{item}` 28, inne 12), pilnuje `tests/textcaps.spec`, a lista D w `tests/fixtures/textcaps/D.luau`
   zostaje pusta.
+- **Usługa z przyciskami w stopce okna** (plan UI 2026-11-10, pakiet D, etap przyjęcia po pakiecie C): funkcja `build`
+  okna zwraca `Window.Parts` (`{ Content = ..., Footer = ... }`), a główne przyciski stoją w `Footer`: rząd 52 px
+  wyrównany do prawej, przycisk z `Size = UDim2.new(0, szerokość, 1, 0)`, a grupa od lewej (filtry, podpowiedź, strony)
+  to jedna `Frame` na cały rząd z własnym `UIListLayout`. Okno z zakładkami: widok zakładki zwraca `{ View: Instance,
+  Footer: Fusion.Child }`, okno trzyma `Computed` wybranej zakładki i podaje `Content` (pasek `Tabs`, pod nim ramka z
+  `use(view).View`) oraz `Footer` jako `Computed` z `use(view).Footer`; każda zakładka daje swój rząd, więc stopka nie
+  stoi pustym pasem. Widok zaczyna się pod paskiem zakładek w `GearLayout.tabsTop(scroll)` (`true` przy `Tabs` z `Scroll
+  = true`), a `Tabs` nie dostaje własnej wysokości. Funkcja widoku w `GearLayout` liczy w ciele okna nad stopką
+  (`GearLayout.area(..., footer)` = `WindowFrame.body`), a przyciski w rzędzie stopki
+  (`GearLayout.footerRow(szerokość)`, od 0). Test w `tests/gearlayout.spec`: przypadki `cases(okno, pod, true)`, `check`
+  dla widoku, `footerRow` dla przycisków (wysokość `GearLayout.BUTTON`) i plik okna na liście testu „the services' main
+  buttons stand in the window's Footer”. Jedno ciało wyższe niż okno na telefonie (handel) to `Scroll = true` w
+  `Window.Parts`, z częściami od góry (`fromOffset`), nie przypiętymi do dołu. Pasek akcji przy slotach, poza stopką,
+  okno zgłasza tooltipowi: `ItemTooltip.avoid(scope, pasek)`. Liczby `GearLayout` to miary ramki okna i `Theme`
+  (`WindowFrame.FOOTER`, `TAB_HEIGHT`, `tabStrip`, `Theme.Size`); nowa miara dostaje porównanie w teście „measures with
+  the window frame's and Theme's sizes”.

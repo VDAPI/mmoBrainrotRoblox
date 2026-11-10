@@ -86,20 +86,26 @@
 - **Plan UI 2026-11-10, pakiet D (plecak, umiejętności, usługi, sklepy, tooltip przedmiotu), część kodowa:** okna z
   prostokąta treści (`Logic/GearLayout`) mierzonego bez animacji okna (`UI/ViewSize`), jedna linia na statystykę i
   cztery zwijane sekcje pochodnych, zwijane „Koszt i odnowienie” i „Przełomy”, jeden pasek arkusza umiejętności na
-  telefonie, krótkie linie węzłów, przyciski usług przypięte pod treścią, na dotyku 44 px, skrócony tooltip
-  przedmiotu, jedno miejsce na tekst w sklepach (DECYZJE, SESJE); czeka na stopkę, przewijanie, przewijane `Tabs`,
-  `ListRow` i `Avoid` pakietu C; nieobejrzane w Studio (arkusz umiejętności na telefonie pod paskiem Robloxa, w dolnym
-  marginesie okna, otwieranie okna plecaka na telefonie, nagłówek kierunków z długimi nazwami, karty przełomów w
-  panelu 326 px, środek kowadła na niskim telefonie, formularz aukcji i kolejka alchemika w przewijaniu, wiersz
-  plecakarza w wąskim oknie, plecak 500 px na 667×375 i obok usługi, przyciski 44 px plecaka i statystyk).
+  telefonie, krótkie linie węzłów, na dotyku 44 px, skrócony tooltip przedmiotu, jedno miejsce na tekst w sklepach
+  (DECYZJE, SESJE); etap przyjęcia po pakiecie C: główne przyciski kowala (na każdej zakładce), aukcji, alchemika,
+  wyglądu i handlu w stopce okna, kolejka alchemika w wierszach `ListRow`, zakładki okien o wysokości paska `Tabs`,
+  tooltip przedmiotu omija pasek akcji plecaka (`ItemTooltip.avoid`), okno zakupu z ceną raz, na przycisku, lista
+  tytułów w wierszach z drugą linią, miary `GearLayout` z ramki okna i `Theme`; nieobejrzane w Studio (arkusz
+  umiejętności na telefonie pod paskiem Robloxa, w dolnym marginesie okna, otwieranie okna plecaka na telefonie,
+  nagłówek kierunków z długimi nazwami, karty przełomów w panelu 326 px, środek kowadła na niskim telefonie, wiersz
+  plecakarza w wąskim oknie, plecak 500 px na 667×375 i obok usługi, przyciski 44 px plecaka i statystyk, stopki kowala
+  i aukcji na telefonie z przewijanym porównaniem, formularzem i filtrami nad nimi, kolejka alchemika w wierszach 64 px,
+  obie strony handlu przewijane nad stopką na telefonie, podgląd wyglądu bez dolnego marginesu na 844×390, tooltip
+  przedmiotu przy pasku akcji plecaka na telefonie, lista tytułów w wierszach 64 px).
 - **Plan UI 2026-11-10, pakiet D, część tekstowa:** teksty plecaka, umiejętności, usług i sklepów w limitach
-  (`docs/UI-ZASADY.md` §2), lista D w `tests/fixtures/textcaps` pusta (było 237): krótkie opisy umiejętności i węzłów
-  do 60 znaków, przełomy do 48 z liczbami, pytania potwierdzeń do 90 z resztą pod „Więcej ▸”, podpowiedzi bez nazw
-  ruchów myszy, Smocza Waluta raz pełną nazwą i dalej ◆ (DECYZJE, SESJE); nazwa zakładki błogosławieństw u alchemika
-  czeka na właściciela (DECYZJE); nieobejrzane w Studio (karty przełomów z nowymi tekstami w panelu 326 px i na
-  telefonie, okno zakupu skrzyni łowów i sprzętu wędrowca z „Więcej ▸”, linia „Zwoje Przemiany: N” pod „Przemień
-  wszystkie”, kafelek paczki startowej z samą liczbą przy ikonie waluty, zakładki alchemika i garderoby z krótszymi
-  nazwami, pytanie zakupu barwnika i tytułu z nazwą w cudzysłowie).
+  (`docs/UI-ZASADY.md` §2), lista D w `tests/fixtures/textcaps` pusta (było 237): krótkie opisy umiejętności i węzłów do
+  60 znaków, przełomy do 48 z liczbami, pytania potwierdzeń do 90 z resztą pod „Więcej ▸”, podpowiedzi bez nazw ruchów
+  myszy, Smocza Waluta raz pełną nazwą i dalej ◆ (DECYZJE, SESJE); zakładka alchemika znów „Błogosławieństwa”, jak w
+  sklepie areny (termin słownika ponad limit zakładki, `TextCaps.TERMS`, `docs/UI-ZASADY.md` §2); nieobejrzane w Studio
+  (karty przełomów z nowymi tekstami w panelu 326 px i na telefonie, okno zakupu skrzyni łowów i sprzętu wędrowca z
+  „Więcej ▸”, linia „Zwoje Przemiany: N” pod „Przemień wszystkie”, kafelek paczki startowej z samą liczbą przy ikonie
+  waluty, pasek zakładek alchemika z „Błogosławieństwa” na telefonie (mniejszy tekst zakładek), zakładki garderoby z
+  krótszymi nazwami, pytanie zakupu barwnika i tytułu z nazwą w cudzysłowie).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa
