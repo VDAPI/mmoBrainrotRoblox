@@ -1555,7 +1555,7 @@ return {
 	-- Alchemist (S07)
 	["window.alchemy.title"] = "Alchemik",
 	["window.stonepicker.title"] = "Wybierz cel",
-	["alchemy.group.blessing"] = "Wzmocnienia",
+	["alchemy.group.blessing"] = "Błogosławieństwa",
 	["alchemy.group.travel"] = "Podróż",
 	["alchemy.group.material"] = "Materiały",
 	["alchemy.group.elixir"] = "Eliksiry",

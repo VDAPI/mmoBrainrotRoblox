@@ -24,14 +24,24 @@ export type Surface = {
 	alt: Wrap?,
 	sentences: number?, -- at most this many sentences
 	perLine: boolean?, -- tooltips: `chars` caps each line, `lines` the whole text
+	terms: { [string]: boolean }?, -- whole texts that may pass `chars` (TextCaps.TERMS)
 }
+
+-- Glossary terms a surface shows whole although they pass its `chars` (UI package D, 2026-11-10: one word per thing;
+-- the alchemist's tab is "Błogosławieństwa", the game's word for these buffs everywhere, 16 characters against the
+-- tab cap of 12). Only a text equal to a listed term passes, so every other tab keeps the cap; Components/Tabs fits
+-- the row (less padding, smaller text, then a sideways scroll) and tests/gearlayout.spec checks that strip on PC and
+-- on the phones. docs/UI-ZASADY.md §2 lists the terms.
+TextCaps.TERMS = table.freeze({
+	tab = table.freeze({ ["Błogosławieństwa"] = true }),
+})
 
 -- Surface id -> its cap (docs/UI-ZASADY.md §2). A key shown on several surfaces keeps the strictest of them.
 TextCaps.SURFACES = table.freeze({
 	-- controls and titles
 	button = { chars = 18, lines = 1, size = 20 }, -- one line, never wrapped (ButtonHeight 52, Body 20)
 	modalButton = { chars = 14, lines = 1, size = 20 }, -- a modal's confirm and cancel buttons ("przycisk 14")
-	tab = { chars = 12 },
+	tab = { chars = 12, terms = TextCaps.TERMS.tab },
 	windowTitle = { chars = 22, lines = 1 },
 	modalTitle = { chars = 28 },
 	sectionTitle = { chars = 24 },
@@ -287,6 +297,9 @@ function TextCaps.check(surface: string | Surface, text: string): (boolean, stri
 	local cap: Surface? = if type(surface) == "string" then TextCaps.SURFACES[surface] else surface
 	assert(cap, `TextCaps: unknown surface {surface}`)
 	local plain = TextCaps.plain(text)
+	if cap.terms and cap.terms[plain] then
+		return true, nil -- a listed glossary term, whole (TextCaps.TERMS)
+	end
 	if cap.perLine then
 		local count = 0
 		for line in string.gmatch(plain .. "\n", "([^\n]*)\n") do

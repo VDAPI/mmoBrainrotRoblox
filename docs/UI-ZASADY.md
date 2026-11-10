@@ -33,7 +33,8 @@ NPC 16, obszar 20, gildia 24, liczba 6, klawisz 6, inne 12. Liczy `Logic/TextCap
 `TextCaps.SURFACES`). Model szerokości: litera 0,56 em, spacja 0,3 em, symbol 1 em. Limit obowiązuje pl i en.
 Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu NPC to zasada pisania.
 
-- Przycisk: 18, jedna linia, bez zawijania. Zakładka: 12.
+- Przycisk: 18, jedna linia, bez zawijania. Zakładka: 12; całe terminy ze słownika gry mogą być dłuższe
+  (`TextCaps.TERMS`, dziś tylko „Błogosławieństwa” u alchemika), pasek zakładek je mieści albo przewija.
 - Tytuł okna: 22, jedna linia. Tytuł modala: 28. Nagłówek sekcji: 24 (nazwa panelu HUD: 20). Linia zwiniętej
   sekcji: 36. Etykieta: 20 plus wartość.
 - Linia w oknie (stan, `.short`): 60, jedna linia.
