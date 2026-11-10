@@ -1,7 +1,8 @@
 --!strict
 -- Derived statistics grouped as Offense / Defense / Resources / Other, with a tooltip explaining where
 -- each value comes from. While stat points are pending, values are previewed with Logic/StatCalc and the
--- difference is shown in green.
+-- difference is shown in green. Owner 2026-11-10: as tall as its rows (the statistics section of the backpack window
+-- scrolls with its column, UI/Components/Section).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -134,21 +135,15 @@ local function DerivedList(scope: Scope, props: Props): Instance
 		end
 	end
 
-	return scope:New("ScrollingFrame")({
+	return scope:New("Frame")({
 		Name = "DerivedList",
 		LayoutOrder = props.LayoutOrder,
 		Position = props.Position,
-		Size = props.Size or UDim2.fromScale(1, 1),
+		Size = props.Size or UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		ScrollingDirection = Enum.ScrollingDirection.Y,
-		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Paper.Label,
 		[Children] = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
-			scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
 			children :: any,
 		},
 	})

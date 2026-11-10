@@ -3,9 +3,6 @@
 -- full screen on touch devices. Opened and stacked by WindowManager; content goes in [Children].
 -- S135/S136 (Data/UiWindows `surface`): parchment body (iron for the admin overlay), iron frame with an inner brass
 -- line, dark iron title bar with a Merriweather title and a brass rule.
--- UI plan phase 3 (Data/UiHubs): a window of a hub shows the hub's windows as tabs in its title bar instead of the title;
--- the current one bright with a brass line under it. A click hands the tab and this window's offset to `OnTab`
--- (WindowManager opens that window in the same place).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -21,9 +18,6 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type UsedAs<T> = Fusion.UsedAs<T>
 
--- UI plan phase 4: `badge` lights a small "!" by the tab's name (its window has news).
-export type HeaderTab = { id: string, label: UsedAs<string>, visible: UsedAs<boolean>?, badge: UsedAs<boolean>? }
-
 export type Props = {
 	Title: UsedAs<string>,
 	Size: Vector2, -- desktop size in virtual pixels
@@ -34,104 +28,8 @@ export type Props = {
 	Name: string?,
 	Surface: Theme.SurfaceName?, -- S136: "paper" (default) or "iron" (the admin overlay); Data/UiWindows
 	Closing: Fusion.Value<boolean>?, -- W28: true plays the closing motion (WindowManager removes the window after it)
-	Tabs: { HeaderTab }?, -- UI plan phase 3: the hub's windows, in the title bar
-	Current: string?, -- the tab of this window
-	OnTab: ((id: string, offset: Vector2) -> ())?,
 	[typeof(Children)]: Fusion.Child?,
 }
-
--- UI plan phase 3: the hub's tabs in the title bar (a row that scrolls sideways when the window is narrow).
-local function headerTabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props, offset: Fusion.Value<Vector2>): Instance
-	local buttons = {}
-	local list: { HeaderTab } = props.Tabs or {}
-	for index, tab in list do
-		local current = tab.id == props.Current
-		local hovered = scope:Value(false)
-		table.insert(
-			buttons,
-			scope:New("TextButton")({
-				Name = tab.id,
-				LayoutOrder = index,
-				AutoButtonColor = false,
-				BackgroundTransparency = 1,
-				Size = UDim2.fromScale(0, 1),
-				AutomaticSize = Enum.AutomaticSize.X,
-				Visible = tab.visible,
-				Text = tab.label,
-				FontFace = if current then Theme.Fonts.Display else Theme.Fonts.BodyBold,
-				TextSize = if current then Theme.TextSize.Large else Theme.TextSize.Body,
-				TextColor3 = scope:Computed(function(use): Color3
-					return if current or use(hovered) then Theme.Iron.Heading else Theme.Iron.TextMuted
-				end),
-				ZIndex = 2,
-				[OnEvent("MouseEnter")] = function()
-					hovered:set(true)
-				end,
-				[OnEvent("MouseLeave")] = function()
-					hovered:set(false)
-				end,
-				[OnEvent("Activated")] = function()
-					if not current and props.OnTab then
-						Sounds.play("click")
-						props.OnTab(tab.id, Fusion.peek(offset))
-					end
-				end,
-				[Children] = {
-					scope:New("UIPadding")({
-						PaddingLeft = UDim.new(0, Theme.Padding.Medium),
-						PaddingRight = UDim.new(0, Theme.Padding.Medium),
-					}),
-					if tab.badge
-						then scope:New("TextLabel")({
-								Name = "Badge",
-								AnchorPoint = Vector2.new(1, 0),
-								-- in the right padding, over the name's top corner
-								Position = UDim2.new(1, Theme.Padding.Medium - 2, 0, Theme.Padding.Small),
-								Size = UDim2.fromOffset(16, 16),
-								BackgroundColor3 = Theme.Iron.Danger,
-								Text = "!",
-								FontFace = Theme.Fonts.BodyBold,
-								TextSize = Theme.TextSize.Caption,
-								TextColor3 = Theme.Iron.DangerText,
-								ZIndex = 3,
-								Visible = tab.badge,
-								[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-							}) :: any
-						else {} :: any,
-					scope:New("Frame")({
-						Name = "Line",
-						Visible = current,
-						AnchorPoint = Vector2.new(0.5, 1),
-						Position = UDim2.new(0.5, 0, 1, -Theme.Size.HeaderRule),
-						Size = UDim2.new(1, 0, 0, 3),
-						BackgroundColor3 = Theme.Brass.Bright,
-						BorderSizePixel = 0,
-					}),
-				},
-			})
-		)
-	end
-	return scope:New("ScrollingFrame")({
-		Name = "HubTabs",
-		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		Position = UDim2.fromOffset(Theme.Padding.Small, 0),
-		Size = UDim2.new(1, -Theme.Padding.Small - Theme.Size.WindowHeader, 1, 0),
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.X,
-		ScrollingDirection = Enum.ScrollingDirection.X,
-		ScrollBarThickness = 0,
-		ZIndex = 2,
-		[Children] = {
-			scope:New("UIListLayout")({
-				FillDirection = Enum.FillDirection.Horizontal,
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				VerticalAlignment = Enum.VerticalAlignment.Center,
-			}),
-			buttons :: any,
-		},
-	})
-end
 
 -- The frame, title bar and close button are the same on both surfaces; the body is parchment or iron.
 local FRAME = {
@@ -286,11 +184,8 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 						BorderSizePixel = 0,
 						ZIndex = 2,
 					}),
-					-- an empty list, not nil: no hole in the children
-					if props.Tabs then headerTabs(scope, props, offset) else {} :: any,
 					scope:New("TextLabel")({
 						Name = "Title",
-						Visible = props.Tabs == nil,
 						BackgroundTransparency = 1,
 						Position = UDim2.fromOffset(Theme.Padding.Large, 0),
 						Size = UDim2.new(1, -Theme.Padding.Large * 2 - Theme.Size.WindowHeader, 1, 0),

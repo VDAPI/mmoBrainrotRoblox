@@ -241,9 +241,9 @@ local function place(
 	end
 	local cx, cy = rect.x + rect.w / 2, rect.y + rect.h / 2
 	local function left(extra: number): (number?, number?, TutorialHint.Arrow?)
-		-- Studio check 2026-10-31 (UI plan phase 4: early in the tutorial the menu's row holds only the Character hub
-		-- and the ☰, right over the minimap): a button of the menu gets its tile left of the whole menu, so the tile
-		-- never covers the minimap
+		-- Studio check 2026-10-31 (UI plan phase 4: early in the tutorial the menu's row holds only the backpack, the
+		-- skills and the ☰, right over the minimap): a button of the menu gets its tile left of the whole menu, so the
+		-- tile never covers the minimap
 		local edge = rect.x
 		if
 			menu

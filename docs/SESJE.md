@@ -14585,6 +14585,56 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Vfx/CameraShake`, `VfxController`, `CombatFxController`, `tools/balance_reasons.luau`, `tests/skilljuice.spec`,
   `tests/skillmotion.spec`, `docs/ANIMACJE.md` §16, `docs/ASSETS.md`.
 
+### Portal: brama kapliczki przodem do ścieżki, pole w bramie (2026-11-10)
+
+- Zgłoszenie właściciela (zrzut z Łąk): „jest brama, w której nie ma tp, tylko pomiędzy jakoś dziwnie”. Fiolet stał
+  w przerwie między granatową stelą a omszałą runiczną bramą, a brama patrzyła w bok.
+- Przyczyna: `common_portal_02` to kapliczka 16 x 18 x 20,9 (schody do bramy z przodu, płyta 3,8 nad stopą, stela z
+  tyłu). W28 obracał o 90° każdy model głębszy niż szerszy, więc brama stanęła bokiem, a „otwór” zmierzony promieniami
+  31.10 (3,75 studa w lewo do 8,5 w prawo po obrocie) był przerwą przed stelą.
+- Teraz: wpis w `Data/Portals.MODEL_OPENING` mówi, czy model się obraca (`turn`), i czy serwer mierzy go promieniami
+  (`scan`); udziały wpisu to pole zapasowe. Model z wpisem idzie do przodu, aż jego tył mieści się w obrysie łuku
+  (`Logic/ArchFit.shift`, `ARCH.model`; kapliczka o 2,2 studa). `Prefabs.fitModel` raz na serwer i model strzela siatką
+  promieni co 0,5 studa przez przednie 45% głębokości (`ArchFit.grid`; części modelu tylko na ten czas `CanQuery`),
+  szuka otworu z kamieniem po obu stronach od schodów do korony (`ArchFit.opening`), środek bramy w głąb z promieni w
+  filary z przodu i z tyłu, a zasłonę wpisuje jako największą elipsę 0,3 studa od kamienia (`ArchFit.inOpening`, nie
+  większą niż `ARCH.field`). Bez otworu z przodu obraca model o 180° i próbuje z drugiej strony; bez otworu w ogóle
+  stoi jak zrobiony z polem z danych. Serwer wypisuje raz `[Prefabs] common_portal_02: the rays found its arch …`
+  (albo ostrzeżenie). Niewidoczne filary i nadproże z kolizją stoją w bramie, na głębokości pola.
+- Test `portals.spec`: kapliczka bez obrotu, przesunięcie, pole zapasowe w bramie (nie przed stelą), model bez wpisu po
+  staremu; otwór z narysowanej bramy (filary, okrągła korona, schody, odłamek przy filarze) i zasłona w nim; brak otworu
+  przy pełnej kolizji, pustych promieniach i bramie bez filara.
+- **Do sprawdzenia w Studio (Play):** Łąki, portal do miasta (-770, 0): brama przodem do drogi, fiolet w bramie, stela
+  za nim; jaskinie i wyjścia z nich (stela może chować się w ciemnym otworze albo w skale); w Output linia
+  `[Prefabs] common_portal_02: the rays found its arch at its front …` (gdy jest „back (turned round)” albo ostrzeżenie,
+  wkleić ją do chmury).
+- **Pliki:** `Logic/ArchFit`, `Data/Portals`, `World/Prefabs` (`measureOpening`, `fitModel`, `Prefabs.portal`),
+  `tests/portals.spec`.
+
+### Huby okien cofnięte, zwijane sekcje (2026-11-10)
+- Właściciel: „podzieliłeś to, że w plecaku masz i umiejętności itp., rozdziel to jak było wcześniej”; za dużo napisów,
+  rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się zwinąć.
+- Huby (plan UI, faza 3, krok 2) cofnięte: pasek HUD ma sześć przycisków fazy 1 (Plecak B, Umiejętności K, Mapa M,
+  Questy L, Sklep, ☰), każdy otwiera swoje okno; wierzchowce, garderoba, osiągnięcia, grupa, gildia, znajomi, poczta,
+  arena, rankingi, Krwawy Księżyc, przepustka, VIP i nagroda dnia są kafelkami ☰ z klawiszami, „!” kafelka zapala ☰.
+  Bez zakładek w pasku tytułu okien (`Window`, `WindowManager` jak przed hubami, bez `FocusHint`). Zostają: osobne okno
+  Ustawień, liczniki Elite II w tropicielu, odsłanianie z samouczkiem, teraz według przycisków (`Logic/HudReveal.button`:
+  ☰ od początku, Plecak i Umiejętności w kroku „plecak”, reszta po samouczku). Toasty odblokowania wierzchowców i areny
+  znów wskazują menu ☰.
+- Okno plecaka bez zakładek (jak przed 2026-10-31): 1240×720, z lewej imię, ekwipunek i sekcja „Zestawy i tytuł”, w
+  środku plecak, z prawej sekcja „Statystyki”; na telefonie z lewej imię, ekwipunek i obie sekcje (przewijane), z
+  prawej plecak. Nowy komponent `UI/Components/Section` (nagłówek ▾/▸, cały klikalny, na dotyku 44, „i” obok tytułu,
+  jedna linia w zwiniętym) ze stanem na koncie (`account.settings.sections`, `Logic/SectionFold`, walidacja w
+  `SettingsService`). Statystyki domyślnie otwarte (zwinięte: plakietka wolnych punktów), Zestawy i tytuł domyślnie
+  zwinięte (aktywny zestaw i tytuł w jednej linii), opis zestawów za „i”.
+- Testy: `sectionfold.spec`, `charactersections.spec` (zamiast `charactertabs`), `hudreveal.spec` (przyciski zamiast
+  hubów), `hudmenu.spec` i `uiart.spec` jak w fazie 1 plus brak hubów; `uihubs.spec` usunięty.
+- **Pliki:** `ScreenController`, `WindowManager`, `Window`, `Hud/init`, `TutorialController` (komentarz),
+  `CharacterWindow` (`init`, `DerivedList`, `StatAllocator`, `TitleChooser`), `Components/Section`,
+  `Logic/SectionFold`, `Logic/CharacterSections`, `Logic/HudMenu`, `Logic/HudReveal`, `Logic/Unlocks`,
+  `AccountSchema`, `Types`, `SettingsService`, `Localization/pl|en`, `tools/balance_reasons.luau`, `docs/DESIGN.md`
+  §23, `docs/ARCHITECTURE.md`, `docs/JAK-DODAC.md`.
+
 ### Głowy potworów bez kości (2026-11-10)
 
 - Pytanie właściciela: „modele poruszają się nie poruszając głową tak 2d, to przez modele generowane za pomocą tripio

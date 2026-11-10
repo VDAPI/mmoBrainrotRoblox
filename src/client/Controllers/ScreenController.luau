@@ -31,7 +31,6 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
-local UiHubs = require(ReplicatedStorage.Shared.Data.UiHubs)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -170,30 +169,25 @@ end
 
 type Lit = { id: string, badge: Fusion.UsedAs<boolean>, visible: ((use: Fusion.Use) -> boolean)? }
 
-local function hubOf(hubId: string): UiHubs.Hub
-	return assert(UiHubs.get(hubId), `no hub {hubId}`)
-end
-
--- UI plan phase 4 (Logic/HudReveal): the hubs' buttons come with the tutorial and the level.
+-- UI plan phase 4 (Logic/HudReveal): the bar's buttons come with the tutorial; owner 2026-11-10: per button again
+-- (the hubs are gone), the backpack's and the skills' with its "backpack" step, the ☰ from the start.
 local tutorialState = State.Value({ "character", "tutorial" })
-local levelState = State.Value({ "character", "level" })
 
--- A hub's button shows once the tutorial and the level reveal it and while one of its tabs does (the world map and the
--- journal need the world, S127).
-local function hubShown(use: Fusion.Use, hubId: string): boolean
-	local level = tonumber(use(levelState)) or 1
-	if not HudReveal.hub(hubId, HudReveal.stage(use(tutorialState)), level) then
-		return false
+local function revealed(id: string): (use: Fusion.Use) -> boolean
+	return function(use: Fusion.Use): boolean
+		return HudReveal.button(id, HudReveal.stage(use(tutorialState)))
 	end
-	for _, tab in hubOf(hubId).tabs do
-		if WindowManager.TabShown(use, tab) then
-			return true
-		end
-	end
-	return false
 end
 
--- The ☰'s "!": a shown tile's own is lit (Logic/HudMenu.attention; a tile of a hidden hub counts too).
+-- S127: the world map and the journal need the world (hidden on an arena server)
+local function revealedInWorld(id: string): (use: Fusion.Use) -> boolean
+	local shown = revealed(id)
+	return function(use: Fusion.Use): boolean
+		return shown(use) and worldOnly(use)
+	end
+end
+
+-- The ☰'s "!": a shown tile's own is lit (Logic/HudMenu.attention).
 local function tilesBadge(s: Scope): Fusion.Computed<boolean>
 	local lit: { Lit } = {}
 	for _, entry in TILES do
@@ -208,85 +202,34 @@ local function tilesBadge(s: Scope): Fusion.Computed<boolean>
 			local visible = t.visible
 			now[t.id] = use(t.badge) == true and (visible == nil or visible(use))
 		end
-		return HudMenu.attention(now, function(hubId: string): boolean
-			return hubShown(use, hubId)
-		end)
+		return HudMenu.attention(now)
 	end)
 end
 
--- UI plan phase 3 (Data/UiHubs): what lights a hub's "!": its windows' own (the old bar buttons' and the tiles').
--- UI plan phase 4: the same "!" shows on the hub's tabs in the window's title bar (WindowManager.SetTabBadge).
-local TAB_BADGES: { [string]: (s: Scope) -> Fusion.UsedAs<boolean> } = {
-	inventory = MenuAttention.statPoints, -- S155b: stat points wait
-	skills = SkillsAttention.badge,
-}
-for id, def in TILE_DEFS do
-	local badge = def.badge
-	if badge then
-		TAB_BADGES[id] = badge
-	end
-end
-
--- A hub's "!": one of its shown tabs has its own.
-local function hubBadge(hubId: string): (s: Scope) -> Fusion.UsedAs<boolean>
-	return function(s: Scope): Fusion.UsedAs<boolean>
-		local lit: { { tab: string, badge: Fusion.UsedAs<boolean> } } = {}
-		for _, tab in hubOf(hubId).tabs do
-			local badge = TAB_BADGES[tab]
-			if badge then
-				table.insert(lit, { tab = tab, badge = badge(s) })
-			end
-		end
-		return s:Computed(function(use): boolean
-			for _, entry in lit do
-				if use(entry.badge) == true and WindowManager.TabShown(use, entry.tab) then
-					return true
-				end
-			end
-			return false
-		end)
-	end
-end
-
-local function hubVisible(hubId: string): (use: Fusion.Use) -> boolean
-	return function(use: Fusion.Use): boolean
-		return hubShown(use, hubId)
-	end
-end
-
-local function hubEntry(hubId: string, hotkey: string?, key: string?, art: string?): Hud.MenuEntry
-	local hub = hubOf(hubId)
-	local windows = table.clone(hub.tabs)
-	for window, tab in UiHubs.ALIAS do
-		if table.find(hub.tabs, tab) then
-			table.insert(windows, window) -- the backpack window ("character") lights the backpack's hub
-		end
-	end
-	return {
-		id = hub.button,
-		icon = hub.icon,
-		hotkey = hotkey,
-		key = key,
-		art = art,
-		tooltipKey = hub.labelKey,
-		badge = hubBadge(hubId),
-		visible = hubVisible(hubId),
-		windows = windows,
-		open = function()
-			WindowManager.ToggleHub(hubId)
-		end,
-	}
-end
-
--- The HUD bar (DESIGN §23): Logic/HudMenu.BAR in that order. UI plan phase 3: the five hubs and the ☰; the backpack's
--- hub keeps the id "inventory" (the tutorial points at it) and every window key still opens its own window.
+-- The HUD bar (DESIGN §23): Logic/HudMenu.BAR in that order. Owner 2026-11-10: the six direct buttons of UI plan
+-- phase 1 again (the hubs of phase 3 are gone), each opening its own window.
 local MENU: { Hud.MenuEntry } = {
-	hubEntry("character", "B", "win_inventory"),
-	hubEntry("world", "M", "win_map", UiArt.menu("map")),
-	hubEntry("social", "P", "win_party", UiArt.menu("party")),
-	hubEntry("rivalry", "U", "win_arena", UiArt.menu("arena")),
-	hubEntry("shop", nil, nil, UiArt.menu("premium")),
-	-- UI plan phase 1: "!" while a tile of the game menu outside the hubs has one
+	-- S155b: "!" while stat points wait (MenuAttention)
+	{
+		id = "inventory",
+		icon = "▣",
+		hotkey = "B",
+		tooltipKey = "hud.menu.inventory",
+		badge = MenuAttention.statPoints,
+		visible = revealed("inventory"),
+	},
+	{
+		id = "skills",
+		icon = "✦",
+		hotkey = "K",
+		tooltipKey = "hud.menu.skills",
+		badge = SkillsAttention.badge,
+		visible = revealed("skills"),
+	},
+	{ id = "map", icon = "⌖", hotkey = "M", tooltipKey = "hud.menu.map", visible = revealedInWorld("map") },
+	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests", visible = revealedInWorld("quests") },
+	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop", visible = revealed("premium") },
+	-- UI plan phase 1: "!" while a tile of the game menu has one
 	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu", badge = tilesBadge },
 }
 
@@ -330,15 +273,14 @@ local function registerWindows()
 	})
 	-- S29: the backpack window: equipment + backpack + statistics in one (WindowRules.MAIN, opened by B without a
 	-- service). FIX 2026-10-14: the separate "Character" button and its C key are gone; the window has the backpack's
-	-- title. UI plan phase 3: one job per tab (Logic/CharacterTabs), so the window is the backpack tab's width
-	-- (260 + 22 + 500 and the padding) instead of 1240 x 700.
+	-- title. Owner 2026-11-10: no tabs any more (UI plan phase 3 had them), the statistics and the sets fold
+	-- (UI/Components/Section), so the window is three columns wide again (1240 x 700 before UI plan phase 3).
 	WindowManager.Register({
 		id = "character",
 		titleKey = "window.inventory.title",
-		size = Vector2.new(826, 752),
+		size = Vector2.new(1240, 720),
 		build = function(scope: Scope)
 			return CharacterWindow(scope, {
-				Focus = WindowManager.FocusHint,
 				Backpack = backpackActions,
 				Unequip = function(slot: string)
 					ItemController.Unequip(slot, nil)
@@ -374,19 +316,6 @@ local function registerWindows()
 			return GameMenu(s, close, { OpenWindow = WindowManager.Open, Settings = true })
 		end,
 	})
-	-- UI plan phase 3: a hub's tab shows like its tile or its old bar button (Data/UiHubs)
-	WindowManager.SetTabRule("map", worldOnly)
-	WindowManager.SetTabRule("quests", worldOnly)
-	for id, def in TILE_DEFS do
-		local visible = def.visible
-		if visible then
-			WindowManager.SetTabRule(id, visible)
-		end
-	end
-	-- UI plan phase 4: the "!" of a hub's tab
-	for tab, badge in TAB_BADGES do
-		WindowManager.SetTabBadge(tab, badge)
-	end
 end
 
 local function selectCamera()

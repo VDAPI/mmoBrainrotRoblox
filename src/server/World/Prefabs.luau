@@ -4,6 +4,7 @@
 -- (buildMode = "asset"). Decorations are anchored, not queryable and small ones cast no shadow.
 
 local CollectionService = game:GetService("CollectionService")
+local Workspace = game:GetService("Workspace")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local ArchFit = require(game:GetService("ReplicatedStorage").Shared.Logic.ArchFit)
@@ -748,35 +749,169 @@ local function boxIn(model: Model, base: CFrame): (Vector3?, Vector3?)
 	return lo, hi
 end
 
+-- Owner 2026-11-10: the field in a painted model's arch, measured with rays once per server and model name
+-- (measureOpening): the field and the opening's sides at half its height in the portal's frame (every portal places
+-- the model the same way in its own frame) and whether the model stands turned round (its arch was at its back), or
+-- false when the rays found no opening at either end.
+type Measured = { field: ArchFit.Field, sides: { number }, round: boolean }
+local measured: { [string]: Measured | false } = {}
+
+local function measureOpening(arch: Model, base: CFrame, lo: Vector3, hi: Vector3): (ArchFit.Field?, { number }?)
+	local answering: { BasePart } = {}
+	for _, item in arch:GetDescendants() do
+		if item:IsA("BasePart") and not item.CanQuery then
+			item.CanQuery = true
+			table.insert(answering, item)
+		end
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { arch }
+	local grid = ArchFit.grid({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z })
+	local ahead = base:VectorToWorldSpace(Vector3.new(0, 0, grid.reach))
+	local blocked: { boolean } = table.create(grid.cols * grid.rows, false)
+	for row = 1, grid.rows do
+		local y = grid.y0 + (row - 1) * grid.step
+		for col = 1, grid.cols do
+			local x = grid.x0 + (col - 1) * grid.step
+			if Workspace:Raycast(base * Vector3.new(x, y, grid.from), ahead, params) then
+				blocked[(row - 1) * grid.cols + col] = true
+			end
+		end
+	end
+	local field: ArchFit.Field?, sides: { number }? = nil, nil
+	local opening = ArchFit.opening(grid, blocked)
+	if opening then
+		local row = opening.rows[math.max(1, math.floor(#opening.rows / 2))]
+		local sum, count = 0, 0
+		for _, x in { row.left - grid.step / 2, row.right + grid.step / 2 } do
+			local front = Workspace:Raycast(base * Vector3.new(x, row.y, grid.from), ahead, params)
+			local back = Workspace:Raycast(base * Vector3.new(x, row.y, grid.from + grid.reach), -ahead, params)
+			if front and back then
+				local z0 = base:PointToObjectSpace(front.Position).Z
+				local z1 = base:PointToObjectSpace(back.Position).Z
+				if z1 > z0 then
+					sum += (z0 + z1) / 2
+					count += 1
+				end
+			end
+		end
+		if count > 0 then
+			field = ArchFit.inOpening(opening, sum / count)
+			sides = { row.left, row.right }
+		end
+	end
+	for _, item in answering do
+		item.CanQuery = false
+	end
+	if field and sides then
+		return field, sides
+	end
+	return nil, nil
+end
+
 -- W28 (owner: the purple field stood outside the portal's frame): the painted model is turned so that it stands
 -- across the portal like the field (its thin side along the frame's z) and the field is fitted into its opening:
 -- centred on the model, never wider or taller than the opening's share of it. The field, the pillars, the lintel and
 -- the model share the portal's one frame `base`. W31 regression fix: the model keeps its size (Logic/ArchFit; it was
 -- scaled into a 16 x 18 x 6 box, a third of its size with its base slab 16 deep). Owner 2026-10-31: `modelId` (its
--- Assets.Kit name) puts the field into that model's own opening (Data/Portals.MODEL_OPENING). Returns how far the
--- model's top stands over the field's centre (nil: no parts, the field left as it was).
-local function fitModel(arch: Model, base: CFrame, field: BasePart, modelId: string): number?
-	local lo, hi = boxIn(arch, base)
-	if not lo or not hi then
-		return nil
+-- Assets.Kit name) puts the field into that model's own opening (Data/Portals.MODEL_OPENING). Owner 2026-11-10 (the
+-- shrine common_portal_02 turned sideways, the field between its stele and its arch): a model with an entry turns
+-- only when the entry says so, moves forward until its back is inside the arch's footprint, and one whose entry says
+-- `scan` gets the field its rays find in its arch (measureOpening, once per model; turned round when the arch is at
+-- its back; the entry's shares when the rays find none). Returns how far the model's top stands over the field's centre (nil: no parts, the field left as it was)
+-- and, for a model with an entry, the sides of its opening across the portal (the unseen pillars stand there).
+local function fitModel(arch: Model, base: CFrame, field: BasePart, modelId: string): (number?, { number }?)
+	local placedLo, placedHi = boxIn(arch, base)
+	if not placedLo or not placedHi then
+		return nil, nil
 	end
+	local lo: Vector3, hi: Vector3 = placedLo, placedHi
 	local fit = ArchFit.fit({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)
 	local f = fit.field
-	if fit.turn then
-		arch:PivotTo(arch:GetPivot() * CFrame.Angles(0, math.rad(90), 0))
-		-- measured again on the turned parts (the pivot need not be the box's middle)
-		lo, hi = boxIn(arch, base)
-		if not lo or not hi then
-			return nil
+	local entry = Portals.MODEL_OPENING[modelId]
+	-- turns the model `degrees` about its pivot, measures it again (the pivot need not be the box's middle), moves a
+	-- model with an entry forward (Logic/ArchFit.shift) and takes the data's field for that place
+	local function stand(degrees: number): boolean
+		if degrees ~= 0 then
+			arch:PivotTo(arch:GetPivot() * CFrame.Angles(0, math.rad(degrees), 0))
+		end
+		local turnedLo, turnedHi = boxIn(arch, base)
+		if not turnedLo or not turnedHi then
+			return false
+		end
+		lo, hi = turnedLo, turnedHi
+		local shift = if entry then ArchFit.shift({ hi.X, hi.Y, hi.Z }) else 0
+		if shift ~= 0 then
+			arch:PivotTo(CFrame.new(base:VectorToWorldSpace(Vector3.new(0, 0, shift))) * arch:GetPivot())
+			lo, hi = turnedLo + Vector3.new(0, 0, shift), turnedHi + Vector3.new(0, 0, shift)
 		end
 		f = ArchFit.field({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)
+		return true
+	end
+	if (fit.turn or entry) and not stand(if fit.turn then 90 else 0) then
+		return nil, nil
 	end
 	if fit.scale ~= 1 then
 		arch:ScaleTo(arch:GetScale() * fit.scale)
 	end
+	local sides: { number }? = nil
+	if entry then
+		sides = { f.x - f.w / 2, f.x + f.w / 2 }
+	end
+	if entry and entry.scan then
+		local known: Measured | false | nil = measured[modelId]
+		if known == nil then
+			local found, foundSides = measureOpening(arch, base, lo, hi)
+			local round = false
+			if not found then
+				-- no arch at the model's front: turned round, the rays try its back (and it stands as made again
+				-- when they find nothing there either)
+				if not stand(180) then
+					return nil, nil
+				end
+				found, foundSides = measureOpening(arch, base, lo, hi)
+				round = found ~= nil
+				if not found and not stand(180) then
+					return nil, nil
+				end
+			end
+			local result: Measured | false = false
+			if found and foundSides then
+				result = { field = found, sides = foundSides, round = round }
+			end
+			known = result
+			measured[modelId] = result
+			if found and foundSides then
+				print(
+					string.format(
+						"[Prefabs] %s: the rays found its arch at its %s, the opening %.2f..%.2f across, the field %.2f x %.2f at %.2f, %.2f, %.2f",
+						modelId,
+						if round then "back (turned round)" else "front",
+						foundSides[1],
+						foundSides[2],
+						found.w,
+						found.h,
+						found.x,
+						found.y,
+						found.z
+					)
+				)
+			else
+				warn(
+					`[Prefabs] {modelId}: the rays found no opening in its arch; the field from Data/Portals.MODEL_OPENING`
+				)
+			end
+		elseif known and known.round and not stand(180) then
+			return nil, nil
+		end
+		if known then
+			f, sides = known.field, known.sides
+		end
+	end
 	field.Size = Vector3.new(f.w, f.h, Portals.ARCH.field.d)
 	field.CFrame = base * CFrame.new(f.x, f.y, f.z)
-	return hi.Y - f.y
+	return hi.Y - f.y, sides
 end
 
 function Prefabs.portal(
@@ -840,13 +975,24 @@ function Prefabs.portal(
 		painted:ScaleTo(arch.height / height)
 		painted:PivotTo(base * CFrame.Angles(0, math.rad(PORTAL_TURN), 0))
 		painted.Parent = model
-		local top = fitModel(painted, base, field, modelId)
+		local top, sides = fitModel(painted, base, field, modelId)
 		if top then
 			labelHeight = top + 2.5
 		end
+		local fieldZ = base:PointToObjectSpace(field.Position).Z
 		for _, item in model:GetChildren() do
 			if item:IsA("BasePart") and (item.Name == "Pillar" or item.Name == "Lintel") then
 				item.Transparency = 1
+				if sides then
+					-- owner 2026-11-10: the unseen stone stands in the painted arch, at the field's depth: the pillars
+					-- at its opening's sides, the lintel over the field (a shrine's slab behind it stays free to walk)
+					local at = base:PointToObjectSpace(item.Position)
+					local across = if item.Name == "Lintel"
+						then (sides[1] + sides[2]) / 2
+						elseif at.X < 0 then sides[1] - item.Size.X / 2
+						else sides[2] + item.Size.X / 2
+					item.CFrame = base * CFrame.new(across, at.Y, fieldZ)
+				end
 			end
 		end
 	end

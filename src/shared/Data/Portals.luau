@@ -187,22 +187,28 @@ local ARCH = table.freeze({
 	-- W31 (Studio review 2026-10-21: the painted pillars stood inside the cave frames' slabs): the room the frames
 	-- round a cave mouth leave the painted arch, its real footprint with the base slab (Assets.Kit common_portal_01 /
 	-- 02 at `height`, measured in Studio about 20.9 across and 16 deep once turned; Logic/ArchFit keeps its size, the
-	-- frames keep out of it, tests/portals.spec)
+	-- frames keep out of it, tests/portals.spec). Owner 2026-11-10: common_portal_02 stands as made (16 across, 20.9
+	-- deep), moved forward so that its back ends at d / 2; its steps reach 4.4 studs into the view before the arch
 	model = table.freeze({ w = 21, h = 18, d = 16.5 }),
 })
 -- Owner (Studio Play 2026-10-31, server raycasts against the painted model: the light of every cave, lair and dungeon
--- exit stood beside the opening): where the opening of a painted model (Assets.Kit) is when it is not the middle of
--- its box. Shares of the box once it stands across the portal (after Logic/ArchFit's turn): `x` the opening's centre
--- off the box's centre (of its width, + along the portal's +x), `foot` the field's bottom over the model's foot and
--- `h` its height (of the box's height), `w` its width (of the box's width); never over ARCH.field. Logic/ArchFit.field
--- uses it; a model without an entry keeps the field centred on its box.
---   common_portal_02 (20.9 x 18 turned): an uneven ruin, a thick left pillar, a thin right one ending 3 studs lower
---   (14.25 over the foot), no lintel; its opening runs from 3.75 studs left of the box's centre to 8.5 right. Its base
---   slab reaches 3.8 over the foot (Studio check of the first fit, foot 0.16 and h 0.6: the field's bottom edge and
---   the veil's 0.6-0.9 studs in it), so the field starts 4.05 over the foot, its top (13.7) where it was
-export type Opening = { x: number, foot: number, w: number, h: number }
+-- exit stood beside the opening) and owner 2026-11-10 (Play: "a gate with no teleport in it, the field weirdly in
+-- between"): a painted model (Assets.Kit) whose field is not the middle of its box. `turn`: whether it turns 90 degrees
+-- (Logic/ArchFit; a model without an entry turns when it is deeper than wide); `scan`: the server finds its arch's
+-- opening with rays (World/Prefabs.fitModel, Logic/ArchFit.opening) and the shares are only the fallback. Shares of
+-- the box as it stands (after the turn): `x` the field's centre off the box's centre (of its width, + along the
+-- portal's +x), `foot` its bottom over the model's foot and `h` its height (of the box's height), `w` its width (of
+-- the box's width), `z` its centre behind the box's front (of its depth); never over ARCH.field. A model with an entry
+-- also moves forward until its back is inside ARCH.model (Logic/ArchFit.shift).
+--   common_portal_02 (16 x 18 x 20.9 as made, its slab sunk 1.5 studs): a small shrine, steps up to a rune arch at its
+--   front (local -z, the front 6.7 studs of its depth), a slab 3.8 over its foot behind the arch and a stele at its
+--   back (14.25 over the foot). W28 turned it for being deeper than wide: its arch looked sideways, and the opening
+--   the server's rays found on 2026-10-31 (3.75 studs left of the box's centre to 8.5 right, turned) was the gap
+--   between the stele and the arch. It stands as made now, 2.2 studs forward; the fallback field is a guess at the
+--   arch's opening (about 8.6 wide, from the slab to 14.7 over the foot) for when the rays find none.
+export type Opening = { turn: boolean, scan: boolean, x: number, foot: number, w: number, h: number, z: number }
 local MODEL_OPENING: { [string]: Opening } = {
-	common_portal_02 = table.freeze({ x = 0.114, foot = 0.225, w = 0.587, h = 0.535 }),
+	common_portal_02 = table.freeze({ turn = false, scan = true, x = 0, foot = 0.227, w = 0.556, h = 0.613, z = 0.16 }),
 }
 table.freeze(MODEL_OPENING)
 -- W31: what a frame round a cave mouth keeps free (tests/portals.spec "cave mouths"): the painted arch (`model` and a

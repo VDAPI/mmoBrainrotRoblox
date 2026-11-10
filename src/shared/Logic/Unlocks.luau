@@ -13,12 +13,11 @@ export type Entry = {
 	id: string,
 	level: number,
 	window: string?, -- the HUD menu entry / window id that gets the "!" (nil: a toast only)
-	hub: string?, -- UI plan phase 4: the Data/UiHubs hub whose HUD button shows from this level (Logic/HudReveal)
 	textKey: string, -- unlock.<id>
 }
 
-local function entry(id: string, level: number, window: string?, hub: string?): Entry
-	return table.freeze({ id = id, level = level, window = window, hub = hub, textKey = `unlock.{id}` })
+local function entry(id: string, level: number, window: string?): Entry
+	return table.freeze({ id = id, level = level, window = window, textKey = `unlock.{id}` })
 end
 
 -- The lowest entry level of a dungeon (the first boss of Data/Bosses.list).
@@ -33,18 +32,8 @@ end
 Unlocks.LIST = table.freeze({
 	entry("dungeon", firstDungeon()),
 	entry("mounts", Config.Mount.minLevel, "mounts"),
-	entry("arena", Arena.MIN_LEVEL, "arena", "rivalry"),
+	entry("arena", Arena.MIN_LEVEL, "arena"),
 } :: { Entry })
-
--- UI plan phase 4: the level from which hub `hubId`'s button shows (nil: no level of its own).
-function Unlocks.hubLevel(hubId: string): number?
-	for _, e in Unlocks.LIST do
-		if e.hub == hubId and e.level > 0 then
-			return e.level
-		end
-	end
-	return nil
-end
 
 -- The entries a level up from `from` to `to` unlocks (from < level <= to), in LIST order.
 function Unlocks.crossed(from: number, to: number): { Entry }

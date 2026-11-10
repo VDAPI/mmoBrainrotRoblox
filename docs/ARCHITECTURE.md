@@ -639,7 +639,8 @@ sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „P
   Pary okien (S29) to czysta logika `Logic/WindowRules` (`onOpen` / `onClose` / `onEscape`, flaga „plecak otworzyła
   usługa”): usługi (`COMPANIONS`: sklep, kowal, alchemik, handel, aukcja, poczta, plecakarz…) otwierają `inventory`
   (sam `BackpackPanel`) jako towarzysza, który zamyka się z ostatnią usługą; `Open('inventory')` bez usługi
-  przekierowuje na `character` (ekwipunek + `BackpackPanel` + statystyki, `FocusHint` dla zakładek na dotyku).
+  przekierowuje na `character` (ekwipunek + `BackpackPanel` + statystyki; bez zakładek, zwijane sekcje
+  `UI/Components/Section`).
   Każda droga zamknięcia (✕, Esc, `CloseTop`, `CloseMany`, `CloseServices` przy śmierci / zmianie mapy, odejście od NPC,
   koniec handlu) przechodzi przez `WindowRules`. Dopasowanie przedmiotu do slotu przy przeciąganiu: `Logic/EquipFit`
   (tylko podpowiedź; rozstrzyga serwer).

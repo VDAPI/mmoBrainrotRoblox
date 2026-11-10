@@ -9,12 +9,15 @@
 -- Owner 2026-10-21 (too many detailed descriptions): under a stat one short line of what it raises (stat.<id>.short),
 -- the numbers per point behind the "i" next to its name.
 -- UI plan phase 3 (Studio review 2026-10-31): the buttons show only with free points, "Spend as the path suggests" and
--- its plan line only with a plan to follow (Logic/CharacterTabs.suggestShown).
+-- its plan line only with a plan to follow (Logic/CharacterSections.suggestShown).
+-- Owner 2026-11-10 (the window's tabs are gone, the statistics fold in a section): `Compact` for a narrow column (the
+-- backpack window's left column on a small phone): the controls stand under the stat's name (its short line goes, the
+-- "i" keeps the details) and "Spend as the path suggests" gets a line of its own.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
-local CharacterTabs = require(ReplicatedStorage.Shared.Logic.CharacterTabs)
+local CharacterSections = require(ReplicatedStorage.Shared.Logic.CharacterSections)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
@@ -37,10 +40,15 @@ type PlanInfo = { plan: StatPlan.Plan, pathKey: string? }
 export type Props = {
 	-- { str, dex, int, vit } points reserved but not yet confirmed.
 	Pending: Fusion.Value<{ [string]: number }>,
+	Compact: boolean?, -- a narrow column: the controls under the name
 }
 
 local HOLD_DELAY = 0.35
 local ROW_HEIGHT = 50
+local VALUE_WIDTH = 90
+local HEAD_HEIGHT = 24
+-- the controls of a row: two buttons, the value and the gaps
+local CONTROLS_WIDTH = ROW_HEIGHT * 2 + VALUE_WIDTH + Theme.Padding.Small * 3
 
 -- What one point of a stat gives, as arguments of "stat.<id>.desc" (Data/Stats.Formula).
 local function pct(value: number): string
@@ -179,12 +187,15 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 	end)
 	local suggestOn = scope:Computed(function(use): boolean
 		local n = use(statPoints)
-		return CharacterTabs.suggestShown(if type(n) == "number" then n else nil, use(planInfo) ~= nil)
+		return CharacterSections.suggestShown(if type(n) == "number" then n else nil, use(planInfo) ~= nil)
 	end)
-	-- the share of the row: Cancel, the suggestion, Confirm (without the suggestion Cancel and Confirm take it all)
+	local compact = props.Compact == true
+	-- the share of the row: Cancel, the suggestion, Confirm (without the suggestion, or with it on its own line in a
+	-- compact column, Cancel and Confirm take it all)
 	local function share(withSuggest: number, without: number): Fusion.Computed<UDim2>
 		return scope:Computed(function(use): UDim2
-			return UDim2.new(if use(suggestOn) then withSuggest else without, -Theme.Padding.Small * 2 / 3, 1, 0)
+			local three = use(suggestOn) and not compact
+			return UDim2.new(if three then withSuggest else without, -Theme.Padding.Small * 2 / 3, 1, 0)
 		end)
 	end
 
@@ -253,121 +264,157 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 		local added = scope:Computed(function(use): number
 			return use(pending)[id] or 0
 		end)
+		-- the name with its "i" and its short line (compact: the name alone, the controls under it)
+		local label = scope:New("Frame")({
+			Name = "Label",
+			LayoutOrder = 1,
+			Size = if compact then UDim2.new(1, 0, 0, HEAD_HEIGHT) else UDim2.new(1, -CONTROLS_WIDTH, 1, 0),
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("Frame")({
+					Name = "Head",
+					Size = UDim2.new(1, 0, 0, HEAD_HEIGHT),
+					BackgroundTransparency = 1,
+					[Children] = {
+						scope:New("UIListLayout")({
+							FillDirection = Enum.FillDirection.Horizontal,
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, 6),
+						}),
+						scope:New("TextLabel")({
+							Name = "Name",
+							LayoutOrder = 1,
+							Size = UDim2.fromScale(0, 1),
+							AutomaticSize = Enum.AutomaticSize.X,
+							BackgroundTransparency = 1,
+							Text = Text.T(scope, `stat.{id}`),
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Body,
+							TextColor3 = Theme.Paper.Text,
+							TextXAlignment = Enum.TextXAlignment.Left,
+						}),
+						-- owner 2026-10-21: what one point gives, with the numbers
+						InfoTip.new(scope, {
+							LayoutOrder = 2,
+							Title = Text.T(scope, `stat.{id}`),
+							Text = Text.T(scope, `stat.{id}.desc`, descArgs[id]),
+						}),
+					},
+				}),
+				scope:New("TextLabel")({
+					Name = "Desc",
+					Visible = not compact,
+					Position = UDim2.fromOffset(0, HEAD_HEIGHT),
+					Size = UDim2.new(1, 0, 1, -HEAD_HEIGHT),
+					BackgroundTransparency = 1,
+					Text = Text.T(scope, `stat.{id}.short`),
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
+				}),
+			},
+		})
+		local controls: { Instance } = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			stepButton(
+				scope,
+				"−",
+				2,
+				function()
+					return change(id, -1)
+				end,
+				scope:Computed(function(use): boolean
+					return use(added) > 0
+				end)
+			),
+			scope:New("TextLabel")({
+				Name = "Value",
+				LayoutOrder = 3,
+				Size = UDim2.fromOffset(VALUE_WIDTH, ROW_HEIGHT),
+				BackgroundTransparency = 1,
+				RichText = true,
+				Text = scope:Computed(function(use): string
+					local final = use(primary)
+					local base = use(stats)
+					local shown = if type(final) == "table"
+						then final[id]
+						elseif type(base) == "table" then base[id]
+						else 0
+					local plus = use(added)
+					if plus > 0 then
+						return `{shown + plus} <font color="{Theme.hex(Theme.Paper.Success)}">(+{plus})</font>`
+					end
+					return tostring(shown)
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Large,
+				TextColor3 = Theme.Paper.Heading,
+			}),
+			stepButton(
+				scope,
+				"+",
+				4,
+				function()
+					return change(id, 1)
+				end,
+				scope:Computed(function(use): boolean
+					return use(available) > 0
+				end)
+			),
+		}
 		table.insert(
 			rows,
-			scope:New("Frame")({
-				Name = id,
-				LayoutOrder = index,
-				Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
-				BackgroundTransparency = 1,
-				[Children] = {
-					scope:New("UIListLayout")({
-						FillDirection = Enum.FillDirection.Horizontal,
-						VerticalAlignment = Enum.VerticalAlignment.Center,
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, Theme.Padding.Small),
-					}),
-					scope:New("Frame")({
-						Name = "Label",
-						LayoutOrder = 1,
-						Size = UDim2.new(1, -(44 * 2 + 90 + Theme.Padding.Small * 3), 1, 0),
-						BackgroundTransparency = 1,
-						[Children] = {
-							scope:New("Frame")({
-								Name = "Head",
-								Size = UDim2.new(1, 0, 0, 24),
-								BackgroundTransparency = 1,
-								[Children] = {
-									scope:New("UIListLayout")({
-										FillDirection = Enum.FillDirection.Horizontal,
-										VerticalAlignment = Enum.VerticalAlignment.Center,
-										SortOrder = Enum.SortOrder.LayoutOrder,
-										Padding = UDim.new(0, 6),
-									}),
-									scope:New("TextLabel")({
-										Name = "Name",
-										LayoutOrder = 1,
-										Size = UDim2.fromScale(0, 1),
-										AutomaticSize = Enum.AutomaticSize.X,
-										BackgroundTransparency = 1,
-										Text = Text.T(scope, `stat.{id}`),
-										FontFace = Theme.Fonts.BodyBold,
-										TextSize = Theme.TextSize.Body,
-										TextColor3 = Theme.Paper.Text,
-										TextXAlignment = Enum.TextXAlignment.Left,
-									}),
-									-- owner 2026-10-21: what one point gives, with the numbers
-									InfoTip.new(scope, {
-										LayoutOrder = 2,
-										Title = Text.T(scope, `stat.{id}`),
-										Text = Text.T(scope, `stat.{id}.desc`, descArgs[id]),
-									}),
-								},
-							}),
-							scope:New("TextLabel")({
-								Name = "Desc",
-								Position = UDim2.fromOffset(0, 24),
-								Size = UDim2.new(1, 0, 1, -24),
-								BackgroundTransparency = 1,
-								Text = Text.T(scope, `stat.{id}.short`),
-								TextTruncate = Enum.TextTruncate.AtEnd,
-								FontFace = Theme.Fonts.Body,
-								TextSize = Theme.TextSize.Small,
-								TextColor3 = Theme.Paper.TextMuted,
-								TextXAlignment = Enum.TextXAlignment.Left,
-								TextYAlignment = Enum.TextYAlignment.Top,
-							}),
-						},
-					}),
-					stepButton(
-						scope,
-						"−",
-						2,
-						function()
-							return change(id, -1)
-						end,
-						scope:Computed(function(use): boolean
-							return use(added) > 0
-						end)
-					),
-					scope:New("TextLabel")({
-						Name = "Value",
-						LayoutOrder = 3,
-						Size = UDim2.fromOffset(90, ROW_HEIGHT),
-						BackgroundTransparency = 1,
-						RichText = true,
-						Text = scope:Computed(function(use): string
-							local final = use(primary)
-							local base = use(stats)
-							local shown = if type(final) == "table"
-								then final[id]
-								elseif type(base) == "table" then base[id]
-								else 0
-							local plus = use(added)
-							if plus > 0 then
-								return `{shown + plus} <font color="{Theme.hex(Theme.Paper.Success)}">(+{plus})</font>`
-							end
-							return tostring(shown)
-						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Paper.Heading,
-					}),
-					stepButton(
-						scope,
-						"+",
-						4,
-						function()
-							return change(id, 1)
-						end,
-						scope:Computed(function(use): boolean
-							return use(available) > 0
-						end)
-					),
-				},
-			})
+			if compact
+				then scope:New("Frame")({
+					Name = id,
+					LayoutOrder = index,
+					Size = UDim2.new(1, 0, 0, HEAD_HEIGHT + Theme.Padding.Tiny + ROW_HEIGHT),
+					BackgroundTransparency = 1,
+					[Children] = {
+						label,
+						scope:New("Frame")({
+							Name = "Controls",
+							Position = UDim2.fromOffset(0, HEAD_HEIGHT + Theme.Padding.Tiny),
+							Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
+							BackgroundTransparency = 1,
+							[Children] = controls,
+						}),
+					},
+				})
+				else scope:New("Frame")({
+					Name = id,
+					LayoutOrder = index,
+					Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
+					BackgroundTransparency = 1,
+					[Children] = { label, controls :: any },
+				})
 		)
 	end
+
+	-- "Spend as the path suggests": between Cancel and Confirm, or on a line of its own in a compact column
+	local suggestButton = Button(scope, {
+		LayoutOrder = 2,
+		Text = Text.T(scope, "character.suggest"),
+		Variant = "secondary",
+		TextSize = Theme.TextSize.Small,
+		Size = if compact
+			then UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall)
+			else UDim2.new(0.42, -Theme.Padding.Small * 2 / 3, 1, 0),
+		Visible = suggestOn,
+		Disabled = scope:Computed(function(use): boolean
+			return use(planInfo) == nil or use(available) <= 0 or use(busy)
+		end),
+		OnClick = suggest,
+	})
 
 	return scope:New("Frame")({
 		Name = "StatAllocator",
@@ -419,18 +466,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 							pending:set({})
 						end,
 					}),
-					Button(scope, {
-						LayoutOrder = 2,
-						Text = Text.T(scope, "character.suggest"),
-						Variant = "secondary",
-						TextSize = Theme.TextSize.Small,
-						Size = UDim2.new(0.42, -Theme.Padding.Small * 2 / 3, 1, 0),
-						Visible = suggestOn,
-						Disabled = scope:Computed(function(use): boolean
-							return use(planInfo) == nil or use(available) <= 0 or use(busy)
-						end),
-						OnClick = suggest,
-					}),
+					if compact then {} :: any else suggestButton,
 					Button(scope, {
 						LayoutOrder = 3,
 						Text = Text.T(scope, "common.confirm"),
@@ -443,9 +479,19 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
+			if compact
+				then scope:New("Frame")({
+					Name = "Suggest",
+					LayoutOrder = 12,
+					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+					BackgroundTransparency = 1,
+					Visible = suggestOn,
+					[Children] = suggestButton,
+				})
+				else {} :: any,
 			scope:New("TextLabel")({
 				Name = "Plan",
-				LayoutOrder = 12,
+				LayoutOrder = 13,
 				Size = UDim2.new(1, 0, 0, 20),
 				BackgroundTransparency = 1,
 				Visible = suggestOn,

@@ -11,11 +11,6 @@
 -- S23: `overlay` windows (the dev panel) neither close other windows nor get closed by them; on desktop they
 -- open at the right edge. Esc closes the normal windows first and overlays last. Overlay hotkeys win over
 -- the other windows' keys; `enabled` hides a window's hotkey from players who may not use it.
--- UI plan phase 3 (Data/UiHubs): the windows of a hub carry the hub's tabs in their title bar (Components/Window); a tab
--- opens its window where the last one stood (one window at a time stays). A tab shows while its window is registered
--- and its rule (SetTabRule: unlocked, on this server) holds. ToggleHub is the HUD bar's hub button: it closes the
--- hub's open window, else opens the hub's first shown tab. The companion backpack next to a service has no tabs.
--- UI plan phase 4: a tab shows its window's "!" (SetTabBadge), so the player sees which tab has news.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -30,7 +25,6 @@ local Modal = require(script.Parent.Parent.UI.Components.Modal)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local Text = require(script.Parent.Parent.UI.Text)
 local Tooltip = require(script.Parent.Parent.UI.Components.Tooltip)
-local UiHubs = require(ReplicatedStorage.Shared.Data.UiHubs)
 local UiWindows = require(ReplicatedStorage.Shared.Data.UiWindows)
 local Device = require(script.Parent.Parent.UI.Device)
 local Scale = require(script.Parent.Parent.UI.Scale)
@@ -66,8 +60,6 @@ local WindowManager = {
 	Deps = { "UIController" },
 	-- Window id opened by Esc when nothing else is open.
 	MenuWindowId = "menu",
-	-- S29: which part of the backpack window ("character") the open request asked for ("backpack" | "stats").
-	FocusHint = nil :: any,
 }
 
 local INVENTORY = WindowRules.INVENTORY
@@ -82,10 +74,6 @@ local rules = WindowRules.new() -- pairing state of the non-overlay windows (S29
 local openValues: { [string]: Fusion.Value<boolean> } = {}
 local hotkeysEnabled = false
 local zCounter = 1
-
-local tabRules: { [string]: (use: Fusion.Use) -> boolean } = {} -- UI plan phase 3: when a hub's tab shows
-local tabBadges: { [string]: (scope: Scope) -> Fusion.UsedAs<boolean> } = {} -- UI plan phase 4: a tab's "!"
-local nextOffset: Vector2? = nil -- a tab's window opens where the last one stood
 
 local modalQueue: { Modal.Spec } = {}
 local modalScope: Scope? = nil
@@ -155,33 +143,6 @@ end
 
 function WindowManager.IsOpen(id: string): Fusion.Value<boolean>
 	return openValue(id)
-end
-
--- UI plan phase 3: tab `tab` of a hub shows only while `rule` holds (an unlock, the world server).
-function WindowManager.SetTabRule(tab: string, rule: (use: Fusion.Use) -> boolean)
-	tabRules[tab] = rule
-end
-
--- UI plan phase 4: tab `tab` of a hub shows "!" while `badge` (built in the window's scope) is true.
-function WindowManager.SetTabBadge(tab: string, badge: (scope: Scope) -> Fusion.UsedAs<boolean>)
-	tabBadges[tab] = badge
-end
-
--- Whether a hub's tab shows now: its window is registered and its rule holds.
-function WindowManager.TabShown(use: Fusion.Use, tab: string): boolean
-	if not defs[tab] then
-		return false
-	end
-	local rule = tabRules[tab]
-	return rule == nil or rule(use)
-end
-
--- The offset that keeps a `size` window whole on the screen (a tab opening where a smaller window stood).
-local function fitOffset(size: Vector2, at: Vector2): Vector2
-	local screen = Fusion.peek(Scale.VirtualSize)
-	local x = math.max(0, (screen.X - size.X) / 2)
-	local y = math.max(0, (screen.Y - size.Y) / 2)
-	return Vector2.new(math.clamp(at.X, -x, x), math.clamp(at.Y, -y, y))
 end
 
 -- W28: plays the closing motion of a window or dialog that already left the bookkeeping (no clicks reach it),
@@ -288,9 +249,6 @@ function WindowManager.Open(id: string)
 		return
 	end
 	local plan = WindowRules.onOpen(rules, id)
-	if plan.focus then
-		WindowManager.FocusHint:set(plan.focus)
-	end
 	destroyAll(plan.close)
 	if #plan.open == 0 then
 		local target = WindowRules.resolve(rules, id)
@@ -326,31 +284,7 @@ function WindowManager.Open(id: string)
 				offset = (pairOffsets(service))
 			end
 		end
-		if offset == nil and nextOffset and desktop and openId ~= INVENTORY then
-			offset = fitOffset(defs[openId].size, nextOffset) -- UI plan phase 3: a tab opens in the same place
-		end
 		openWindow(openId, offset)
-	end
-end
-
--- UI plan phase 3: the HUD bar's hub button. The hub's open window closes; else the hub opens on its first shown tab
--- (Toggle, so the backpack next to a service toggles as B does).
-function WindowManager.ToggleHub(hubId: string)
-	local hub = UiHubs.get(hubId)
-	if not hub then
-		return
-	end
-	for id in open do
-		if id ~= INVENTORY and UiHubs.hubOf(id) == hub then
-			WindowManager.Close(id)
-			return
-		end
-	end
-	local entry = UiHubs.entry(hub, function(tab: string): boolean
-		return WindowManager.TabShown(Fusion.peek, tab)
-	end)
-	if entry then
-		WindowManager.Toggle(entry)
 	end
 end
 
@@ -364,26 +298,6 @@ openWindow = function(id: string, offset: Vector2?)
 	local function close()
 		WindowManager.Close(id)
 	end
-	-- UI plan phase 3: the hub's tabs (not on the companion backpack next to a service)
-	local hub = if id ~= INVENTORY then UiHubs.hubOf(id) else nil
-	local tabs: { Window.HeaderTab }? = nil
-	if hub then
-		local list: { Window.HeaderTab } = {}
-		local current = UiHubs.tabOf(id)
-		for _, tab in hub.tabs do
-			local badge = tabBadges[tab]
-			table.insert(list, {
-				id = tab,
-				label = Text.T(scope, UiHubs.tabLabel(tab)),
-				visible = scope:Computed(function(use): boolean
-					return WindowManager.TabShown(use, tab)
-				end),
-				-- the open tab needs no "!": the player is looking at it
-				badge = if badge and tab ~= current then badge(scope) else nil,
-			})
-		end
-		tabs = list
-	end
 	local root = Window(scope, {
 		Name = `Window_{id}`,
 		Title = Text.T(scope, def.titleKey),
@@ -396,13 +310,6 @@ openWindow = function(id: string, offset: Vector2?)
 		OnFocus = function()
 			bringToFront(id)
 		end,
-		Tabs = tabs,
-		Current = UiHubs.tabOf(id),
-		OnTab = function(tab: string, at: Vector2)
-			nextOffset = at
-			WindowManager.Open(tab)
-			nextOffset = nil
-		end,
 		[Fusion.Children] = def.build(scope, close),
 	}) :: GuiObject
 	entry.root = root
@@ -413,8 +320,8 @@ openWindow = function(id: string, offset: Vector2?)
 	Sounds.play("open")
 end
 
--- Toggle with the backpack alias (S29): B toggles the character window; pressing it while another tab of that window
--- is open switches to its tab instead of closing it (touch since S29, every device since the UI plan phase 3 tabs).
+-- Toggle with the backpack alias (S29): B toggles the character window. Owner 2026-11-10: the window has no tabs any
+-- more (its secondary parts fold, UI/Components/Section), so B on the open window always closes it.
 function WindowManager.Toggle(id: string)
 	if isOverlay(id) then
 		if open[id] then
@@ -424,13 +331,8 @@ function WindowManager.Toggle(id: string)
 		end
 		return
 	end
-	local target, focus = WindowRules.resolve(rules, id)
+	local target = WindowRules.resolve(rules, id)
 	if open[target] then
-		if focus and Fusion.peek(WindowManager.FocusHint) ~= focus then
-			WindowManager.FocusHint:set(focus)
-			bringToFront(target)
-			return
-		end
 		WindowManager.Close(target)
 	else
 		WindowManager.Open(id)
@@ -592,7 +494,6 @@ end
 function WindowManager.Init(registry)
 	UIController = registry.Get("UIController")
 	rootScope = UIController.Scope
-	WindowManager.FocusHint = rootScope:Value("stats")
 end
 
 function WindowManager.Start()

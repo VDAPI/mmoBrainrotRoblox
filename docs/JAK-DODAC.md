@@ -210,6 +210,13 @@
   Okno potwierdzenia (`Modal.Spec`): krótkie `Message` (1–2 zdania) i `Details` = dłuższy tekst pod „Więcej ▸”
   (zwinięte, wspólne `Details`); powitanie NPC skrócone do pierwszego zdania: reszta w `npc.<id>.greeting.info`
   („i” w oknie rozmowy, `NpcDialog`).
+- **Zwijana sekcja** (2026-11-10, właściciel: „nie da się zwinąć”): część okna z własnym tytułem to
+  `Section.new(scope, { Id, Title, Summary?, Accent?, Info?, Children? | Build?, Surface?, Padding?, LayoutOrder?,
+  Visible? })` (`UI/Components/Section`): nagłówek „▾ Tytuł” (otwarta) / „▸ Tytuł” i jedna krótka linia `Summary`
+  (zwinięta; `Accent` = plakietka, gdy coś czeka), cały nagłówek jest przyciskiem (na dotyku ≥ `Theme.Size.MinTouch`),
+  „i” obok tytułu (`Info`) nie zwija. Stan na koncie (`account.settings.sections`, `SetSetting "sections"`): nowe `Id`
+  najpierw w `Logic/SectionFold.DEFAULTS` z domyślnym stanem (serwer przyjmuje tylko znane), test `tests/sectionfold.spec`.
+  `Details` („Więcej ▸”) zostaje dla dłuższego tekstu pod krótką linią.
 - **Walka z podsumowaniem** (S134f): `FightLogService.Begin/End` + `Logic/FightStats`; nowe źródło liczb przez sygnał, nie kopię.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).
