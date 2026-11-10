@@ -7,6 +7,13 @@
 -- keeps 280 px of content. Popovers: next to anchors on a 12 x 8 grid of every screen they stay inside the safe area
 -- less 8, never cover their anchor, flip above when there is no room below and keep off a rectangle they are told to
 -- avoid. UI package C owns this spec after package F: it empties RATCHET.
+-- UI package C (2026-11-10): the components read these modules (source checks), a phone's title bar is 44 px with a
+-- 52 x 44 ✕, a modal stays under the top bar and inside the screen (its body scrolls past that), and on a touch
+-- screen the item tooltip takes the half of the screen away from the tapped slot (Popover.away) and keeps off a
+-- window's action buttons.
+-- Review 2026-11-10: a window's footer rule stays out of its buttons' list; on touch the item tooltip stands at the top
+-- of its half, under the window's title bar, and keeps off the action strip at the window's bottom (at the slot's
+-- height it covered the backpack's Załóż / Użyj bar for every slot of a phone's backpack).
 
 local fs = require("@lune/fs")
 
@@ -200,11 +207,12 @@ local function pairProblems(service: WindowFrame.Size, backpack: WindowFrame.Siz
 	return problems
 end
 
--- The popovers of the UI: an (i) note's box (Theme.Size.InfoTipWidth, up to 8 lines), the compact item tooltip
--- (Theme.Size.TooltipWidth; about 300 tall [estimate]: at most 10 lines of 60, package D's tooltip.spec) and a plain
--- tooltip (Components/Tooltip: at most 360 wide); anchors are touch targets and item slots (MinTouch, SlotSize).
+-- The popovers of the UI: an (i) note's box (Theme.Size.InfoTipWidth; Components/InfoTip: 8 lines of Small + 4 and
+-- its padding, then it scrolls), the compact item tooltip (Theme.Size.TooltipWidth; about 300 tall [estimate]: at
+-- most 10 lines of 60, package D's tooltip.spec) and a plain tooltip (Components/Tooltip: at most 360 wide); anchors
+-- are touch targets and item slots (MinTouch, SlotSize).
 local POPOVERS = {
-	{ name = "info", w = 320, h = 160 },
+	{ name = "info", w = 320, h = 8 * (17 + 4) + 2 * 8 },
 	{ name = "item", w = 340, h = 300 },
 	{ name = "tooltip", w = 360, h = 80 },
 }
@@ -338,6 +346,74 @@ T.describe("Windows (L7, owner 2026-11-10)", function()
 		T.expect(service).toEqual({ x = (560 + 720 + 12) / 2 - 360, y = 0 })
 	end)
 
+	T.it("gives a phone a 44-px title bar with a 52 x 44 ✕ and keeps a pinned footer under the body", function()
+		local phones = 0
+		for _, screen in screens() do
+			if screen.compact then
+				phones += 1
+				local frame = WindowFrame.rect(
+					{ w = screen.w, h = screen.h },
+					{ w = 900, h = 620 },
+					nil,
+					true,
+					screen.bar,
+					true
+				)
+				T.expect(frame.header.bottom - frame.header.top).toBe(WindowFrame.HEADER_COMPACT)
+				T.expect(frame.close.right - frame.close.left).toBe(WindowFrame.CLOSE_WIDE)
+				T.expect(frame.close.bottom - frame.close.top).toBe(WindowFrame.HEADER_COMPACT)
+				T.expect(inside(frame.close, frame.header)).toBe(true)
+			end
+		end
+		T.expect(phones > 0).toBe(true)
+		-- Components/Window's Footer: the buttons at the content's bottom, the rest FOOTER_GAP above them
+		local frame = WindowFrame.rect({ w = 1920, h = 1080 }, { w = 900, h = 620 }, nil, false)
+		T.expect(WindowFrame.body(frame, true)).toEqual({
+			left = frame.content.left,
+			top = frame.content.top,
+			right = frame.content.right,
+			bottom = frame.footer.top - WindowFrame.FOOTER_GAP,
+		})
+		T.expect(WindowFrame.body(frame)).toEqual(frame.content)
+	end)
+
+	T.it(
+		"keeps a modal under the top bar and inside the screen, at most 520 wide, its body scrolling past that",
+		function()
+			for _, screen in screens() do
+				local area = {
+					left = 0,
+					top = screen.bar + WindowFrame.TOP_GAP,
+					right = screen.w,
+					bottom = screen.h - WindowFrame.TOP_GAP,
+				}
+				local header = if screen.compact then WindowFrame.HEADER_COMPACT else WindowFrame.HEADER
+				local pad = if screen.compact then WindowFrame.PADDING_COMPACT else WindowFrame.PADDING
+				for _, height in { 160, 400, math.huge } do
+					local r = WindowFrame.modal({ w = screen.w, h = screen.h }, height, screen.bar)
+					local where = `{screen.name}, a modal {height} px tall`
+					if not inside(r, area) then
+						error(`{where}: {show(r)} reaches the top bar or leaves the screen`)
+					end
+					if
+						r.right - r.left > WindowFrame.MODAL_W + 1e-6
+						or math.abs(r.left + r.right - screen.w) > 1e-6
+					then
+						error(`{where}: {show(r)} is not centred and at most {WindowFrame.MODAL_W} wide`)
+					end
+					if height <= area.bottom - area.top and math.abs(r.bottom - r.top - height) > 1e-6 then
+						error(`{where}: cut to {r.bottom - r.top} px though it fits`)
+					end
+					-- Components/Modal: what is left for the body between the title bar and the buttons
+					local body = r.bottom - r.top - header - WindowFrame.FOOTER - pad
+					if height == math.huge and body < 120 then
+						error(`{where}: {body} px for the body`)
+					end
+				end
+			end
+		end
+	)
+
 	T.it("uses Theme's numbers", function()
 		local size = theme("Theme.Size")
 		local padding = theme("Theme.Padding")
@@ -351,11 +427,75 @@ T.describe("Windows (L7, owner 2026-11-10)", function()
 		T.expect(size.InfoTipWidth).toBe(POPOVERS[1].w)
 		T.expect(size.TooltipWidth).toBe(ITEM_TOOLTIP.w)
 		T.expect(padding.Small).toBe(Popover.MARGIN)
-		local window = fs.readFile("src/client/UI/Components/Window.luau")
-		T.expect(string.find(window, "UDim2.new(1, -6, 0.5, 0)", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(window, "props.Size.X / 2 - 80)", 1, true) ~= nil).toBe(true)
-		local manager = fs.readFile("src/client/Controllers/WindowManager.luau")
-		T.expect(string.find(manager, `local GAP = {WindowFrame.PAIR_GAP}\n`, 1, true) ~= nil).toBe(true)
+		-- UI package C: the footer's gap and the tab strip (Components/Tabs)
+		T.expect(padding.Small).toBe(WindowFrame.FOOTER_GAP)
+		T.expect(padding.Small).toBe(WindowFrame.TAB_GAP)
+		T.expect(size.TabHeight).toBe(size.MinTouch)
+		local text = theme("Theme.TextSize")
+		local levels = WindowFrame.TAB_LEVELS
+		T.expect({ levels[1].pad, levels[2].pad, levels[3].pad })
+			.toEqual({ padding.Large, padding.Medium, padding.Small })
+		T.expect({ levels[1].size, levels[2].size, levels[3].size }).toEqual({ text.Body, text.Body, text.Small })
+	end)
+
+	T.it("is what the window chrome and the popovers read (UI package C)", function()
+		local function calls(path: string, needles: { string }): string
+			local source = fs.readFile(path)
+			for _, needle in needles do
+				if not string.find(source, needle, 1, true) then
+					error(`{path} does not read {needle}`)
+				end
+			end
+			return source
+		end
+		local function lacks(path: string, source: string, needles: { string })
+			for _, needle in needles do
+				if string.find(source, needle, 1, true) then
+					error(`{path} still has its own "{needle}"`)
+				end
+			end
+		end
+		local path = "src/client/UI/Components/Window.luau"
+		local source = calls(path, {
+			"WindowFrame.clampDrag(",
+			"WindowFrame.HEADER_COMPACT",
+			"WindowFrame.CLOSE_WIDE",
+			"WindowFrame.FOOTER_GAP",
+		})
+		lacks(path, source, { "UDim2.new(1, -6, 0.5, 0)", "props.Size.X / 2 - 80)" })
+		-- the footer's rule stands outside the frame that holds the buttons' UIListLayout: a list lays out every
+		-- sibling, so a rule beside it became a full-width item across the middle of the row
+		local footerAt = assert(string.find(source, 'Name = "Footer"', 1, true), "Window's Footer")
+		local ruleAt = string.find(source, 'Name = "Rule"', footerAt, true)
+		local buttonsAt = string.find(source, 'Name = "Buttons"', footerAt, true)
+		local listAt = string.find(source, 'scope:New("UIListLayout")', footerAt, true)
+		if not (ruleAt and buttonsAt and listAt and ruleAt < buttonsAt and buttonsAt < listAt) then
+			error(`{path}: the footer's rule is not kept out of its buttons' UIListLayout`)
+		end
+		path = "src/client/Controllers/WindowManager.luau"
+		lacks(path, calls(path, { "WindowFrame.pair(", "WindowRules.partner(" }), { "local GAP = " })
+		calls("src/client/UI/Components/Modal.luau", { "WindowFrame.modal(", "WindowFrame.CLOSE_WIDE" })
+		calls("src/client/UI/Components/Tabs.luau", { "WindowFrame.tabFit(", "WindowFrame.TAB_GAP" })
+		for _, name in { "Tooltip", "ItemTooltip", "InfoTip" } do
+			path = `src/client/UI/Components/{name}.luau`
+			lacks(path, calls(path, { "Popover.place(" }), { "local OFFSET = " })
+		end
+		path = "src/client/UI/Components/ItemTooltip.luau"
+		lacks(
+			path,
+			calls(path, {
+				"Popover.away(",
+				"function ItemTooltip.avoid(",
+				"WindowFrame.rect(",
+				"top = window.header.bottom,",
+				"avoid = window.footer,",
+				"keepOff = avoidRects(),",
+				"{ prefer = open.side :: Popover.Side, gap = DETAIL_GAP }",
+			}),
+			{ "Scale.VirtualSize" }
+		)
+		path = "src/client/UI/Components/InfoTip.luau"
+		lacks(path, calls(path, { "local MAX_LINES = 8\n", "Tooltip.SafeArea" }), { "local MARGIN = ", "local GAP = " })
 	end)
 end)
 
@@ -441,12 +581,144 @@ T.describe("Popovers (L8, owner 2026-11-10)", function()
 		T.expect(took).toBe("right")
 		T.expect(tip.left).toBe(818)
 		T.expect(tip.top).toBe(422)
-		local source = fs.readFile("src/client/UI/Components/ItemTooltip.luau")
-		T.expect(string.find(source, "local OFFSET = Vector2.new(20, 20)", 1, true) ~= nil).toBe(true)
-		source = fs.readFile("src/client/UI/Components/Tooltip.luau")
-		T.expect(string.find(source, "local OFFSET = Vector2.new(18, 22)", 1, true) ~= nil).toBe(true)
-		source = fs.readFile("src/client/UI/Components/InfoTip.luau")
-		T.expect(string.find(source, "local MARGIN = 8", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(source, "local GAP = 6", 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it(
+		"on touch, the item tooltip takes the half away from the tapped slot and keeps off the action buttons",
+		function()
+			local size = { w = ITEM_TOOLTIP.w, h = ITEM_TOOLTIP.h }
+			local touch = 0
+			for _, screen in screens() do
+				if not screen.touch then
+					continue
+				end
+				touch += 1
+				local safe = { left = 0, top = screen.bar, right = screen.w, bottom = screen.h }
+				local area = { left = 8, top = screen.bar + 8, right = screen.w - 8, bottom = screen.h - 8 }
+				local middle = screen.w / 2
+				for _, side in ANCHORS do
+					for _, anchor in grid(safe, side) do
+						local where = `{screen.name}, slot {show(anchor)}`
+						local rect, took = Popover.away(anchor, size, safe)
+						if not inside(rect, area) then
+							error(`{where}: {show(rect)} leaves the safe area less 8`)
+						end
+						local far: Popover.Side = if (anchor.left + anchor.right) / 2 < middle then "right" else "left"
+						if took ~= far then
+							error(`{where}: went {took}, not to the far half`)
+						end
+						-- the far half has room for it (the slot does not reach across the middle): there, clear of the slot
+						local room = if far == "right"
+							then area.right - math.max(middle, anchor.right) - Popover.GAP
+							else math.min(middle, anchor.left) - Popover.GAP - area.left
+						if room >= size.w then
+							local onFar = if far == "right" then rect.left >= middle else rect.right <= middle
+							if overlaps(rect, anchor) or not onFar then
+								error(`{where}: {show(rect)} is not on the far half, clear of the slot`)
+							end
+							-- a strip of buttons across the place it took: under or over it when there is room
+							local strip = {
+								left = 0,
+								top = rect.top + size.h / 2 - 26,
+								right = screen.w,
+								bottom = rect.top + size.h / 2 + 26,
+							}
+							local below = strip.bottom + Popover.GAP + size.h <= area.bottom
+							local above = strip.top - Popover.GAP - size.h >= area.top
+							local moved = Popover.away(anchor, size, safe, { avoid = strip })
+							if not inside(moved, area) then
+								error(`{where}: {show(moved)} leaves the safe area less 8`)
+							end
+							if (below or above) and overlaps(moved, strip) then
+								error(`{where}: {show(moved)} covers the buttons {show(strip)}`)
+							end
+						end
+					end
+				end
+			end
+			T.expect(touch > 0).toBe(true)
+		end
+	)
+
+	T.it("on touch, the item tooltip stands under the title bar and keeps off the window's action strip", function()
+		local checked = 0
+		for _, screen in screens() do
+			if not screen.touch then
+				continue
+			end
+			-- Components/ItemTooltip: the full-screen window of this layer (every touch window is one), its footer the
+			-- strip of the actions at its bottom (the backpack's Załóż / Użyj / Podziel bar, a pinned Footer)
+			local layer = { w = screen.w, h = screen.h }
+			local safe = { left = 0, top = screen.bar, right = screen.w, bottom = screen.h }
+			local area = { left = 8, top = screen.bar + 8, right = screen.w - 8, bottom = screen.h - 8 }
+			local frame = WindowFrame.rect(layer, layer, nil, true, screen.bar, screen.compact)
+			local strip = frame.footer
+			local under = frame.header.bottom + Popover.MARGIN
+			local middle = screen.w / 2
+			for _, h in { 160, 240, ITEM_TOOLTIP.h } do
+				local size = { w = ITEM_TOOLTIP.w, h = h }
+				-- the slots of the window's body, its bottom row (over the strip) included
+				for _, slot in grid(WindowFrame.body(frame, true), 64) do
+					checked += 1
+					local where = `{screen.name}, a {h}-px tooltip for the slot {show(slot)}`
+					local rect = Popover.away(slot, size, safe, { avoid = strip, top = frame.header.bottom })
+					if not inside(rect, area) then
+						error(`{where}: {show(rect)} leaves the safe area less 8`)
+					end
+					local room = if (slot.left + slot.right) / 2 < middle
+						then area.right - math.max(middle, slot.right) - Popover.GAP
+						else math.min(middle, slot.left) - Popover.GAP - area.left
+					if room >= size.w and overlaps(rect, slot) then
+						error(`{where}: {show(rect)} covers its slot`)
+					end
+					if under + h <= strip.top then
+						-- room under the title bar: there, clear of the strip
+						if math.abs(rect.top - under) > 1e-6 or overlaps(rect, strip) then
+							error(`{where}: {show(rect)} is not under the title bar, clear of {show(strip)}`)
+						end
+					elseif area.top + h + Popover.GAP <= strip.top then
+						-- room over the title bar only: it rises there, clear of the strip
+						if overlaps(rect, strip) then
+							error(`{where}: {show(rect)} covers the action strip {show(strip)}`)
+						end
+					elseif math.abs(rect.top - area.top) > 1e-6 then
+						-- no room: as high as it goes, over the least of the strip
+						error(`{where}: {show(rect)} covers more of {show(strip)} than it must`)
+					end
+				end
+			end
+		end
+		T.expect(checked > 0).toBe(true)
+		-- the review's case: the bottom row of an 844 x 390 phone's backpack under a 58-px top bar, a 260-px tooltip
+		for _, screen in screens() do
+			if screen.name == "phone 844x390 bar 58" then
+				local layer = { w = screen.w, h = screen.h }
+				local safe = { left = 0, top = screen.bar, right = screen.w, bottom = screen.h }
+				local frame = WindowFrame.rect(layer, layer, nil, true, screen.bar, true)
+				local body = WindowFrame.body(frame, true)
+				for x = body.left, body.right - 64, 72 do
+					local slot = { left = x, top = body.bottom - 64, right = x + 64, bottom = body.bottom }
+					local rect = Popover.away(slot, { w = 340, h = 260 }, safe, {
+						avoid = frame.footer,
+						top = frame.header.bottom,
+					})
+					T.expect(overlaps(rect, frame.footer)).toBe(false)
+				end
+			end
+		end
+		-- a window's registered buttons (ItemTooltip.avoid) count with the strip: under them when there is room there
+		local layer = { w = 1280, h = 800 }
+		local safe = { left = 0, top = 0, right = 1280, bottom = 800 }
+		local frame = WindowFrame.rect(layer, layer, nil, true, 0, false)
+		local under = frame.header.bottom + Popover.MARGIN
+		local buttons = { left = 640, top = under + 100, right = 1280, bottom = under + 152 }
+		local slot = { left = 40, top = 300, right = 104, bottom = 364 }
+		local rect = Popover.away(slot, { w = 340, h = 240 }, safe, {
+			top = frame.header.bottom,
+			avoid = frame.footer,
+			keepOff = { buttons },
+		})
+		T.expect(overlaps(rect, buttons) or overlaps(rect, frame.footer) or overlaps(rect, slot)).toBe(false)
+		T.expect(rect.top).toBe(buttons.bottom + Popover.GAP)
 	end)
 end)

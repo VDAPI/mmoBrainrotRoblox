@@ -292,6 +292,16 @@
   `CameraController.Release("<właściciel>")` (gracz dostaje kamerę z powrotem, gdy nikt jej nie trzyma). Bez właściciela
   strażnik oddaje kamerę po 0,5 s; `cameralease.spec` pilnuje, że `Scriptable` pisze tylko `CameraController` (i pisarz
   przerywnika).
+- **Okno ze stopką, przewijaniem i przyciskiem w nagłówku** (2026-11-10, plan UI, pakiet C; `docs/UI-ZASADY.md` §7):
+  `build` w `WindowManager.Register` zwraca zamiast samej treści `Window.Parts`: `{ Content = ..., Footer = { przyciski
+  }, Scroll = true, HeaderAction = { Text, OnClick, Visible? } }`. Główny przycisk idzie do `Footer` (52, przypięta pod
+  treścią; miejsce nad nią daje `WindowFrame.body`), długa treść ma jedno przewijanie (`Scroll`), przycisk w nagłówku
+  stoi przed ✕ (na dotyku jego miejsce bierze przełącznik usługi i plecaka). Wiersz listy to `ListRow` (48) albo
+  `ListRow` z `Tall = true` (64, z linią `Sub`), bez własnej `Height`; zakładki to `Tabs` bez własnej wysokości (rząd sam
+  się zwęża i przewija). Modal: `WindowManager.ShowModal` z krótkim `Message` (do 90) i resztą w `Details`. Pas
+  przycisków na dole okna (stopkę) tooltip przedmiotu na dotyku omija sam, a okno z przyciskami akcji w innym miejscu
+  (przy slotach) zgłasza ich ramkę przez `ItemTooltip.avoid(scope, ramka)`, żeby ich nie zasłaniał; własny dymek
+  stawia `Popover.place` w obszarze `Tooltip.SafeArea`.
 - **Okno świata z listą i długa kwestia** (2026-11-10, plan UI, pakiet E): prostokąty okna (nagłówek, zakładki, lista,
   stopka, przyciski) liczy funkcja w `Logic/WorldLayout` z treści okna (`WindowFrame.content`) i urządzenia
   (`WorldLayout.device(touch, compact)`: `pc`, `tablet`, `phone`), wysokości nagłówka sekcji i tekstu z

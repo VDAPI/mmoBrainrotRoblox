@@ -9,13 +9,21 @@
 --   F2 the Portal Master's price buttons hold every label on one line, at every price, in both languages
 --   F3 the skill tree's column heads: one text size (no TextScaled), room for every role name (PoolTree.HEAD_WIDTH)
 --   F4 the login reward card: no word of the chest line is wider than the PC card's room beside its "i"
+--   Owner 2026-11-10 ("too much text, things covering each other"), UI package C:
+--   F5 a tab row takes one look for all its tabs, the first of WindowFrame.TAB_LEVELS that fits its strip, and past
+--      the last one the strip scrolls sideways (the quest journal's "Tygodniowe" stood past the strip's end)
+--   F6 a Button, a tab and a side tab keep their label on one line (no wrapping, no scaled text)
+--   F7 (review 2026-11-10: the tabs had come out 42 px) a tab is as tall as its strip less the scroll bar's room, 44 by
+--      default, a touch screen's ◂ / ▸ is a whole touch target, and the selected tab scrolls clear of them
 
 local fs = require("@lune/fs")
 
 local Locale = require("../src/shared/Util/Locale")
+local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local PortalData = require("../src/shared/Data/PortalShop")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
+local WindowFrame = require("../src/shared/Logic/WindowFrame")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
@@ -202,5 +210,114 @@ describe("uifit", function()
 			end
 		end
 		expect(table.concat(bad, "\n")).toBe("")
+	end)
+
+	it("F5 a tab row fits its strip at one look for all its tabs, or the strip scrolls", function()
+		-- Components/Tabs: the look from WindowFrame.tabFit, a strip that scrolls sideways
+		local tabs = read("src/client/UI/Components/Tabs.luau")
+		for _, needle in
+			{
+				"WindowFrame.tabFit(",
+				'scope:New("ScrollingFrame")',
+				"ScrollingDirection = Enum.ScrollingDirection.X",
+				"AutomaticCanvasSize = Enum.AutomaticSize.X",
+			}
+		do
+			if not string.find(tabs, needle, 1, true) then
+				expect(`Components/Tabs: {needle}`).toBe("found")
+			end
+		end
+		-- the quest journal's six tabs: in its PC window (QuestController's size less the window's padding and the
+		-- strip's edges for the selected tab's frame) and in the narrowest phone's window
+		local window = number(
+			"src/client/Controllers/QuestController.luau",
+			'id = "quests",%s+titleKey = "[%w%.]+",%s+size = Vector2%.new%((%d+),'
+		)
+		local edge = tokens("Theme.Stroke").Normal
+		local pc = window - 2 * PADDING.Large - 2 * edge
+		local phone = math.huge
+		for _, device in PhoneHud.DEVICES do
+			local w = PhoneHud.area(device)
+			phone = math.min(phone, w - 2 * PADDING.Medium - 2 * edge)
+		end
+		local levels = WindowFrame.TAB_LEVELS
+		for _, lang in LANGS do
+			local labels = {}
+			for _, id in { "main", "daily", "side", "contract", "boss", "weekly" } do
+				table.insert(labels, Locale.T(`quest.tab.{id}`, nil, lang))
+			end
+			for _, room in { pc, phone } do
+				local fit = WindowFrame.tabFit(labels, room)
+				local want = levels[#levels]
+				for _, level in levels do
+					if WindowFrame.tabRow(labels, level.pad, level.size) <= room then
+						want = level
+						break
+					end
+				end
+				expect({ fit.pad, fit.size }).toEqual({ want.pad, want.size })
+				expect(fit.width).toBe(WindowFrame.tabRow(labels, want.pad, want.size))
+				expect(fit.scroll).toBe(fit.width > room)
+			end
+			-- a phone's window holds the whole row
+			expect(WindowFrame.tabFit(labels, phone).scroll).toBe(false)
+		end
+	end)
+
+	it("F6 a Button, a tab and a side tab keep their label on one line", function()
+		for _, name in { "Button", "Tabs", "SideTabs" } do
+			local source = read(`src/client/UI/Components/{name}.luau`)
+			expect(string.find(source, "TextWrapped = false", 1, true) ~= nil).toBe(true)
+			expect(string.find(source, "TextWrapped = true", 1, true)).toBe(nil)
+			expect(string.find(source, "TextScaled", 1, true)).toBe(nil)
+		end
+		expect(string.find(read("src/client/UI/Components/SideTabs.luau"), "Theme.Size.TabHeight", 1, true) ~= nil).toBe(
+			true
+		)
+	end)
+
+	it("F7 a tab is a whole touch target, its ◂ / ▸ too, and the selected tab scrolls clear of them", function()
+		local size = tokens("Theme.Size")
+		expect(WindowFrame.TAB_HEIGHT).toBe(size.TabHeight)
+		expect(WindowFrame.TAB_EDGE).toBe(tokens("Theme.Stroke").Normal)
+		expect(WindowFrame.TAB_CHEVRON_TOUCH >= size.MinTouch).toBe(true)
+		-- Components/Tabs: the row's ScrollingFrame reaches `edge` above the strip and pads the row down by as much,
+		-- and the bar draws in its room without an inset; a tab is the strip's height less that room
+		local tabs = read("src/client/UI/Components/Tabs.luau")
+		for _, needle in
+			{
+				"WindowFrame.tabStrip(",
+				"WindowFrame.tabReveal(",
+				"Position = UDim2.fromOffset(0, -EDGE)",
+				"Size = UDim2.new(1, 0, 1, EDGE)",
+				"PaddingTop = UDim.new(0, EDGE)",
+				"HorizontalScrollBarInset = Enum.ScrollBarInset.None",
+				"Size = UDim2.new(0, 0, 1, -barSpace)",
+			}
+		do
+			if not string.find(tabs, needle, 1, true) then
+				expect(`Components/Tabs: {needle}`).toBe("found")
+			end
+		end
+		for _, scroll in { false, true } do
+			local strip = WindowFrame.tabStrip(scroll)
+			local tab = (strip.height + strip.edge) - strip.edge - strip.bar
+			expect(tab).toBe(strip.button)
+			expect(strip.button).toBe(size.TabHeight)
+		end
+		-- a tab past either end of a 400-wide strip scrolled at 300, revealed: clear of that end's ◂ / ▸ and the frame
+		for _, chevron in { WindowFrame.TAB_CHEVRON, WindowFrame.TAB_CHEVRON_TOUCH } do
+			local edge = chevron + WindowFrame.TAB_EDGE
+			for _, tab in { { 380, 470 }, { 330, 395 }, { -60, 30 }, { 10, 100 } } do
+				local moved = WindowFrame.tabReveal(tab[1], tab[2], 400, 300, chevron) - 300
+				if tab[1] - moved < edge or tab[2] - moved > 400 - edge then
+					expect(`{chevron}-px chevrons: the tab {tab[1]}-{tab[2]} ends at {tab[1] - moved}-{tab[2] - moved}`).toBe(
+						"clear"
+					)
+				end
+			end
+			expect(WindowFrame.tabReveal(edge, 400 - edge, 400, 120, chevron)).toBe(120)
+			expect(WindowFrame.tabReveal(5, 60, 400, 0, chevron)).toBe(0)
+		end
 	end)
 end)

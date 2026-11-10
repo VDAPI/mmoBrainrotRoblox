@@ -14867,6 +14867,89 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `tests/fixtures/textcaps/A|B|C|D|E.luau`, `tests/textcaps.spec.luau`, `tests/hudzones.spec.luau`,
   `tests/uiframe.spec.luau`, `tests/sectionfold.spec.luau`, `tests/uifit.spec.luau`, `tools/balance_reasons.luau`.
 
+### Plan UI 2026-11-10, pakiet C: okna, modale, dymki i komponenty (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Pakiet C przenosi ramkę okna, modal, dymki i wspólne komponenty na API pakietu F (`Logic/WindowFrame`,
+  `Logic/Popover`); okna pakietów D i E przechodzą na nowe części same, a teksty z listy C
+  (`tests/fixtures/textcaps/C.luau`) skraca osobny przebieg.
+- Okno (`Components/Window`): na dotyku od dołu paska Robloxa (`Scale.TopBar`) do dołu warstwy; na telefonie nagłówek
+  44, odstęp 14, tytuł Body 20 i ✕ 52×44, gdzie indziej 52, 22, Large 24 i 44×44; tytuł w jednej linii z „…”;
+  przeciąganie i zmiana ekranu przez `WindowFrame.clampDrag` (nagłówek co najmniej 8 pod paskiem, 80 px na ekranie).
+  Nowe, opcjonalne `Footer` (przyciski przypięte pod treścią, 8 pod nią, z linią), `Scroll` (jedno przewijanie w
+  pionie), `HeaderAction` (przycisk w nagłówku przed ✕) i `Place` (przesunięcie jako wartość, którą zmienia
+  `WindowManager`); `build` w `WindowManager.Register` może zwrócić `Window.Parts`. `WindowFrame` dostał `CLOSE_WIDE`,
+  `FOOTER_GAP`, `body`, `modal`, `tabFit`, `tabRow`, `TAB_LEVELS` i `TAB_GAP`, a `Popover` funkcję `away`.
+- `WindowManager`: pary z `WindowFrame.pair` bez własnego `GAP`; otwarty plecak przesuwa się do nowej usługi, a
+  usługa odsuwa się w bok, gdy gracz otwiera plecak obok niej (wartość `place`, bez zamykania okna). Na dotyku
+  przełącznik w nagłówku: „Plecak” na usłudze (także po ✕ na plecaku), „◂ <usługa>” na plecaku
+  (`WindowRules.partner`, klucze `ui.window.backpack` i `ui.window.back`). `Notice` zostaje zaślepką (pytanie UI 8).
+- Modal: tytuł i ✕ w żelaznym nagłówku (✕ tylko w oknie z „Anuluj”, działa jak Esc), treść, „Więcej ▸”, pole i
+  przełącznik w przewijanym środku, przyciski w stopce; szerokość `ModalWidth` (na wąskim ekranie mniej), wysokość
+  najwyżej warstwa minus pasek minus 16 (`WindowFrame.modal`); błąd przewija środek do siebie. Zamiana
+  błogosławieństwa: na wierzchu „Obecne błogosławieństwo przepadnie.”, zasada pod „Więcej ▸”
+  (`blessing.replace.details`); w oknie przebudowy (`rework2`) akapit maga przeszedł do szczegółów.
+- Dymki: `Tooltip` mierzy się i staje według `Popover.place` (18 w prawo i 22 w dół od kursora, na dotyku nad
+  elementem) w `Tooltip.SafeArea` (warstwa pod paskiem Robloxa); `ItemTooltip` na PC 20 i 20 od kursora z odbiciem
+  przy krawędzi i zmierzoną wysokością, na dotyku `Popover.away` (połowa ekranu dalej od slotu, idzie za slotem przy
+  przewijaniu, omija ramki z `ItemTooltip.avoid`); `InfoTip` w bezpiecznym obszarze, do 8 linii, dalej przewijany.
+- Komponenty: `Button` w jednej linii (gdy napis się nie mieści, mały odstęp od brzegu, na końcu „…”), `Tabs`
+  (`TabHeight` 44, rząd w poziomym przewijaniu, wygląd rzędu z `WindowFrame.tabFit`, strzałki ◂ / ▸, wybrana zakładka
+  przewijana do widoku), `SideTabs` (wiersze `TabHeight`), `ListRow` (`Tall`: 64, token `Theme.Size.RowHeightTall`),
+  `TextInput` (pole wypełnia ramkę niższą niż pole z linią błędu), `Section` (`Theme.Size.SectionHeader`, tytuł w
+  jednej linii), `Details` (nagłówek „Więcej ▸ / Mniej ▾”, własne napisy tylko w starszych oknach).
+- Testy: `uiframe.spec` (nagłówek i ✕ telefonu, stopka, modal na każdym ekranie, tooltip przedmiotu na dotyku na
+  drugiej połowie ekranu i poza paskiem przycisków, (i) do 8 linii, tokeny zakładek, komponenty czytają `WindowFrame` i
+  `Popover`; `RATCHET` pusty), `windowrules.spec` (przełącznik telefonu), `uifit.spec` (F5 rząd zakładek, F6 jedna
+  linia).
+- Odstępstwa od planu:
+  - plecak-towarzysz zostaje przy każdej usłudze poza depozytem: DESIGN §23 („Jedno główne okno naraz”, S18, S29)
+    wygrywa z planem, który chciał go tylko przy sklepie i handlu; propozycja w DECYZJE czeka na właściciela;
+  - `ListRow` `Height` i własne napisy `Details` (`MoreText`, `LessText`) zostają dla okien, które ich jeszcze używają
+    (pakiety D i E), a `Tabs` z rozmiarem od wywołującego bierze jego wysokość, dopóki okno nie przejdzie na
+    `TabHeight`;
+  - przycisk nie zmniejsza tekstu, więc za długi napis kończy się „…”; za długie napisy stoją na listach pakietów w
+    `tests/fixtures/textcaps`;
+  - `HudCover.HeaderBottom` (pakiet B) liczy dalej nagłówek 52, choć na telefonie ma on 44 (komunikaty stoją przez to
+    8 px niżej).
+- Przebieg tekstów (ten sam dzień): każdy klucz pakietu mieści się w limicie swojej powierzchni, lista C w
+  `tests/fixtures/textcaps/C.luau` jest pusta (było 6).
+  - Okno zmiany umiejętności (`rework2.*`): tytuł „Zmiana rozwoju umiejętności”, treść „Rangi kupujesz teraz za punkty,
+    a broń wybiera pulę umiejętności. Masz darmowy reset.”, pod „Więcej ▸” trzy zdania (punkt co poziom i limit rangi;
+    własne punkty, rangi i pasek każdej puli; dawne rangi zostały, na ile starczyło punktów, najpierw z paska, i
+    darmowe zwroty do 20. poziomu), przycisk „Umiejętności”. Treść mówiła wcześniej, że rangi „wróciły jako punkty”,
+    a migracja (DESIGN-18 §10) zostawia dawne rangi w granicach punktów. Mag widzi pod nimi swój akapit (żywioł broni
+    wybiera pulę), więc jego szczegóły są dłuższe niż 240 znaków; każdy klucz mieści się w limicie.
+  - Reset umiejętności (`skills.reset.confirm`, zwój z plecaka i przycisk w oknie Umiejętności): „Zresetować
+    umiejętności i kierunki zestawu? Przełomy zostają.”; koszt zwoju stał w treści i w szczegółach, teraz tylko pod
+    „Więcej ▸” (przycisk resetu sam go podaje).
+  - Szczegóły związania po angielsku krótsze o 18 znaków; pytanie o zniszczenie: „<nazwa> przepadnie na zawsze.”
+    (wcześniej „zostanie zniszczony” przy każdej nazwie, także żeńskiej).
+- Poprawki po przeglądzie (ten sam dzień):
+  - stopka okna (`Footer`): linia nad przyciskami stoi obok ramki „Buttons” z ich `UIListLayout`, nie przy nim; lista
+    układała ją jako element na całą szerokość w połowie stopki i mogła wypchnąć przyciski w lewo (żadne okno nie ma
+    jeszcze stopki);
+  - zakładki znów mają całe 44 (było 42, z widocznym paskiem przewijania 38): ramka wybranej karty ma miejsce w pasku
+    2 px nad rzędem, a pasek przewijania rysuje się w swoim miejscu pod rzędem (`WindowFrame.tabStrip`); strzałki ◂ / ▸
+    na dotyku mają 44 (było 36), a wybrana zakładka przewija się poza strzałkę tego urządzenia
+    (`WindowFrame.tabReveal`; trzymała tylko 30 px);
+  - tooltip przedmiotu na dotyku stoi znów u góry swojej połowy, pod nagłówkiem okna, i omija pas przycisków na dole
+    okna (stopka z `WindowFrame.rect`: Załóż / Użyj / Podziel plecaka, przypięta `Footer`) razem z ramkami z
+    `ItemTooltip.avoid` (`Popover.away`: `top`, `keepOff`); gdy pod nagłówkiem brak miejsca, wchodzi na nagłówek, a gdy
+    nigdzie, zasłania jak najmniej. Na wysokości slotu zasłaniał ten pas przy każdym slocie plecaka telefonu;
+  - panel szczegółów S68 stoi według `Popover.place` w `Tooltip.SafeArea` (liczony w całym widoku wchodził pod pasek
+    Robloxa i pod pasek gestów), a jego „×” na dotyku ma 44×44 (było 28×28);
+  - pytanie o zniszczenie: „Przedmiot przepadnie na zawsze: <nazwa>.”, bo „przepadnie” nie pasowało do nazw w liczbie
+    mnogiej (rękawice i buty: „Buty Płytowe”); w angielskich szczegółach związania „through your vault” zamiast
+    „through the deposit” (ten schowek po angielsku to „Vault”);
+  - DESIGN §23 „Okna”: przełącznik „Plecak” / „◂ <usługa>” jest na dotyku (telefon i tablet), jak w kodzie;
+  - testy: `uiframe.spec` (linia stopki poza listą przycisków, tooltip na dotyku pod nagłówkiem i poza pasem
+    przycisków na każdym ekranie dotykowym, także dolny rząd plecaka telefonu 844×390 pod paskiem 58 px), `uifit.spec`
+    F7 (zakładka 44, strzałki dotyku 44, wybrana zakładka poza strzałką).
+- **Pliki:** `UI/Components/Window|Modal|Tooltip|ItemTooltip|InfoTip|Tabs|SideTabs|Button|ListRow|TextInput|Section|Details`,
+  `UI/Theme`, `Controllers/WindowManager|ItemController|ReworkController`, `Logic/WindowFrame|Popover|WindowRules`,
+  lokalizacja (pl, en), `tests/uiframe.spec.luau`, `tests/windowrules.spec.luau`, `tests/uifit.spec.luau`,
+  `tests/fixtures/textcaps/C.luau`.
+
 ### Plan UI 2026-11-10, pakiet E: okna świata i społeczności, rozmowy, ustawienia (2026-11-10)
 - Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
   zwinąć”. Pakiet E (okna świata i społeczności, questy i rozmowy z NPC, ustawienia, osierocone teksty) idzie ostatni
