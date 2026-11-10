@@ -14584,3 +14584,29 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Data/SkillJuice`, `Data/Sfx`, `Logic/SkillJuice`, `Logic/CameraShake`, `Config`, `Vfx/Juice`,
   `Vfx/CameraShake`, `VfxController`, `CombatFxController`, `tools/balance_reasons.luau`, `tests/skilljuice.spec`,
   `tests/skillmotion.spec`, `docs/ANIMACJE.md` §16, `docs/ASSETS.md`.
+
+### Portal: brama kapliczki przodem do ścieżki, pole w bramie (2026-11-10)
+
+- Zgłoszenie właściciela (zrzut z Łąk): „jest brama, w której nie ma tp, tylko pomiędzy jakoś dziwnie”. Fiolet stał
+  w przerwie między granatową stelą a omszałą runiczną bramą, a brama patrzyła w bok.
+- Przyczyna: `common_portal_02` to kapliczka 16 x 18 x 20,9 (schody do bramy z przodu, płyta 3,8 nad stopą, stela z
+  tyłu). W28 obracał o 90° każdy model głębszy niż szerszy, więc brama stanęła bokiem, a „otwór” zmierzony promieniami
+  31.10 (3,75 studa w lewo do 8,5 w prawo po obrocie) był przerwą przed stelą.
+- Teraz: wpis w `Data/Portals.MODEL_OPENING` mówi, czy model się obraca (`turn`), i czy serwer mierzy go promieniami
+  (`scan`); udziały wpisu to pole zapasowe. Model z wpisem idzie do przodu, aż jego tył mieści się w obrysie łuku
+  (`Logic/ArchFit.shift`, `ARCH.model`; kapliczka o 2,2 studa). `Prefabs.fitModel` raz na serwer i model strzela siatką
+  promieni co 0,5 studa przez przednie 45% głębokości (`ArchFit.grid`; części modelu tylko na ten czas `CanQuery`),
+  szuka otworu z kamieniem po obu stronach od schodów do korony (`ArchFit.opening`), środek bramy w głąb z promieni w
+  filary z przodu i z tyłu, a zasłonę wpisuje jako największą elipsę 0,3 studa od kamienia (`ArchFit.inOpening`, nie
+  większą niż `ARCH.field`). Bez otworu z przodu obraca model o 180° i próbuje z drugiej strony; bez otworu w ogóle
+  stoi jak zrobiony z polem z danych. Serwer wypisuje raz `[Prefabs] common_portal_02: the rays found its arch …`
+  (albo ostrzeżenie). Niewidoczne filary i nadproże z kolizją stoją w bramie, na głębokości pola.
+- Test `portals.spec`: kapliczka bez obrotu, przesunięcie, pole zapasowe w bramie (nie przed stelą), model bez wpisu po
+  staremu; otwór z narysowanej bramy (filary, okrągła korona, schody, odłamek przy filarze) i zasłona w nim; brak otworu
+  przy pełnej kolizji, pustych promieniach i bramie bez filara.
+- **Do sprawdzenia w Studio (Play):** Łąki, portal do miasta (-770, 0): brama przodem do drogi, fiolet w bramie, stela
+  za nim; jaskinie i wyjścia z nich (stela może chować się w ciemnym otworze albo w skale); w Output linia
+  `[Prefabs] common_portal_02: the rays found its arch at its front …` (gdy jest „back (turned round)” albo ostrzeżenie,
+  wkleić ją do chmury).
+- **Pliki:** `Logic/ArchFit`, `Data/Portals`, `World/Prefabs` (`measureOpening`, `fitModel`, `Prefabs.portal`),
+  `tests/portals.spec`.

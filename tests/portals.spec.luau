@@ -574,69 +574,145 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 		expect(string.find(body, "fit.scale", 1, true) ~= nil).toBe(true)
 	end)
 
-	it("puts the field into the uneven ruin's own opening, not into its pillars or slab (owner 2026-10-31)", function()
-		-- common_portal_02 as the server's rays met it in Studio Play: 16 x 18 x 20.88 at scale 0.9, turned 90 degrees
-		-- (its long local z, the opening's way, across the portal), measured in the frame of the box-centred field
-		-- (x across, y from that field's centre): every cave, lair and dungeon exit stands on it
-		local lo, hi = { -8, -1.5, -10.44 }, { 8, 16.5, 10.44 }
-		local old = ArchFit.fit(lo, hi).field
-		local ox, oy = old.x, old.y
-		local foot, top = lo[2] - oy, hi[2] - oy
-		expect(math.abs(foot + 7.25) < 1e-6 and math.abs(top - 10.75) < 1e-6).toBe(true)
-		local opening = { x0 = -3.75, x1 = 8.5 } -- clear between the thick left and the thin right pillar (y -2..+6)
-		-- the right pillar's top (the left one 10, no lintel); the base slab's top, 3.78 over the foot (the Studio check
-		-- of the first fit: -4.5 under the centre of its field, which stood 2.88 + 5.4 over the foot)
-		local rightTop, slab = 7, foot + 3.78
-		-- the reported fault: the box-centred field a stud inside the left pillar, its lowest studs in the slab
-		expect(old.x - ox - old.w / 2 < opening.x0).toBe(true)
-		expect(old.y - oy - old.h / 2 < slab).toBe(true)
-
-		expect(Portals.MODEL_OPENING.common_portal_02 ~= nil).toBe(true)
+	it("stands the shrine as made, its rune arch to the path and a little forward (owner 2026-11-10)", function()
+		-- common_portal_02 as made (16 x 18 x 20.9 at the arch's height, its slab sunk 1.5 studs): steps up to a rune
+		-- arch at its front (local -z, the front 6.7 studs), a slab 3.78 over its foot behind it, a stele at its back.
+		-- W28 turned it for being deeper than wide: the arch looked sideways and the 10-31 field stood in the gap
+		-- between the stele and the arch ("a gate with no teleport in it, the field weirdly in between")
+		local lo, hi = { -8, -1.5, -10.45 }, { 8, 16.5, 10.45 }
+		local entry = Portals.MODEL_OPENING.common_portal_02
+		expect(entry ~= nil and entry.turn == false and entry.scan == true).toBe(true)
 		local fit = ArchFit.fit(lo, hi, "common_portal_02")
-		expect(fit.turn).toBe(true)
+		expect(fit.turn).toBe(false)
 		expect(fit.scale).toBe(1)
+		-- forward until its back is where the arch's footprint ends: the frames round the cave mouths and exits keep
+		-- the same room behind it, its steps reach into the view before it
+		local back = Portals.ARCH.model.d / 2
+		expect(math.abs(fit.shift - (back - hi[3])) < 1e-6 and fit.shift < 0).toBe(true)
+		local front = lo[3] + fit.shift
+		-- the fallback field (the rays found no opening): in the arch, over the slab, under the arch's top, inside the
+		-- box across, never back in the gap before the stele
 		local f = fit.field
-		local cx, cy = f.x - ox, f.y - oy
-		-- the measured fit: 9.5 wide (ARCH.field), its centre 2.38 right of the box's, from 4.05 over the foot (a stud
-		-- higher than the first fit's 2.88), 9.63 tall (its top 13.68 over the foot, where the first fit had it)
-		expect(math.abs(f.w - Portals.ARCH.field.w) < 1e-6).toBe(true)
-		expect(math.abs(cx - 2.38) < 0.01).toBe(true)
-		expect(math.abs(cy - f.h / 2 - foot - 4.05) < 0.01).toBe(true)
-		expect(math.abs(f.h - 9.63) < 0.01).toBe(true)
-		expect(math.abs(cy + f.h / 2 - foot - 13.68) < 0.01).toBe(true)
-		expect(math.abs(f.z) < 1e-6).toBe(true)
-		-- the field, the veil and the core (Portals.look, from the field) between the pillars, at least 0.2 over the
-		-- slab, under the right pillar's top
-		local look = Portals.look(f.w, f.h)
-		for _, size in { { w = f.w, h = f.h }, look.veil, look.core } do
-			expect(cx - size.w / 2 >= opening.x0 and cx + size.w / 2 <= opening.x1).toBe(true)
-			expect(cy - size.h / 2 >= slab + 0.2).toBe(true)
-			expect(cy + size.h / 2 < rightTop).toBe(true)
-		end
-		-- a model without its own opening keeps the box-centred field
-		local generic = ArchFit.fit(lo, hi, "common_portal_01").field
-		expect(generic.x == old.x and generic.y == old.y and generic.w == old.w and generic.h == old.h).toBe(true)
-		-- every opening stays inside its model's box
+		expect(f.z > front and f.z < front + 6.7).toBe(true)
+		expect(f.y - f.h / 2 >= lo[2] + 3.78 + 0.2).toBe(true)
+		expect(f.y + f.h / 2 <= hi[2] - 1).toBe(true)
+		expect(f.x - f.w / 2 >= lo[1] and f.x + f.w / 2 <= hi[1]).toBe(true)
+		expect(f.w <= Portals.ARCH.field.w and f.h <= Portals.ARCH.field.h).toBe(true)
+		-- a model without an entry keeps W28's rule: turned when deeper than wide, the box-centred field, no shift
+		local generic = ArchFit.fit(lo, hi, "common_portal_01")
+		expect(generic.turn).toBe(true)
+		expect(generic.shift).toBe(0)
+		expect(math.abs(generic.field.x) < 1e-6 and math.abs(generic.field.z) < 1e-6).toBe(true)
+		-- an entry moves a model only forward
+		expect(ArchFit.shift({ 8, 16.5, 6 })).toBe(0)
+		-- every entry stays inside its model's box
 		for name, o in Portals.MODEL_OPENING do
-			if math.abs(o.x) + o.w / 2 > 0.5 or o.foot < 0 or o.foot + o.h > 1 then
+			if math.abs(o.x) + o.w / 2 > 0.5 or o.foot < 0 or o.foot + o.h > 1 or o.z <= 0 or o.z >= 1 then
 				error(`Data/Portals.MODEL_OPENING.{name} reaches out of its model's box`)
 			end
 		end
-		-- the arches outside the city (every exit) stand on common_portal_02 and pass its name to the fit; the
-		-- light, the sparkles, the "E" prompt and the server's range hang on the field, the zone label over the model
+		-- the arches outside the city (every exit) stand on common_portal_02 and pass its name to the fit; the server
+		-- measures its arch with rays once (its parts answer rays only meanwhile); the light, the sparkles, the "E"
+		-- prompt and the server's range hang on the field, the zone label over the model, the unseen pillars in the arch
 		local prefabs = read("src/server/World/Prefabs.luau")
 		for _, needle in
 			{
 				'PORTAL_MODEL_WILD = "common_portal_02"',
 				"ArchFit.fit({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)",
 				"ArchFit.field({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)",
+				"ArchFit.shift({ hi.X, hi.Y, hi.Z })",
+				"measureOpening(arch, base, lo, hi)",
+				"measured[modelId] = result",
+				"local opening = ArchFit.opening(grid, blocked)",
+				"field = ArchFit.inOpening(opening, sum / count)",
+				"params.FilterType = Enum.RaycastFilterType.Include",
+				"item.CanQuery = false",
 				"labelHeight = top + 2.5",
+				"local top, sides = fitModel(painted, base, field, modelId)",
+				"item.CFrame = base * CFrame.new(across, at.Y, fieldZ)",
 			}
 		do
 			if not string.find(prefabs, needle, 1, true) then
 				error(`Prefabs.luau: missing {needle}`)
 			end
 		end
+	end)
+
+	it("finds a rune arch's opening in the rays and puts the veil into it (owner 2026-11-10)", function()
+		-- the shrine where it stands (moved forward), its arch drawn as the rays would meet it: the steps and the slab
+		-- to 2.3 over the ground, pillars 3.3 thick round a 8.6 wide opening a little left of the box's middle, a round
+		-- crown from 10 up, a fallen stone by the left pillar
+		local lo, hi = { -8, -1.5, -12.65 }, { 8, 16.5, 8.25 }
+		local c0 = -0.4
+		local function stone(x: number, y: number): boolean
+			if y < 2.3 or (x > -4.6 and x < -3.6 and y < 3.4) then
+				return true
+			end
+			local dx = x - c0
+			local r = if y <= 10 then math.abs(dx) else math.sqrt(dx * dx + (y - 10) ^ 2)
+			return r >= 4.3 and r <= 7.6
+		end
+		local grid = ArchFit.grid(lo, hi)
+		expect(grid.from < lo[3]).toBe(true)
+		-- the rays reach through the arch, not to the stele at the back
+		expect(grid.from + grid.reach > lo[3] + 6.7 and grid.from + grid.reach < hi[3] - 2).toBe(true)
+		local function scan(isStone: (number, number) -> boolean): { boolean }
+			local blocked = {}
+			for r = 1, grid.rows do
+				for c = 1, grid.cols do
+					blocked[(r - 1) * grid.cols + c] =
+						isStone(grid.x0 + (c - 1) * grid.step, grid.y0 + (r - 1) * grid.step)
+				end
+			end
+			return blocked
+		end
+		local opening = ArchFit.opening(grid, scan(stone))
+		assert(opening, "no opening found")
+		expect(math.abs(opening.bottom - 2.3) <= grid.step).toBe(true)
+		expect(math.abs(opening.top - 14.3) <= grid.step).toBe(true)
+		local mid = opening.rows[math.floor(#opening.rows / 2)]
+		expect(math.abs(mid.left - (c0 - 4.3)) <= grid.step and math.abs(mid.right - (c0 + 4.3)) <= grid.step).toBe(
+			true
+		)
+		local f = assert(ArchFit.inOpening(opening, -9.3))
+		expect(f.z).toBe(-9.3)
+		expect(math.abs(f.x - c0) <= grid.step).toBe(true)
+		expect(f.w <= Portals.ARCH.field.w + 1e-6 and f.h <= Portals.ARCH.field.h + 1e-6).toBe(true)
+		-- the veil (Portals.look of the field) stands in the opening: never in the stone, the steps or the fallen stone
+		local look = Portals.look(f.w, f.h)
+		local a, b = look.veil.w / 2, look.veil.h / 2
+		for deg = 0, 355, 5 do
+			local t = math.rad(deg)
+			for _, k in { 1, 0.7, 0.4 } do
+				local px, py = f.x + a * k * math.cos(t), f.y + b * k * math.sin(t)
+				if stone(px, py) then
+					error(string.format("the veil's point %.2f, %.2f is in the stone", px, py))
+				end
+			end
+		end
+		-- and fills most of it: nearly the opening's width, from the steps up into the crown
+		expect(a >= 3.6 and b >= 5.3).toBe(true)
+		expect(f.y - b <= 2.3 + 0.6).toBe(true)
+		expect(f.y + b >= 12.5).toBe(true)
+		-- no opening, no field: the rays the data's field stays for (World/Prefabs.fitModel)
+		expect(ArchFit.opening(
+			grid,
+			scan(function()
+				return true -- the model's collision fills its arch
+			end)
+		)).toBe(nil)
+		expect(ArchFit.opening(
+			grid,
+			scan(function()
+				return false -- the rays met nothing
+			end)
+		)).toBe(nil)
+		expect(ArchFit.opening(
+			grid,
+			scan(function(x: number, y: number)
+				return stone(x, y) and not (x > c0 and y > 2.3 and y < 14) -- the right pillar missing: open to the side
+			end)
+		)).toBe(nil)
 	end)
 
 	it("frames the cave exits too (light themed frames round the arch)", function()
