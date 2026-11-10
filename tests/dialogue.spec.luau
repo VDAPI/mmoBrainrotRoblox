@@ -1562,3 +1562,80 @@ describe("Dialogue pages fit the window (owner 2026-11-10)", function()
 		expect(problems).toEqual({})
 	end)
 end)
+
+-- Quest lines teach no controls (review 2026-11-10, UI pass package E) --------------------------------------------
+-- An objective is a line of the HUD tracker on every device (UI-ZASADY §3: no control words, no "(K)" key hints), and
+-- the text scan never sees it, since QuestText.rows builds its key as `quest.obj.{type}`. A quest's text and its pages
+-- are read on a phone too. The tutorial tile (package A) teaches each control in the device's own words.
+
+local TextScan = require("./TextScan")
+
+-- The control word or key hint in a quest text (nil when none). A story may still say that wolves drag their prey.
+local function controlIn(text: string, story: boolean): string?
+	local found = TextScan.control(text)
+	if found and story and string.find(found, "^drag") then
+		found = nil
+	end
+	if not found and string.find(string.lower(text), "dwuklik", 1, true) then
+		found = "dwuklik"
+	end
+	return found
+end
+
+describe("Quest lines teach no controls (review 2026-11-10)", function()
+	it("objective lines (the HUD tracker) have no control word or key hint in pl and en", function()
+		local problems: { string } = {}
+		local count = 0
+		for key in pl :: any do
+			if string.sub(key, 1, 10) ~= "quest.obj." then
+				continue
+			end
+			count += 1
+			for lang, tbl in { pl = pl :: any, en = en :: any } do
+				local text = tbl[key]
+				local found = if type(text) == "string" then controlIn(text, false) else "missing"
+				if found then
+					table.insert(problems, `{lang} {key}: {found}`)
+				end
+			end
+		end
+		table.sort(problems)
+		expect(problems).toEqual({})
+		expect(count >= 20).toBe(true)
+		expect(controlIn("Podnieś łup (F)", false)).toBe("(F)")
+		expect(controlIn("Załóż nowy plecak (dwuklik)", false)).toBe("dwuklik")
+		expect(controlIn("Equip the new backpack (double-click)", false)).toBe("click")
+	end)
+
+	it("quest texts and conversation pages have no click or key hint in pl and en", function()
+		local problems: { string } = {}
+		local keys: { string } = {}
+		for _, item in Dialogue.allQuests() do
+			table.insert(keys, `quest.{item.quest.id}.text`)
+		end
+		for _, key in conversationPages() do
+			table.insert(keys, key)
+		end
+		local seen: { [string]: boolean } = {}
+		for _, key in keys do
+			if seen[key] or not hasKey(key) then
+				continue
+			end
+			seen[key] = true
+			for _, part in Dialogue.parts(key, hasKey) do
+				for lang, tbl in { pl = pl :: any, en = en :: any } do
+					local found = controlIn(tbl[part], true)
+					if found then
+						table.insert(problems, `{lang} {part}: {found}`)
+					end
+				end
+			end
+		end
+		table.sort(problems)
+		expect(problems).toEqual({})
+		expect(seen["quest.firstHunt.text"]).toBe(true)
+		expect(seen["quest.gearUp.p2"]).toBe(true)
+		expect(controlIn("The wolves dragged it to their den.", true)).toBe(nil)
+		expect(controlIn("Kliknij królika.", true)).toBe("kliknij")
+	end)
+end)
