@@ -120,7 +120,7 @@ end
 
 -- Season pass ------------------------------------------------------------------------------------------------------
 -- The header (PC and tablet: the season, its tier, when it ends, the points bar and the week's limits; a phone: the
--- season with its (i) and the tier on one line over a thin points bar, when it ends and the limits behind the (i)), the
+-- season, when it ends and its (i) and the tier on one line over a thin points bar, the limits behind the (i)), the
 -- toolbar (tabs and the claim and unlock buttons), then PC the horizontal strip of tiers, touch a list of tier rows
 -- under their heads (the list's own top padding 4; a phone's rows 50: the icon 40, the name and the state one line
 -- each).

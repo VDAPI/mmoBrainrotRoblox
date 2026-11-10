@@ -10797,6 +10797,8 @@ return {
 	["season.tier"] = "Tier {tier}/{tiers}",
 	["season.endsIn"] = "Ends in {d} d {h} h",
 	["season.grace"] = "{season} has ended; claim your rewards until {date}",
+	["season.endsShort"] = "ends in {d} d {h} h",
+	["season.graceShort"] = "claim until {date}",
 	["season.soon"] = "The next season soon",
 	["season.soon.desc"] = "The next season has no date yet. Cosmetics you earned stay forever.",
 	["season.soon.next"] = "{season} starts on {date} (UTC).",

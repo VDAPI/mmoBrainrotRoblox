@@ -18,8 +18,9 @@
 -- strip), both only while the premium track can be bought.
 -- Owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"; UI plan E, Logic/WorldLayout.season): the
 -- header, the tabs and the tier rows come from WorldLayout. A phone's header is one line (the season with its (i), the
--- tier) over a thin points bar: when the season ends and the week's limit with its badges go behind the (i), and its
--- tier rows are 50 tall, so at least three show.
+-- tier) over a thin points bar: the week's limit with its badges go behind the (i), and its tier rows are 50 tall, so
+-- at least three show. Review 2026-11-10 (UI-ZASADY §1, time on top): the line keeps when the season ends ("Sezon
+-- Szronu · koniec za 5 d 3 h"), or in its grace days until when the rewards can be claimed.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -757,9 +758,22 @@ local function whenText(use: Fusion.Use, v: View): string
 	return Text.get(use, "season.soon")
 end
 
--- A phone's (i) after the season's name: when it ends, the week's limit and its badges (catch-up, capped, maxed).
+-- A phone's header line: when the season ends, short ("koniec za 5 d 3 h"), or until when its rewards can be claimed;
+-- "" without a season.
+local function phoneWhen(use: Fusion.Use, v: View): string
+	if v.mode == "running" then
+		local d, h = SeasonView.daysHours(v.endsIn)
+		return Text.get(use, "season.endsShort", { d = d, h = h })
+	elseif v.mode == "grace" and v.def then
+		return Text.get(use, "season.graceShort", { date = date((v.claimUntil :: number) - 1) })
+	end
+	return ""
+end
+
+-- A phone's (i) after the season's name: the week's limit and its badges (catch-up, capped, maxed); in the grace days
+-- the whole sentence of when the rewards can be claimed (the header line keeps the short end).
 local function phoneInfo(use: Fusion.Use, v: View): string
-	local lines = { whenText(use, v) }
+	local lines: { string } = if v.mode == "running" then {} else { whenText(use, v) }
 	if v.mode == "running" then
 		table.insert(
 			lines,
@@ -815,12 +829,16 @@ local function header(scope: Scope, ctx: Ctx, layout: Fusion.Computed<WorldLayou
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
-			-- a phone: the season with its (i) (when it ends, the week's limit and its badges)
+			-- a phone: the season and when it ends, with its (i) (the week's limit and its badges)
 			InfoLine.new(scope, {
 				Name = "SeasonPhone",
 				Size = UDim2.new(1, -170, 0, 30),
 				Visible = phone,
-				Text = seasonName,
+				Text = scope:Computed(function(use): string
+					local name = use(seasonName)
+					local left = phoneWhen(use, use(view))
+					return if left ~= "" then `{name} · {left}` else name
+				end),
 				Info = scope:Computed(function(use): string
 					return phoneInfo(use, use(view))
 				end),

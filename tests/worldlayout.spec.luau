@@ -15,6 +15,7 @@ local Config = require("../src/shared/Config")
 local Folds = require("../src/shared/Data/Folds")
 local Leaderboards = require("../src/shared/Data/Leaderboards")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
+local Seasons = require("../src/shared/Data/Seasons")
 local SectionFold = require("../src/shared/Logic/SectionFold")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
@@ -254,6 +255,8 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 	end)
 
 	T.it("season pass: at least 3 tier rows on a phone; PC shows its strip and 5 tiers", function()
+		local src = fs.readFile("src/client/UI/Screens/SeasonPass.luau")
+		T.expect(string.find(src, "local left = phoneWhen(use, use(view))", 1, true) ~= nil).toBe(true)
 		local problems: { string } = {}
 		for _, screen in screens() do
 			local content = contentOf("season", screen)
@@ -271,6 +274,22 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 				local want = if screen.device == "phone" then 3 else 2
 				if rows < want then
 					table.insert(problems, `{screen.name}: {rows} tier rows < {want}`)
+				end
+			end
+			-- review 2026-11-10: a phone's header line keeps when the season ends (or the claim date of its grace days)
+			-- beside the season's name: it fits with the (i) left of the tier's 170
+			if screen.device == "phone" then
+				for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+					for _, def in Seasons.list do
+						local ends = string.gsub(string.gsub(t["season.endsShort"], "{d}", "88"), "{h}", "88")
+						local grace = string.gsub(t["season.graceShort"], "{date}", "88.88.8888")
+						for _, left in { ends, grace } do
+							local line = `{t[def.nameKey]} · {left}`
+							if TextCaps.width(line, 24) + 44 > content.w - 170 then
+								table.insert(problems, `{screen.name} {lang}: "{line}" wider than the header`)
+							end
+						end
+					end
 				end
 			end
 			-- the two tabs fit their strip
