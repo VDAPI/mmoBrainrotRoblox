@@ -2,8 +2,13 @@
 -- Purchase confirmation for Dragon Currency (S120, DESIGN-17 §1): every purchase for shards (premium shop items and
 -- cosmetics, wardrobe) asks first with the name, what it gives, the price and the balance after the purchase. The
 -- card tooltips use the same text (`describe`). Robux purchases go through the native Roblox prompt instead.
+-- Owner 2026-11-10 ("bardzo dużo napisów, zbyt szczegółowe opisy"; UI plan, one home per thing): the dialog's body is
+-- the question (at most 60 characters) and one price line, at most 90 in all; what the purchase gives (`desc`, up to
+-- 220 characters for Auto Hunt) goes under "Więcej ▸" (the Modal's Details). A card's hover is only the price and the
+-- balance after the purchase: the card shows the name and its (i) holds the description, so nothing is said twice.
 --   PremiumConfirm.setShowModal(fn)  WindowManager.ShowModal (PremiumController.Init)
---   PremiumConfirm.describe(spec, mode?)  "confirm" (default): price, balance, after; "tooltip": price, after
+--   PremiumConfirm.describe(spec, mode?)  "confirm" (default): the question and the price line; "tooltip": the price
+--     and the balance after (premium.error.shards instead of a negative balance)
 --   PremiumConfirm.ask(spec)  the dialog; confirming sends `spec.remote(spec.arg, spec.arg2)` and keeps an error in the
 --     dialog (S123: arg2 = the price shown, PremiumBuyCosmetic refuses another one with premium.error.priceChanged)
 
@@ -41,27 +46,23 @@ function PremiumConfirm.setShowModal(fn: (spec: any) -> ())
 	showModal = fn
 end
 
--- The text of the dialog ("confirm") or of a card tooltip ("tooltip"; a negative balance shows the error instead).
+-- The body of the dialog ("confirm") or a card's hover ("tooltip"). Neither repeats the description: the dialog puts it
+-- under "Więcej ▸" (PremiumConfirm.details), the card behind its (i).
 function PremiumConfirm.describe(spec: Spec, mode: ("confirm" | "tooltip")?): string
-	local lines = { spec.name, "" }
-	if spec.desc and spec.desc ~= "" then
-		table.insert(lines, spec.desc)
-	end
 	local after = Premium.balanceAfter(spec.shards, spec.price)
+	local args = { price = Format.number(spec.price), after = Format.number(after) }
 	if mode == "tooltip" then
-		table.insert(lines, Text.now("premium.tooltip.price", { price = Format.number(spec.price) }))
-		table.insert(
-			lines,
-			if after < 0
-				then Text.now("premium.error.shards")
-				else Text.now("premium.tooltip.after", { after = Format.number(after) })
-		)
-	else
-		table.insert(lines, Text.now("premium.confirm.price", { price = Format.number(spec.price) }))
-		table.insert(lines, Text.now("premium.confirm.balance", { shards = Format.number(spec.shards) }))
-		table.insert(lines, Text.now("premium.confirm.after", { after = Format.number(after) }))
+		local balance = if after < 0 then Text.now("premium.error.shards") else Text.now("premium.tooltip.after", args)
+		return `{Text.now("premium.tooltip.price", args)}\n{balance}`
 	end
-	return table.concat(lines, "\n")
+	local balance = if after < 0 then Text.now("premium.error.shards") else Text.now("premium.confirm.after", args)
+	local question = Text.now("premium.confirm.question", { name = spec.name })
+	return `{question}\n{Text.now("premium.confirm.price", args)} · {balance}`
+end
+
+-- What the purchase gives, for the dialog's "Więcej ▸" (nil without a description).
+function PremiumConfirm.details(spec: Spec): string?
+	return if spec.desc and spec.desc ~= "" then spec.desc else nil
 end
 
 -- Sends the purchase; returns (ok, localized error).
@@ -112,6 +113,7 @@ function PremiumConfirm.ask(spec: Spec)
 	show({
 		Title = Text.now("premium.confirm.title"),
 		Message = PremiumConfirm.describe(spec, "confirm"),
+		Details = PremiumConfirm.details(spec),
 		ConfirmText = Text.now("premium.confirm.buy", { price = Format.number(spec.price) }),
 		CancelText = Text.now("common.cancel"),
 		OnConfirm = function(_text: string): (boolean, string?)

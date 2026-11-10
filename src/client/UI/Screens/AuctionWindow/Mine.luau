@@ -55,8 +55,9 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 				"auction.cancel.confirm",
 				{ item = ItemText.name(entry.item.id, entry.item.up, entry.item.el) }
 			),
-			ConfirmText = Text.now("auction.cancel"),
-			CancelText = Text.now("common.cancel"),
+			-- owner 2026-11-10 (UI plan): one "Anuluj" in the dialog; the buttons say what they do
+			ConfirmText = Text.now("auction.cancel.yes"),
+			CancelText = Text.now("auction.cancel.keep"),
 			Variant = "danger",
 			OnConfirm = function(): (boolean, string?)
 				local ok, err = Net.Invoke("AuctionCancel", entry.id)

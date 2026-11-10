@@ -12,8 +12,10 @@ local Items = require("../src/shared/Data/Items")
 local Locale = require("../src/shared/Util/Locale")
 local Rarities = require("../src/shared/Data/Rarities")
 local Rng = require("../src/shared/Logic/Rng")
+local SkillData = require("../src/shared/Data/Skills")
 local Stats = require("../src/shared/Data/Stats")
 local T = require("./Test")
+local TipText = require("../src/shared/Logic/TipText")
 local TooltipModel = require("../src/shared/Logic/TooltipModel")
 
 local ALIASES: { [string]: string } = { hp = "maxHp", mana = "maxMana", energy = "maxEnergy" }
@@ -752,4 +754,125 @@ T.describe("TooltipModel compact view (2026-10-21)", function()
 			end
 		end
 	)
+end)
+
+-- Owner 2026-11-10 ("bardzo dużo napisów, zbyt szczegółowe opisy"; UI plan, tooltip content): the compact tooltip of
+-- every item fits COMPACT_MAX_LINES lines (a mythic piece of equipment one more, as above) of at most COMPACT_LINE
+-- characters, a longer line shows its `short` text and the full view keeps the whole one; the skill bar tooltip keeps
+-- at most TipText.SKILL_MAX_LINES lines.
+T.describe("TooltipModel compact caps (owner 2026-11-10)", function()
+	-- every non-equipment item, and every equipment type at the levels 20 to 100 (the red "Level 100" included)
+	local function items(): { string }
+		local out: { string } = {}
+		for id, def in Items.byId do
+			if def.category ~= "equipment" or not def.tier or def.fixedBonuses or (def.level or 0) % 20 == 0 then
+				table.insert(out, id)
+			end
+		end
+		table.sort(out)
+		return out
+	end
+
+	T.it(
+		"every item: at most COMPACT_MAX_LINES lines of at most COMPACT_LINE characters; the full view keeps every line",
+		function()
+			local checked = 0
+			for _, id in items() do
+				local def = Items.get(id) :: Items.ItemDef
+				local rolled = def.category == "equipment" and def.tier ~= nil
+				for _, rarity in (if rolled then { Rarities.LEGENDARY, Rarities.MYTHIC } else { 0 }) do
+					local item: any = if rarity ~= 0 then sample(id, rarity, 3) else ItemRoll.makeStack(id, 1, "caps")
+					for _, lang in { "pl", "en" } do
+						local ctx: any = {
+							lang = lang,
+							level = 60,
+							class = if def.classes and def.classes[1] then def.classes[1] else "Warrior",
+							input = "mouse",
+							detailsKey = "Alt",
+							view = "compact",
+						}
+						local short = TooltipModel.build(item, nil, ctx).lines
+						local cap = TooltipModel.COMPACT_MAX_LINES + (if rarity == Rarities.MYTHIC then 1 else 0)
+						T.expect({ id, lang, #short <= cap }).toEqual({ id, lang, true })
+						ctx.view = "full"
+						local full = TooltipModel.build(item, nil, ctx).lines
+						for _, line in short do
+							local n = TooltipModel.visible(line.text)
+							T.expect({ id, lang, line.role, n <= TooltipModel.COMPACT_LINE })
+								.toEqual({ id, lang, line.role, true })
+							if line.role == "effect" or line.role == "use" or line.role == "head" then
+								-- the same line, or the short text of a longer one the full view shows whole
+								local found = false
+								for _, whole in full do
+									if
+										whole.role == line.role
+										and (whole.text == line.text or whole.short == line.text)
+									then
+										found = true
+										T.expect(whole.text ~= "" and TooltipModel.visible(whole.text) >= n).toBe(true)
+									end
+								end
+								T.expect({ id, lang, line.role, found }).toEqual({ id, lang, line.role, true })
+							end
+						end
+						checked += 1
+					end
+				end
+			end
+			T.expect(checked > 500).toBe(true)
+		end
+	)
+
+	T.it(
+		"the everlasting dungeon stones and the Scroll of Protection: a short line here, the whole text in full",
+		function()
+			for _, id in { "stone_dungeon_ashen_perm", "stone_dungeon_duskwood_perm", "scroll_protection" } do
+				for _, lang in { "pl", "en" } do
+					local item: any = ItemRoll.makeStack(id, 1, "short")
+					local short =
+						TooltipModel.build(item, nil, { lang = lang, view = "compact", input = "touch" }).lines
+					local full = TooltipModel.build(item, nil, { lang = lang }).lines
+					local compactEffect, fullEffect
+					for _, line in short do
+						if line.role == "effect" then
+							compactEffect = line.text
+						end
+					end
+					for _, line in full do
+						if line.role == "effect" then
+							fullEffect = line.text
+						end
+					end
+					T.expect(compactEffect ~= nil and fullEffect ~= nil).toBe(true)
+					T.expect({ id, lang, TooltipModel.visible(fullEffect) > TooltipModel.COMPACT_LINE })
+						.toEqual({ id, lang, true })
+					T.expect({ id, lang, TooltipModel.visible(compactEffect) <= TooltipModel.COMPACT_LINE })
+						.toEqual({ id, lang, true })
+					-- the details are a tap away: "More ▸" ends the short view on touch
+					T.expect(short[#short].role).toBe("moreHint")
+				end
+			end
+		end
+	)
+
+	T.it("the skill bar tooltip: one line per compact part, at most SKILL_MAX_LINES", function()
+		local compact = 0
+		for _ in TipText.SKILL_COMPACT do
+			compact += 1
+		end
+		T.expect(compact <= TipText.SKILL_MAX_LINES).toBe(true)
+		local skills = 0
+		for id in SkillData.byId do
+			skills += 1
+			for _, lang in { "pl", "en" } do
+				for _, key in { `skill.{id}.name`, `skill.{id}.short` } do
+					if Locale.has(key, lang) then
+						local text = Locale.T(key, nil, lang)
+						T.expect({ key, lang, string.find(text, "\n", 1, true) == nil }).toEqual({ key, lang, true })
+					end
+				end
+			end
+		end
+		T.expect(skills > 50).toBe(true)
+	end)
 end)

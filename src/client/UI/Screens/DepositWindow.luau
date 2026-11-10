@@ -106,14 +106,17 @@ local function DepositWindow(scope: Scope): Fusion.Child
 			Size = UDim2.new(0.5, -8, 1, 0),
 			BackgroundTransparency = 1,
 			[Children] = {
+				-- owner 2026-11-10 (one title per window): a column's label, not a second title; the window's title bar
+				-- says "Depozyt", the deposit's column only counts its slots
 				scope:New("TextLabel")({
 					Size = UDim2.new(1, -110, 0, 36),
 					BackgroundTransparency = 1,
 					Text = title,
-					FontFace = Theme.Fonts.Display,
-					TextSize = Theme.TextSize.Large,
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Body,
 					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
 				}),
 				Button(scope, {
 					AnchorPoint = Vector2.new(1, 0),
