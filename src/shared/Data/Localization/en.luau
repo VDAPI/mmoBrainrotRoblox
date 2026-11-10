@@ -984,7 +984,7 @@ return {
 	["equip.error.backpackSlot"] = "You cannot remove your backpack.",
 	["equip.bind.title"] = "Bind item",
 	["equip.bind.message"] = "Equipping binds <b>{name}</b> to your character.",
-	["equip.bind.details"] = "A bound item cannot be traded, mailed, auctioned or put into the guild vault. You can still sell it to a merchant or move it to another character of this account through the deposit. A Scroll of Unbinding removes the binding.",
+	["equip.bind.details"] = "A bound item cannot be traded, mailed, auctioned or put into the guild vault. You can still sell it to a merchant or move it to another character of this account through your vault. A Scroll of Unbinding removes the binding.",
 	["equip.bind.session"] = "Don't ask again this session",
 	["equip.bind.confirm"] = "Equip",
 	["equip.bind.dontAsk"] = "Equip, don't ask again",

@@ -833,7 +833,7 @@ return {
 	["inventory.full"] = "Plecak jest pełny.",
 	["inventory.cannotUse"] = "Nie można tego tutaj użyć.",
 	["inventory.drop.title"] = "Zniszcz przedmiot",
-	["inventory.drop.message"] = "<b>{name}</b> przepadnie na zawsze.",
+	["inventory.drop.message"] = "Przedmiot przepadnie na zawsze: <b>{name}</b>.",
 	["inventory.drop.confirm"] = "Zniszcz",
 	["inventory.dropped"] = "Zniszczono: {name}.",
 	["inventory.split.title"] = "Podziel stos",
