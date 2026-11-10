@@ -8,8 +8,9 @@
 --     section: stat points and the derived statistics); the side columns scroll on their own;
 --   narrow touch (a phone in landscape, full screen): the left column (220 to 400, scrolling) holds the name, the
 --     equipment and both sections, the backpack takes the rest.
--- The columns are Logic/CharacterSections.columns' (pure, tested); a narrow statistics column puts a stat's controls
--- under its name (StatAllocator `Compact`).
+-- The columns are Logic/GearLayout.character's (pure, tested): owner 2026-11-10 via the UI plan, from the window's
+-- content as measured (its AbsoluteSize in virtual px), not the screen, whose safe-area insets left a 428-px backpack
+-- on an 844x390 phone; a narrow statistics column puts a stat's controls under its name (StatAllocator `Compact`).
 -- "charStats" stands open by default (folded: the free points as a badge); "charSets" shows once a set or a title means
 -- something (CharacterSections.setsShown / titlesShown), folded by default to one line: the active set and the worn
 -- title; what the sets are is behind its "i".
@@ -26,6 +27,7 @@ local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local BackpackPanel = require(script.Parent.BackpackPanel)
 local BuildSetSwitch = require(script.Parent.Parent.Components.BuildSetSwitch)
 local CharacterSections = require(ReplicatedStorage.Shared.Logic.CharacterSections)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local DerivedList = require(script.DerivedList)
 local Device = require(script.Parent.Parent.Device)
@@ -41,7 +43,7 @@ local Theme = require(script.Parent.Parent.Theme)
 local TitleChooser = require(script.TitleChooser)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
-local Children = Fusion.Children
+local Children, Out = Fusion.Children, Fusion.Out
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -55,7 +57,7 @@ local LEFT_WIDTH = LAYOUT.left
 local MIDDLE_WIDTH = LAYOUT.middle
 local GUTTER = LAYOUT.gutter
 local NARROW_GUTTER = LAYOUT.narrowGutter
-local TOUCH_SLOT = 56
+local TOUCH_SLOT = GearLayout.BACKPACK.touchSlot
 local TOUCH_GAP = 8
 
 type Chooser = { open: Fusion.Value<boolean>, state: TitleChooser.ChooserState }
@@ -196,9 +198,14 @@ local function statsSection(
 				BackgroundTransparency = 1,
 				[Children] = StatAllocator(scope, { Pending = pending, Compact = compact }),
 			}),
-			DerivedList(scope, { Pending = pending, LayoutOrder = 2 }),
 		},
 	})
+end
+
+-- Owner 2026-11-10 (UI plan): the derived statistics as four sections after the statistics' one (one fold level):
+-- "Atak" open, the defence, resources and other ones folded (DerivedList, Data/Folds/Gear).
+local function derivedSections(scope: Scope, pending: Fusion.Value<{ [string]: number }>, order: number): { Instance }
+	return DerivedList(scope, { Pending = pending, LayoutOrder = order })
 end
 
 -- The build sets (S58) and the title; folded, one line: the active set and the worn title.
@@ -338,7 +345,10 @@ local function wideLayout(
 		rule(scope, "RuleLeft", LEFT_WIDTH + GUTTER / 2),
 		backpack(scope, props, touch, middleX, MIDDLE_WIDTH),
 		rule(scope, "RuleRight", rightX - GUTTER / 2),
-		column(scope, "Right", rightX, nil, { statsSection(scope, pending, compact, 1) }),
+		column(scope, "Right", rightX, nil, {
+			statsSection(scope, pending, compact, 1),
+			derivedSections(scope, pending, 1) :: any,
+		}),
 	}
 end
 
@@ -346,20 +356,22 @@ local function narrowLayout(
 	scope: Scope,
 	props: Props,
 	pending: Fusion.Value<{ [string]: number }>,
-	left: number,
-	compact: boolean,
+	layout: GearLayout.Character,
 	shown: Shown,
 	titles: Chooser
 ): { Instance }
+	local left = layout.left.right
 	return {
 		column(scope, "Left", 0, left, {
 			heroHeader(scope, true, 1),
 			equipment(scope, props, true, 2),
-			statsSection(scope, pending, compact, 3),
-			setsSection(scope, true, shown, titles, 4),
+			statsSection(scope, pending, layout.compact, 3),
+			derivedSections(scope, pending, 3) :: any,
+			setsSection(scope, true, shown, titles, 8),
 		}),
 		rule(scope, "Rule", left + NARROW_GUTTER / 2),
-		backpack(scope, props, true, left + NARROW_GUTTER, nil),
+		-- owner 2026-11-10: the backpack as wide as GearLayout gives it (500 on every phone), not "the rest"
+		backpack(scope, props, true, layout.backpack.left, layout.backpack.right - layout.backpack.left),
 	}
 end
 
@@ -406,32 +418,42 @@ local function CharacterWindow(scope: Scope, props: Props): Fusion.Child
 		end),
 	}
 
-	-- The columns (Logic/CharacterSections.columns): PC always three; touch by the screen's width. Rebuilt only when
-	-- one of the three changes, not on every resize.
-	local columns = scope:Computed(function(use): CharacterSections.Columns
+	-- The columns (Logic/GearLayout.character): PC always three; touch by the content's width as measured (owner
+	-- 2026-11-10 via the UI plan: the content rect, not the screen). Until the first measure the PC layout stands.
+	-- Rebuilt only when the kind, the left width, the backpack's width or `compact` changes, not on every resize.
+	local absolute = scope:Value(Vector2.zero)
+	local columns = scope:Computed(function(use): GearLayout.Character
 		local touch = use(Device.Touch) == true
-		local size: Vector2 = if touch then use(Scale.VirtualSize) else Vector2.zero
-		return CharacterSections.columns(touch, size.X)
+		local size: Vector2 = use(absolute)
+		local k: number = use(Scale.Value)
+		if size.X <= 0 or k <= 0 then
+			return GearLayout.character({ w = 1196, h = 624 }, false)
+		end
+		return GearLayout.character({ w = size.X / k, h = size.Y / k }, touch)
 	end)
-	local wide = scope:Computed(function(use): boolean
-		return use(columns).wide
-	end)
-	local left = scope:Computed(function(use): number
-		return use(columns).left
-	end)
-	local compact = scope:Computed(function(use): boolean
-		return use(columns).compact
+	local key = scope:Computed(function(use): string
+		local c = use(columns)
+		return `{c.wide}|{c.compact}|{c.left.right}|{c.backpack.left}|{c.backpack.right}`
 	end)
 
-	return scope:Computed(function(use, s: Scope): { Instance }
+	local layout = scope:Computed(function(use, s: Scope): { Instance }
+		use(key)
 		local touch = use(Device.Touch)
-		local out = if use(wide)
-			then wideLayout(s, props, pending, touch, use(compact), shown, titles)
-			else narrowLayout(s, props, pending, use(left), use(compact), shown, titles)
+		local c = Fusion.peek(columns)
+		local out = if c.wide
+			then wideLayout(s, props, pending, touch, c.compact, shown, titles)
+			else narrowLayout(s, props, pending, c, shown, titles)
 		-- last: drawn over the whole window
 		table.insert(out, TitleChooser.Panel(s, { Open = titles.open, State = titles.state, Touch = touch }))
 		return out
-	end) :: any
+	end)
+	return scope:New("Frame")({
+		Name = "Character",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		[Out("AbsoluteSize")] = absolute,
+		[Children] = layout :: any,
+	})
 end
 
 return CharacterWindow

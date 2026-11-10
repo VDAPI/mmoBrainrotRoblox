@@ -7,6 +7,8 @@ local fs = require("@lune/fs")
 
 local T = require("./Test")
 local CharacterSections = require("../src/shared/Logic/CharacterSections")
+local GearLayout = require("../src/shared/Logic/GearLayout")
+local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local Progression = require("../src/shared/Data/Progression")
 local SectionFold = require("../src/shared/Logic/SectionFold")
 
@@ -85,6 +87,36 @@ T.describe("Backpack window sections", function()
 	T.it("the statistics stand open by default, the sets fold", function()
 		T.expect(SectionFold.isOpen(nil, "charStats")).toBe(true)
 		T.expect(SectionFold.isOpen(nil, "charSets")).toBe(false)
+		-- owner 2026-11-10 (UI plan): the derived statistics in four sections, the attack ones open
+		T.expect(SectionFold.isOpen(nil, "charOffense")).toBe(true)
+		for _, id in { "charDefense", "charResources", "charOther" } do
+			T.expect({ id, SectionFold.known(id), SectionFold.isOpen(nil, id) }).toEqual({ id, true, false })
+		end
+	end)
+
+	T.it("the derived statistics: one section per group, names on up to two lines, never cut", function()
+		local list = read("src/client/UI/Screens/CharacterWindow/DerivedList.luau")
+		for _, id in { "charOffense", "charDefense", "charResources", "charOther" } do
+			T.expect({ id, string.find(list, `"{id}"`, 1, true) ~= nil }).toEqual({ id, true })
+		end
+		T.expect(string.find(list, "Section.new(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(list, "TextTruncate", 1, true)).toBeNil()
+		T.expect(string.find(list, "TextWrapped = true", 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("a stat is one line with its effect behind the i; the buttons and the points only with free points", function()
+		local alloc = read("src/client/UI/Screens/CharacterWindow/StatAllocator.luau")
+		-- no second line under the name: what a stat raises is behind the (i)
+		T.expect(string.find(alloc, 'Name = "Desc"', 1, true)).toBeNil()
+		T.expect(string.find(alloc, "InfoTip.new(", 1, true) ~= nil).toBe(true)
+		-- the -/+ controls and "Wolne punkty" follow the free points
+		T.expect(string.find(alloc, "Visible = hasPoints", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(alloc, "local controlsOn = hasPoints", 1, true) ~= nil).toBe(true)
+		local _, steps = string.gsub(alloc, "\n%s*controlsOn\n%s*%)", "")
+		T.expect(steps).toBe(2) -- the - and the + button
+		-- the backpack's overflow line is Small 17, never scaled
+		local panel = read("src/client/UI/Screens/BackpackPanel.luau")
+		T.expect(string.find(panel, "TextScaled", 1, true)).toBeNil()
 	end)
 
 	T.it("no tabs: one view with the equipment, the backpack and both sections", function()
@@ -127,34 +159,46 @@ T.describe("Backpack window sections", function()
 		T.expect(CharacterSections.columns(false, 1920)).toEqual({ wide = true, left = L.left, compact = false })
 	end)
 
-	T.it("touch: three columns on a wide tablet, two on a phone, the stat rows on two lines when narrow", function()
-		local L = CharacterSections.LAYOUT
-		-- a 1280 wide tablet: three columns, one-line rows; a 1210 one (1024 x 768 at the touch scale): two-line rows
-		T.expect(CharacterSections.columns(true, 1280)).toEqual({ wide = true, left = L.left, compact = false })
-		T.expect(CharacterSections.columns(true, 1210)).toEqual({ wide = true, left = L.left, compact = true })
-		-- a 20:9 phone (844 x 390 at 44 / 52): two columns, the left one at its widest
-		local phone = CharacterSections.columns(true, 997)
-		T.expect(phone).toEqual({ wide = false, left = L.narrowLeftMax, compact = false })
-		-- a 16:9 phone (667 x 375): the backpack keeps its 500, the stat rows go on two lines
-		local small = CharacterSections.columns(true, 788)
-		T.expect(small.wide).toBe(false)
-		T.expect(small.compact).toBe(true)
-		T.expect(788 - 2 * L.pad - small.left - L.narrowGutter >= L.middle).toBe(true)
-		-- never narrower than the equipment with touch slots (3 x 56 + 2 x 8)
-		T.expect(CharacterSections.columns(true, 600).left >= 3 * 56 + 2 * 8).toBe(true)
-		-- the window takes its numbers from here
-		local src = read(WINDOW)
-		T.expect(string.find(src, "CharacterSections.columns(touch, size.X)", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(src, "Compact = compact", 1, true) ~= nil).toBe(true)
-		-- the paddings are Theme's (Padding.Large and Medium)
-		local theme = read("src/client/UI/Theme.luau")
-		local at = assert(string.find(theme, "Theme.Padding = {", 1, true))
-		local large = tonumber(string.match(theme, "Large = (%d+)", at))
-		local medium = tonumber(string.match(theme, "Medium = (%d+)", at))
-		T.expect(L.pad).toBe(large)
-		T.expect(L.gutter).toBe(large)
-		T.expect(L.narrowGutter).toBe(medium)
-	end)
+	T.it(
+		"touch: columns from the content width; three on a wide tablet, two on a phone with a 500-px backpack",
+		function()
+			local L = CharacterSections.LAYOUT
+			-- owner 2026-11-10 (UI plan): the width is the window's content (WindowFrame.content), not the screen's
+			-- a 1280 wide tablet (1236 of content): three columns, one-line rows; a 1210 one: two-line rows
+			T.expect(CharacterSections.columns(true, 1236)).toEqual({ wide = true, left = L.left, compact = false })
+			T.expect(CharacterSections.columns(true, 1166)).toEqual({ wide = true, left = L.left, compact = true })
+			-- the three phones (safe-area insets left out, a 58-px top bar, the compact title bar): two columns and the
+			-- backpack keeps its 500 (the audit's 428 on 844x390 came from the screen's width)
+			for _, device in PhoneHud.DEVICES do
+				local w, h = PhoneHud.area(device)
+				local area = GearLayout.area({ w = w, h = h }, { w = 1240, h = 720 }, true, 58, true)
+				local columns = CharacterSections.columns(true, area.w)
+				T.expect({ device.name, columns.wide }).toEqual({ device.name, false })
+				T.expect({ device.name, area.w - columns.left - L.narrowGutter >= L.middle })
+					.toEqual({ device.name, true })
+			end
+			-- a 16:9 phone (667 x 375, 760 of content): the stat rows go on two lines
+			local small = CharacterSections.columns(true, 760)
+			T.expect(small.wide).toBe(false)
+			T.expect(small.compact).toBe(true)
+			-- never narrower than the equipment with touch slots (3 x 56 + 2 x 8)
+			T.expect(CharacterSections.columns(true, 556).left >= 3 * 56 + 2 * 8).toBe(true)
+			-- the window takes its numbers from GearLayout, measured from its content, never from the screen
+			local src = read(WINDOW)
+			T.expect(string.find(src, "GearLayout.character(", 1, true) ~= nil).toBe(true)
+			T.expect(string.find(src, '[Out("AbsoluteSize")]', 1, true) ~= nil).toBe(true)
+			T.expect(string.find(src, "Scale.VirtualSize", 1, true)).toBeNil()
+			T.expect(string.find(src, "Compact = compact", 1, true) ~= nil).toBe(true)
+			-- the paddings are Theme's (Padding.Large and Medium)
+			local theme = read("src/client/UI/Theme.luau")
+			local at = assert(string.find(theme, "Theme.Padding = {", 1, true))
+			local large = tonumber(string.match(theme, "Large = (%d+)", at))
+			local medium = tonumber(string.match(theme, "Medium = (%d+)", at))
+			T.expect(L.pad).toBe(large)
+			T.expect(L.gutter).toBe(large)
+			T.expect(L.narrowGutter).toBe(medium)
+		end
+	)
 end)
 
 return nil

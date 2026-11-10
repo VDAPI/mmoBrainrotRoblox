@@ -5,6 +5,9 @@
 -- next to services ("inventory").
 -- S121: the capacity is Logic/Inventory.capacityOf (backpack + Merchant's Pockets from the `passes` branch); items
 -- above it (overflow) get extra slots with a red frame and can only be taken out.
+-- Owner 2026-11-10 (UI plan: "niektóre rzeczy zasłaniają inne"): the rows come from Logic/GearLayout.backpack: the
+-- header, the overflow / pockets line under it in Small 17 (it was scaled text over the gold), the filters, the slot
+-- grid and the action bar in the footer.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,6 +15,7 @@ local Button = require(script.Parent.Parent.Components.Button)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
@@ -44,8 +48,11 @@ export type Props = {
 	ButtonWidth: number?, -- action bar button width, default 120
 }
 
-local SLOT = 64
-local GAP = 6
+local SLOT = GearLayout.BACKPACK.slot
+local GAP = GearLayout.BACKPACK.gap
+-- The panel's rows are anchored to its top and bottom, so GearLayout's rects at any height give their offsets.
+local NOMINAL = { w = 500, h = 640 }
+local NOMINAL_RECTS = GearLayout.backpack(NOMINAL)
 local BUTTON_WIDTH = 120
 
 local FILTERS: { [string]: { [string]: boolean }? } = {
@@ -76,6 +83,13 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 	end)
 	local overflow = scope:Computed(function(use): boolean
 		return use(shown) > use(capacity)
+	end)
+	-- the overflow / pockets line takes its own row under the header (GearLayout.backpack)
+	local hinted = scope:Computed(function(use): boolean
+		return use(overflow) or use(pockets) == true
+	end)
+	local rects = scope:Computed(function(use): GearLayout.Backpack
+		return GearLayout.backpack(NOMINAL, slotSize, use(hinted))
 	end)
 	local used = scope:Computed(function(use): number
 		local n = 0
@@ -205,35 +219,10 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				}),
 				-- S121: under the count, the Merchant's Pockets line or the overflow warning
 				scope:New("TextLabel")({
-					Name = "SlotsHint",
-					AnchorPoint = Vector2.new(1, 1),
-					Position = UDim2.new(1, -140, 1, 2),
-					Size = UDim2.fromOffset(220, 16),
-					BackgroundTransparency = 1,
-					Visible = scope:Computed(function(use): boolean
-						return use(overflow) or use(pockets) == true
-					end),
-					Text = scope:Computed(function(use): string
-						if use(overflow) then
-							return Text.get(use, "backpack.overflow")
-						end
-						return Text.get(use, "backpack.pockets", { n = Products.POCKETS_SLOTS })
-					end),
-					TextScaled = true,
-					FontFace = Theme.Fonts.Body,
-					TextColor3 = scope:Computed(function(use): Color3
-						return if use(overflow) then Theme.Paper.Danger else Theme.Paper.TextMuted
-					end),
-					TextXAlignment = Enum.TextXAlignment.Right,
-				}),
-				scope:New("TextLabel")({
 					Name = "Slots",
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, -140, 0, 0),
-					Size = scope:Computed(function(use): UDim2
-						local hinted = use(overflow) or use(pockets) == true
-						return UDim2.new(0, 120, if hinted then 0 else 1, if hinted then 24 else 0)
-					end),
+					Size = UDim2.new(0, 120, 1, 0),
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						return Text.get(use, "inventory.slots", { used = use(used), capacity = use(capacity) })
@@ -268,8 +257,35 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				}),
 			},
 		}),
+		-- owner 2026-11-10 (UI plan): the overflow / pockets line under the header in Small 17, never scaled text over the
+		-- gold (GearLayout.backpack's hint)
+		scope:New("TextLabel")({
+			Name = "SlotsHint",
+			Position = scope:Computed(function(use): UDim2
+				local hint = use(rects).hint
+				return UDim2.fromOffset(0, if hint then hint.top else 0)
+			end),
+			Size = UDim2.new(1, 0, 0, GearLayout.BACKPACK.hint),
+			BackgroundTransparency = 1,
+			Visible = hinted,
+			Text = scope:Computed(function(use): string
+				if use(overflow) then
+					return Text.get(use, "backpack.overflow")
+				end
+				return Text.get(use, "backpack.pockets", { n = Products.POCKETS_SLOTS })
+			end),
+			FontFace = Theme.Fonts.Body,
+			TextSize = Theme.TextSize.Small,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextColor3 = scope:Computed(function(use): Color3
+				return if use(overflow) then Theme.Paper.Danger else Theme.Paper.TextMuted
+			end),
+			TextXAlignment = Enum.TextXAlignment.Right,
+		}),
 		Tabs(scope, {
-			Position = UDim2.fromOffset(0, 48),
+			Position = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, use(rects).tabs.top)
+			end),
 			Selected = filter,
 			Tabs = {
 				{ id = "all", label = Text.T(scope, "inventory.filter.all") },
@@ -280,8 +296,13 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("ScrollingFrame")({
 			Name = "Grid",
-			Position = UDim2.fromOffset(0, 98),
-			Size = UDim2.new(1, 0, 1, -98 - 52),
+			Position = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, use(rects).grid.top)
+			end),
+			Size = scope:Computed(function(use): UDim2
+				local r = use(rects)
+				return UDim2.new(1, 0, 1, -(r.grid.top + NOMINAL.h - r.grid.bottom))
+			end),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			CanvasSize = UDim2.new(),
@@ -309,7 +330,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 			Name = "Actions",
 			AnchorPoint = Vector2.new(0, 1),
 			Position = UDim2.fromScale(0, 1),
-			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall + 6),
+			Size = UDim2.new(1, 0, 0, NOMINAL.h - NOMINAL_RECTS.actions.top),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			CanvasSize = UDim2.new(),

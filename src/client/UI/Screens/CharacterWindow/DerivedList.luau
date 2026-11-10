@@ -3,12 +3,14 @@
 -- each value comes from. While stat points are pending, values are previewed with Logic/StatCalc and the
 -- difference is shown in green. Owner 2026-11-10: as tall as its rows (the statistics section of the backpack window
 -- scrolls with its column, UI/Components/Section).
+-- Owner 2026-11-10 (UI plan: 37 rows, 11 names cut): one Section per group next to the statistics' section (one fold
+-- level), "Atak" open and the rest folded (charOffense / charDefense / charResources / charOther in Data/Folds/Gear);
+-- a name never cut: it wraps to a second line beside its value.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local ListRow = require(script.Parent.Parent.Parent.Components.ListRow)
-local SectionLabel = require(script.Parent.Parent.Parent.Components.SectionLabel)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local StatCalc = require(ReplicatedStorage.Shared.Logic.StatCalc)
 local State = require(script.Parent.Parent.Parent.State)
 local Stats = require(ReplicatedStorage.Shared.Data.Stats)
@@ -22,12 +24,19 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Pending: Fusion.Value<{ [string]: number }>,
-	LayoutOrder: number?,
-	Position: UDim2?,
-	Size: UDim2?,
+	LayoutOrder: number?, -- the sections take LayoutOrder + 1 .. + 4
 }
 
-local ROW_HEIGHT = 30 -- S135: a dense ListRow (Small text)
+local ROW_HEIGHT = 30 -- one line of Small text; a long name takes a second line
+local VALUE_WIDTH = 84
+
+-- Owner 2026-11-10 (UI plan): each group of Data/Stats folds on its own (Data/Folds/Gear).
+local SECTIONS: { [string]: string } = {
+	offense = "charOffense",
+	defense = "charDefense",
+	resources = "charResources",
+	other = "charOther",
+}
 
 local function formatValue(def: Stats.StatDef, value: number): string
 	local text = string.format(`%.{def.decimals}f`, value)
@@ -41,7 +50,7 @@ local function formatPart(value: number, pct: boolean?): string
 	return sign .. text .. (if pct then "%" else "")
 end
 
-local function DerivedList(scope: Scope, props: Props): Instance
+local function DerivedList(scope: Scope, props: Props): { Instance }
 	local derived = State.Value({ "derived" })
 	local character = State.Value({ "character" })
 
@@ -65,52 +74,72 @@ local function DerivedList(scope: Scope, props: Props): Instance
 		}).values
 	end)
 
-	local children = {}
-	local order = 0
-	local rowIndex = 0
-	for _, group in Stats.groups do
-		order += 1
-		table.insert(
-			children,
-			-- S135: the group as a section label
-			SectionLabel(scope, {
-				Name = `Group_{group}`,
-				LayoutOrder = order,
-				Text = Text.T(scope, `statGroup.{group}`),
-				Size = UDim2.new(1, 0, 0, 34),
-			})
-		)
+	-- owner 2026-11-10: one section per group, the attack ones open, the rest folded to their header
+	local sections: { Instance } = {}
+	for index, group in Stats.groups do
+		local rows: { Instance } = {}
+		local rowIndex = 0
 		for _, def in Stats.list do
 			if def.group ~= group then
 				continue
 			end
-			order += 1
+			rowIndex += 1
 			local value = scope:Computed(function(use): number
 				local d = use(derived)
 				return if type(d) == "table" then d.values[def.id] or 0 else 0
 			end)
-			-- S135: a dense ListRow (alternating parchment, the value aligned right)
-			rowIndex += 1
-			local row = ListRow(scope, {
+			local row = scope:New("Frame")({
 				Name = def.id,
-				LayoutOrder = order,
-				Index = rowIndex,
-				Height = ROW_HEIGHT,
-				Dense = true,
-				RichText = true,
-				Text = Text.T(scope, def.nameKey),
-				Value = scope:Computed(function(use): string
-					local current = use(value)
-					local p = use(preview)
-					local text = formatValue(def, current)
-					if p and p[def.id] and math.abs(p[def.id] - current) > 1e-6 then
-						return `<font color="{Theme.hex(Theme.Paper.Success)}">{formatValue(def, p[def.id])}</font>`
-					end
-					return text
-				end),
+				LayoutOrder = rowIndex,
+				Active = true,
+				Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				-- alternating parchment, as the dense list rows had (S135)
+				BackgroundColor3 = Theme.Paper.Raised,
+				BackgroundTransparency = if rowIndex % 2 == 0 then 0.5 else 1,
+				[Children] = {
+					scope:New("UIPadding")({
+						PaddingLeft = UDim.new(0, 6),
+						PaddingRight = UDim.new(0, 6),
+						PaddingTop = UDim.new(0, 4),
+						PaddingBottom = UDim.new(0, 4),
+					}),
+					-- the name wraps to a second line instead of being cut ("Regeneracja energii w walce (na s)")
+					scope:New("TextLabel")({
+						Name = "Name",
+						Size = UDim2.new(1, -VALUE_WIDTH, 0, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, def.nameKey),
+						TextWrapped = true,
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+					scope:New("TextLabel")({
+						Name = "Value",
+						AnchorPoint = Vector2.new(1, 0),
+						Position = UDim2.fromScale(1, 0),
+						Size = UDim2.fromOffset(VALUE_WIDTH, ROW_HEIGHT - 8),
+						BackgroundTransparency = 1,
+						RichText = true,
+						Text = scope:Computed(function(use): string
+							local current = use(value)
+							local p = use(preview)
+							local text = formatValue(def, current)
+							if p and p[def.id] and math.abs(p[def.id] - current) > 1e-6 then
+								return `<font color="{Theme.hex(Theme.Paper.Success)}">{formatValue(def, p[def.id])}</font>`
+							end
+							return text
+						end),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Heading,
+						TextXAlignment = Enum.TextXAlignment.Right,
+					}),
+				},
 			})
-			local rowAny: any = row
-			rowAny.Active = true
 			Tooltip.attach(
 				scope,
 				row :: GuiObject,
@@ -131,22 +160,21 @@ local function DerivedList(scope: Scope, props: Props): Instance
 					return table.concat(lines, "\n")
 				end)
 			)
-			table.insert(children, row)
+			table.insert(rows, row)
 		end
+		table.insert(
+			sections,
+			Section.new(scope, {
+				Id = SECTIONS[group] or "charOther",
+				Name = `Group_{group}`,
+				LayoutOrder = (props.LayoutOrder or 0) + index,
+				Title = Text.T(scope, `statGroup.{group}`),
+				Padding = 0,
+				Children = rows,
+			})
+		)
 	end
-
-	return scope:New("Frame")({
-		Name = "DerivedList",
-		LayoutOrder = props.LayoutOrder,
-		Position = props.Position,
-		Size = props.Size or UDim2.fromScale(1, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundTransparency = 1,
-		[Children] = {
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
-			children :: any,
-		},
-	})
+	return sections
 end
 
 return DerivedList

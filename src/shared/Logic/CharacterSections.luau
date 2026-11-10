@@ -80,16 +80,17 @@ CharacterSections.LAYOUT = table.freeze({
 
 export type Columns = { wide: boolean, left: number, compact: boolean }
 
--- PC: always the three columns (the window is 1240 wide). Touch: the window fills the screen (`screenWidth` virtual
--- px), so three columns while the statistics keep `statsMin`, else two: the left one (name, equipment, both sections;
--- scrolling) as wide as the backpack leaves. `compact`: the statistics' column is too narrow for a stat row on one
--- line (StatAllocator `Compact`: the controls under the name).
-function CharacterSections.columns(touch: boolean, screenWidth: number): Columns
+-- PC: always the three columns (the window is 1240 wide). Touch: three columns while the statistics keep `statsMin`,
+-- else two: the left one (name, equipment, both sections; scrolling) as wide as the backpack leaves. `contentWidth`:
+-- the window's content (Logic/WindowFrame.content, virtual px; owner 2026-11-10 via the UI plan: not the screen, whose
+-- safe-area insets left a 428-px backpack on an 844x390 phone). `compact`: the statistics' column is too narrow for a
+-- stat row on one line (StatAllocator `Compact`: the controls under the name).
+function CharacterSections.columns(touch: boolean, contentWidth: number): Columns
 	local L = CharacterSections.LAYOUT
 	if not touch then
 		return { wide = true, left = L.left, compact = false }
 	end
-	local content = screenWidth - 2 * L.pad
+	local content = contentWidth
 	local right = content - (L.left + L.gutter + L.middle + L.gutter)
 	if right >= L.statsMin then
 		return { wide = true, left = L.left, compact = right - L.scrollPad < L.statsOneLine }
