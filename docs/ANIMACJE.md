@@ -700,3 +700,54 @@ co wcześniej, fixture `skill_timing`); Kula Piorunów pcha kulę nisko w wykrok
 
 **Wydajność.** Wszystko z `Vfx/Pool` i na zegarze `Vfx/Clock`; `LmKit.amount` mnoży liczby przez
 `GraphicsLevel.particles` (W29) i połowę dla `simple` (daleko albo `low`), `lmSkyRift` bez światła.
+
+## 16. Dynamika umiejętności (2026-11-10)
+
+Właściciel: umiejętności każdej klasy mają mieć „większą dynamikę: dźwięk, wybuch, partikle”. Każda aktywna umiejętność
+Wojownika, Kapłana, Łowcy i Maga dostaje na wierzch swoich składników dwa wspólne klocki z `src/client/Vfx/Juice.luau`;
+wybierają je dane (`src/shared/Data/SkillJuice.luau`) i czysta logika (`src/shared/Logic/SkillJuice.luau`), test
+`tests/skilljuice.spec.luau`. Składniki `SkillVfx` i limity `Config.Vfx.perCast` się nie zmieniły. Nieobejrzane w Studio.
+
+**Dlaczego było statycznie (audyt).** 47 ze 105 aktywnych umiejętności nie miało nic przy rzuceniu (Wojownik i Kapłan
+zwykle tylko smugę broni, której nie ma daleko ani na `low`), 94 nie miały dźwięku rzucenia, błysk trafienia trwał
+0,08–0,12 s, iskry to około 8 drobin po 0,2 st., a wstrząs kamery (±0,5 × siła st. przez 0,12 s) z odległości kamery był
+prawie niewidoczny; pociski nie trzęsły wcale.
+
+**Klocki.**
+- `flare` (rzucenie): jasny rdzeń przy dłoni albo grocie broni (`SkillVfx.launch`, dłoń poświaty, inaczej po klasie:
+  łuk Łowcy w lewej, pułapka z prawej, leczenie Kapłana z lewej), drobiny stylu i krótkie światło. Czar zbierany
+  (`castFx`) błyska w chwili wypuszczenia.
+- `punch` (uderzenie): większy rdzeń (Kapłan także promienie), rozprysk drobin stylu (iskry stali lecą dalej od
+  rzucającego), obłok pyłu, dymu albo mgły, pierścień na ziemi nie szerszy niż obszar umiejętności, odłamki skał przy
+  ciężkich ciosach, krótkie łuki błyskawic i gasnące światło. Pomoc (leczenie, wzmocnienia, osłony) unosi drobiny w górę,
+  bez obłoku, odłamków i łuków. Gra przy trafieniu, przy dolocie pocisku, na każdym ogniwie łańcucha, przy pułapce,
+  uderzeniach burzy i meteorów, detonacji, roztrzaskaniu, finale kuli piorunów i ocaleniu (anioł, feniks).
+
+**Style (`Data/SkillJuice.STYLES`, klasa i żywioł).** Wojownik `steel`: iskry stali, pył, fala kurzu, odłamki. Kapłan
+`holy` (złote drobiny, promienie) i `heal` (wznoszące się gwiazdki). Łowca `hunt`: liście przy łuku, iskry, pył,
+drzazgi; `venom` przy truciźnie (bąble, zielony dym); strzała burzy i pułapka mrozu biorą `lightning` i `ice`. Mag: `fire`
+(płomienie, żar, dym), `ice` (odłamki lodu, szron), `lightning` (trzaskające iskry, łuki), `arcane` (gwiazdki). Kolor to
+barwa stylu z domieszką koloru umiejętności (`share`).
+
+**Waga (`light` / `medium` / `heavy`).** Ciężkie: lista `HEAVY`, finiszery i `SkillVfx.shake` co najmniej 0,45. Lekkie:
+lista `LIGHT`, pomoc i ciche rodzaje (osłabienie, pułapka, doskok, towarzysz). Kolejne fale, dalsze cele i ogniwa
+łańcucha o stopień lżej.
+
+**Dźwięk.** `skill.<id>.voice` przy rzuceniu, gdy umiejętność nie ma własnego `skill.<id>.cast`, a cios nie pada od razu
+(co najmniej 0,12 s), i `skill.impact.<styl>` przy dolocie pocisku. Tylko pliki z listy S111 (`docs/ASSETS.md`), każda
+umiejętność stylu w innej wysokości (`Data/Sfx`, `VOICE_STEPS`).
+
+**Kamera (`Logic/CameraShake`, `Vfx/CameraShake`).** Jedyne miejsce, które pisze `Humanoid.CameraOffset`: płynne drganie
+(dwie sinusoidy na oś, wygaszanie do zera), siła × suwak „Odczucie trafień” (0 wyłącza) × poziom grafiki. Nasze ciężkie
+ciosy i finiszery trzęsą co najmniej o 0,45, także pociski przy dolocie; cudze umiejętności w pobliżu o połowę słabiej.
+Tym samym kanałem idą wstrząsy bossów i ciężkich trafień z `CombatFxController` (płynniej i nieco mocniej niż dawne
+losowe przesunięcie).
+
+**Wydajność.** Wszystko z `Vfx/Pool` (limity `Config.Vfx.max*`) i na zegarze `Vfx/Clock`. Liczby drobin
+`Logic/SkillJuice.count`: poziom grafiki (W29), połowa daleko i na `low`, cudze × 0,6, telefon × 0,75, najwyżej 30 i
+`maxBurst` urządzenia. Światło tylko blisko, nie na `low`, przy naszych albo ciężkich umiejętnościach. Szczyt: rzucenie
+2 emitery i światło, uderzenie do 5 emiterów, obraz na ziemi, światło i 2 promienie. Podgląd w oknie umiejętności
+(ViewportFrame) zostaje bez tego.
+
+**Jak obejrzeć i stroić.** `/skillpreview <id>` (na sobie), `/animlab skill <id>`, `/dummy <poziom>` jako cel; liczby w
+`Config.Vfx.juice` i `Config.Vfx.shake`, style, ruchy drobin i wagi w `Data/SkillJuice`.

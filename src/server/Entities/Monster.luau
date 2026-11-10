@@ -1718,6 +1718,7 @@ function Monster.TakeDamage(self: Monster, amount: number, source: Player?): num
 		self.state = "dead"
 		setTarget(self, nil)
 		self.model:SetAttribute("Dead", true)
+		RigBuilder.dropBlocker(self.model) -- owner 2026-11-10: the body no longer blocks the way
 		stop(self)
 		self.ctx.died(self)
 	end

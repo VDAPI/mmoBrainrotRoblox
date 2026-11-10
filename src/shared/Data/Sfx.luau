@@ -14,7 +14,8 @@
 -- skill.default.<strike|cast|blast|heal|buff|dash|trap|call>, skill.<skillId> (SkillVfx.sound names a key),
 -- skill.<skillId>.cast (S114: at the cast event, a long wind-up), skill.guardianAngel.save (S114: the angel's save),
 -- skill.<skillId>.trigger / .wave and skill.falcon.strike (S115: a trap springing, a later wave or a storm's strike,
--- the falcon's strike),
+-- the falcon's strike), skill.<skillId>.voice and skill.impact.<style> (owner 2026-11-10, skill juice: the cast voice of
+-- every active skill and the blow of a projectile spell, Data/SkillJuice),
 -- mob.<family>.<attack|hurt|death|aggro>, boss.<bossId>.<roar|attack|death|phase>, telegraph.warn,
 -- boss.mechanic.<mark|split|channel> (S134),
 -- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error|lowHp>, S149b ui.worldboss.<spawn|victory>,
@@ -23,6 +24,8 @@
 
 local Bosses = require("./Bosses")
 local Families = require("./Families")
+local SkillJuice = require("./SkillJuice")
+local Skills = require("./Skills")
 
 export type Def = {
 	ids: { string }, -- "rbxassetid://<digits>" variants; empty = silent (the fallback chain picks another key)
@@ -454,6 +457,61 @@ end
 defs["skill.guardianAngel.save"] = d("angel save harp choir burst", 0.7, 120)
 for key, own in PHASE do
 	defs[`skill.{key}`] = d(own.hint, own.volume or 0.55, own.roll, { ids = own.ids, pitch = own.pitch })
+end
+
+-- Owner 2026-11-10 (skill juice, Data/SkillJuice): every active skill of the four classes has a cast voice
+-- skill.<id>.voice (played by VfxController when Logic/SkillJuice.voiced says so: no wind-up of its own, the blow not at
+-- once) and every spell style a projectile's blow skill.impact.<style>. Only files of the S111 list above: the skills of
+-- a style take its ids in turn and move one pitch step (VOICE_STEPS) after each round, so no two skills of a class
+-- share a voice.
+local VOICE_IDS: { [string]: string } = {
+	UNSHEATH = UNSHEATH,
+	SWOOSH = SWOOSH,
+	WHOOSH_01 = WHOOSH_01,
+	WHOOSH_02 = WHOOSH_02,
+	WHOOSH_04 = WHOOSH_04,
+	SELECT_01 = SELECT_01,
+	SELECT_02 = SELECT_02,
+	SWEEP = SWEEP,
+	CUTE_GOODBYE = CUTE_GOODBYE,
+	SWITCH = SWITCH,
+	PAPER_SWIPE = PAPER_SWIPE,
+	SPLAT = SPLAT,
+	SNAP = SNAP,
+	PING = PING,
+	BASS = BASS,
+}
+Sfx.VOICE_IDS = VOICE_IDS
+local VOICE_STEPS = { 0, 0.05, -0.05, 0.1, -0.1, 0.025, -0.025, 0.075, -0.075 }
+local VOICE_BAND = 0.02 -- +- around a skill's own pitch
+local function voiceDef(voice: SkillJuice.Voice, n: number, roll: number): Def
+	local count = #voice.ids
+	local id = VOICE_IDS[voice.ids[(n - 1) % count + 1]]
+	local step = VOICE_STEPS[(math.floor((n - 1) / count) % #VOICE_STEPS) + 1]
+	local function round(x: number): number
+		return math.floor(x * 1000 + 0.5) / 1000
+	end
+	local mid = voice.pitch + step
+	return d(
+		voice.hint,
+		voice.volume,
+		roll,
+		{ ids = { id }, pitch = { round(mid - VOICE_BAND), round(mid + VOICE_BAND) } }
+	)
+end
+for _, class in { "Warrior", "Cleric", "Hunter", "Mage" } do
+	local seen: { [string]: number } = {}
+	for _, skill in Skills.byClass[class] :: { Skills.SkillDef } do
+		if skill.type ~= "passive" then
+			local style = SkillJuice.styleOf(skill.class, skill.type, skill.element)
+			local n = (seen[style] or 0) + 1
+			seen[style] = n
+			defs[`skill.{skill.id}.voice`] = voiceDef(SkillJuice.VOICES[style], n, 70)
+		end
+	end
+end
+for style, voice in SkillJuice.IMPACT_VOICES do
+	defs[`skill.impact.{style}`] = voiceDef(voice, 1, 90)
 end
 
 -- Monsters: one set per family (DESIGN-16 §3); the attack plays at the attacker, the rest at the monster.

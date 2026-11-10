@@ -7,10 +7,14 @@
 -- height from the same rig the clients build (or from `asset` numbers), and tells clients what to build with
 -- the attributes Look (look id), LookScale and LookRegion, set before the model is parented.
 -- S162m: the root carries an Attachment "Muzzle" where the kind's shots leave the drawn body (Data/MonsterRelease).
+-- Owner 2026-11-10 ("they may block, but no climbing"): a player bumps into the monster's invisible "Blocker" column
+-- (Data/BodyGroups.blocker, welded to the root, colliding with player characters only), never into its root, so no
+-- player stands on a monster; RigBuilder.dropBlocker lets the way free when it dies.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
+local BodyGroups = require(ReplicatedStorage.Shared.Data.BodyGroups)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local MonsterRelease = require(ReplicatedStorage.Shared.Data.MonsterRelease)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
@@ -131,6 +135,28 @@ function RigBuilder.build(def: Monsters.MonsterDef, variant: string, variantScal
 	root.Parent = model
 	model.PrimaryPart = root
 
+	-- the column players bump into (the root is in "Monsters", which never touches a player)
+	local size, y =
+		BodyGroups.blocker({ body.rootSize.X, body.rootSize.Y, body.rootSize.Z }, body.hipHeight, body.drawn)
+	local blocker = Instance.new("Part")
+	blocker.Name = BodyGroups.BLOCKER
+	blocker.Size = Vector3.new(size[1], size[2], size[3])
+	blocker.CFrame = root.CFrame * CFrame.new(0, y, 0)
+	blocker.Transparency = 1
+	blocker.CanCollide = true
+	blocker.CanQuery = false
+	blocker.CanTouch = false
+	blocker.Massless = true
+	blocker.CastShadow = false
+	blocker.CollisionGroup = BodyGroups.BLOCKERS
+	blocker.TopSurface = Enum.SurfaceType.Smooth
+	blocker.BottomSurface = Enum.SurfaceType.Smooth
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = root
+	weld.Part1 = blocker
+	weld.Parent = blocker
+	blocker.Parent = model
+
 	-- S162m: where its shots leave (the mouth, the beak, the hand): shares of the drawn height from the feet, ahead of
 	-- the root (-Z) and to its right; the root's centre stands hipHeight + half its height over the feet
 	local release = MonsterRelease.of(def.id)
@@ -160,6 +186,14 @@ function RigBuilder.build(def: Monsters.MonsterDef, variant: string, variantScal
 		aura(root, Color3.fromHex(def.aura or "#E8C25A"), 24)
 	end
 	return model
+end
+
+-- A dead monster's body no longer blocks the way (its blocker stops colliding; the body stays for the death).
+function RigBuilder.dropBlocker(model: Model)
+	local blocker = model:FindFirstChild(BodyGroups.BLOCKER)
+	if blocker and blocker:IsA("BasePart") then
+		blocker.CanCollide = false
+	end
 end
 
 return RigBuilder

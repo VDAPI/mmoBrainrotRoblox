@@ -49,6 +49,11 @@
 
 ## Niedokończone (kod)
 
+- **Dynamika umiejętności (2026-11-10, ANIMACJE §16):** błysk przy rzuceniu, uderzenie (drobiny, obłok, pierścień,
+  światło), głos rzucenia, dźwięk dolotu pocisku i płynny wstrząs kamery dla każdej aktywnej umiejętności (`Vfx/Juice`,
+  `Data/SkillJuice`, `Logic/SkillJuice`, `Logic/CameraShake`, `tests/skilljuice.spec`); nieobejrzane i nieodsłuchane w
+  Studio (wielkość i jasność przy własnych składnikach umiejętności, kierunek iskier stali, siła wstrząsu
+  `Config.Vfx.shake.studs` 0,75, głosy w innej wysokości, koszt na telefonie przy kilku graczach naraz).
 - **Ozdobne ptaki na grzędach (2026-11-01):** Krucze Pole bez ozdobnych wron, ptaki martwych drzew (Łąki, Bór,
   Pustkowia) na końcu gałęzi swojego drzewa (`Blueprint.mark`, `tests/perches.spec`); nieobejrzane w Studio (martwe
   drzewa Boru i Pustkowi to modele zestawu `tree:blackDead`, więc wrona może nie trafić w ich gałąź; wrona na Starym

@@ -194,6 +194,7 @@ return {
 		["Data/SkillMotions"] = "wygląd",
 		["Data/SkillVfx"] = "wygląd",
 		["Data/LmVfxPieces"] = "wygląd", -- W30: the Hunter and Mage skill pieces (layer, phase, cost)
+		["Data/SkillJuice"] = "wygląd", -- owner 2026-11-10: the shared flare / punch / camera kick of every skill
 		["Data/AttackMotions"] = "wygląd",
 		["Data/Ambience"] = "wygląd",
 		["Data/MapLooks"] = "wygląd", -- W01
@@ -226,6 +227,7 @@ return {
 		["Data/Binding"] = "reguły", -- owner 2026-10-31: which items bind and when (no numbers but a rarity threshold)
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
 		["Data/ArenaPit"] = "geometria", -- S127: the arena server map (sand, stands, start points)
+		["Data/BodyGroups"] = "reguły", -- owner 2026-11-10: which bodies collide (players, monsters, their blockers)
 		["Data/Portals"] = "świat",
 		["Data/Npcs"] = "świat",
 		["Data/Keybinds"] = "świat",

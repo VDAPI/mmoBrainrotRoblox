@@ -669,6 +669,35 @@ local Config = {
 		rainSpeed = 180,
 		shotMaxTime = 0.6,
 		stormFall = 0.15,
+		-- owner 2026-11-10 (skill juice: Data/SkillJuice, Logic/SkillJuice, Vfx/Juice; looks only): another player's
+		-- skill plays othersShare of the particles, a phone touchShare; at most maxParticles per layer; the cast voice
+		-- plays only when the first blow or shot comes at least voiceGap s after the cast (else the blow's own sound
+		-- says it); a skill whose SkillVfx.shake is at least heavyShake is heavy; a skill shakes the camera of players
+		-- within shakeRange studs of its blow (others' skills x othersShake, our own at least ownFloor of the strength
+		-- wherever they land); the punch's light fades over lightTime s from lightBrightness (the flare's: half)
+		juice = {
+			othersShare = 0.6,
+			touchShare = 0.75,
+			maxParticles = 30,
+			voiceGap = 0.12,
+			heavyShake = 0.45,
+			shakeRange = 40,
+			othersShake = 0.5,
+			ownFloor = 0.6,
+			lightTime = 0.24,
+			lightBrightness = 4,
+		},
+		-- owner 2026-11-10: the camera kick of every shake (Logic/CameraShake, Vfx/CameraShake; bosses, heavy hits on
+		-- us, big skills): studs of a strength-1 kick, its time (base + per x strength s), the strongest strength
+		-- taken, the cap of all kicks together (studs per axis) and the share per graphics level (settings.quality)
+		shake = {
+			studs = 0.75,
+			base = 0.16,
+			per = 0.22,
+			maxStrength = 1.5,
+			maxStuds = 1.2,
+			level = { low = 0.6, medium = 0.85, high = 1 } :: { [string]: number },
+		},
 	},
 	-- Sound effects (S111, DESIGN-16 §3, Data/Sfx, SfxController): positional voices at once (a phone is touch without a
 	-- keyboard), 2D interface voices, the same key again within `repeatWindow` s is dropped, nothing positional
@@ -824,7 +853,8 @@ local Config = {
 		-- camera within which TownFxController animates flags, flickering lights and water shimmer; `npcRadius` = studs
 		-- from the camera within which the owner's NPC models breathe and gesture (NpcAnimController; farther ones keep
 		-- their relaxed stance), `npcRate` = their pose updates per second; W31: every NPC figure moves (the R15 ones in
-		-- their outfits too), `npcMax` = at most this many of the nearest at once.
+		-- their outfits too), `npcMax` = at most this many of the nearest at once; owner 2026-11-10 ("the NPCs we walk
+		-- up to look laggy"): the `npcSmooth` nearest within `npcSmoothRadius` studs move every frame.
 		levels = {
 			low = {
 				bloom = 0,
@@ -845,6 +875,8 @@ local Config = {
 				npcRadius = 60,
 				npcRate = 15,
 				npcMax = 6,
+				npcSmooth = 2,
+				npcSmoothRadius = 30,
 			},
 			medium = {
 				bloom = 0.6,
@@ -865,6 +897,8 @@ local Config = {
 				npcRadius = 100,
 				npcRate = 30,
 				npcMax = 12,
+				npcSmooth = 4,
+				npcSmoothRadius = 45,
 			},
 			high = {
 				bloom = 1,
@@ -885,6 +919,8 @@ local Config = {
 				npcRadius = 140,
 				npcRate = 60,
 				npcMax = 20,
+				npcSmooth = 8,
+				npcSmoothRadius = 60,
 			},
 		},
 		-- Seconds the post effects tween when the map or the level changes.

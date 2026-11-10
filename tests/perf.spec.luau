@@ -119,6 +119,11 @@ T.describe("Graphics levels (W29, Logic/GraphicsLevel)", function()
 		T.expect(low.chevrons < high.chevrons).toBe(true)
 		T.expect(low.plateEvery > high.plateEvery).toBe(true)
 		T.expect(low.fxRadius < high.fxRadius).toBe(true)
+		-- owner 2026-11-10: the NPCs next to the player move every frame on every level, a few on low
+		T.expect(low.npcSmooth >= 1 and low.npcSmooth <= medium.npcSmooth).toBe(true)
+		T.expect(medium.npcSmooth <= high.npcSmooth and high.npcSmooth <= high.npcMax).toBe(true)
+		T.expect(low.npcSmoothRadius >= 20 and low.npcSmoothRadius <= low.npcRadius).toBe(true)
+		T.expect(high.npcSmoothRadius <= high.npcRadius).toBe(true)
 		T.expect(GraphicsLevel.get("nonsense")).toBe(GraphicsLevel.get(Config.Graphics.default))
 	end)
 

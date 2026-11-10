@@ -62,6 +62,7 @@ local Telegraph = require(ReplicatedStorage.Shared.Logic.Telegraph)
 local BossCast = require(ReplicatedStorage.Shared.Logic.BossCast)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local BossCastBar = require(script.Parent.Parent.Vfx.BossCastBar)
+local CameraShake = require(script.Parent.Parent.Vfx.CameraShake)
 local FightView = require(script.Parent.Parent.UI.FightView)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -572,25 +573,11 @@ local function impact(model: Model, crit: boolean)
 	destroyLater(ball, 0.2)
 end
 
--- Short camera kick when we take a heavy (critical) hit or a big skill lands nearby (S28). Scaled by the setting
--- "Camera shake" (settings.shake 0..1, default 1); low effect quality shakes for half as long (S117).
+-- Short camera kick when we take a heavy (critical) hit or a big skill lands nearby (S28). Owner 2026-11-10: one
+-- smooth kick for every shake of the game (Vfx/CameraShake, Logic/CameraShake), scaled by the setting "Hit feel"
+-- (settings.shake 0..1, default 1, 0 = none) and the graphics level (low shakes least).
 local function shake(strength: number)
-	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-	local setting = State.Get({ "account", "settings", "shake" })
-	strength *= if type(setting) == "number" then math.clamp(setting, 0, 1) else 1
-	if not humanoid or strength <= 0.01 then
-		return
-	end
-	local frames = if lowQuality() then 2 else 4
-	task.spawn(function()
-		for i = 1, frames do
-			local fade = 1 - (i - 1) / frames
-			humanoid.CameraOffset =
-				Vector3.new((math.random() - 0.5) * strength * fade, (math.random() - 0.5) * strength * fade, 0)
-			task.wait(0.03)
-		end
-		humanoid.CameraOffset = Vector3.zero
-	end)
+	CameraShake.Kick(strength)
 end
 
 local function swing(attacker: Model, target: Model)

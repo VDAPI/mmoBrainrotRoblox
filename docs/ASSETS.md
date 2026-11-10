@@ -172,6 +172,30 @@ wysokości (nieodsłuchane, wybór po nazwie). Puste: `skill.phoenixHeart`.
 | `skill.iceBarrier`, `skill.stormArmor` | `rbxassetid://10066968815` | RBLX UI Select 02 (SFX) | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-10-20 | W30, osłony |
 | `skill.immolate` | `rbxassetid://15675046931` | Roblox_UI_Sweep | Roblox | 0,61 | Creator Store, twórca Roblox | 2026-10-20 | W30, nisko |
 
+Dynamika umiejętności (2026-11-10, `docs/ANIMACJE.md` §16): nowych ID nie ma. `Data/Sfx` sam tworzy `skill.<id>.voice`
+(głos rzucenia każdej aktywnej umiejętności; gra tylko bez własnego `skill.<id>.cast`) i `skill.impact.<styl>` (dolot
+pocisku) z plików listy S111 według stylu (`Data/SkillJuice.VOICES`, `IMPACT_VOICES`): kolejne umiejętności stylu biorą
+kolejny plik i kolejny stopień wysokości (do ±0,1 wokół bazowej), więc każda brzmi trochę inaczej. Nieodsłuchane, wybór
+po nazwie. Lepszy dźwięk: ID pod nową nazwą w `VOICE_IDS` (`Data/Sfx`), ta nazwa w `ids` stylu
+(`Data/SkillJuice.VOICES`) i wiersz tutaj (test `skilljuice.spec` sprawdza, że każde ID głosu jest w tym pliku).
+
+| Klucz | ID | Nazwa w Creator Store | Twórca | Długość (s) | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|---|
+| `skill.<id>.voice` Wojownika (`steel`, 24) | `rbxassetid://12222225`, `rbxassetid://12222200`, `rbxassetid://15675024286` | unsheath.wav, swoosh.wav, Roblox_UI_Whoosh_01 | Roblox | 0,65 / 0,20 / 0,85 | Creator Store, twórca Roblox | 2026-11-10 | wysokość 0,90–1,14 |
+| `skill.<id>.voice` Kapłana (`holy`, 18) | `rbxassetid://10066968815`, `rbxassetid://10128760939`, `rbxassetid://15675046931` | RBLX UI Select 02 / 01 (SFX), Roblox_UI_Sweep | Roblox | 0,49 / 0,58 / 0,61 | Creator Store, twórca Roblox | 2026-11-10 | wysokość 0,91–1,15 |
+| `skill.<id>.voice` Kapłana (`heal`, 7) | `rbxassetid://10128760939`, `rbxassetid://15675081158` | RBLX UI Select 01 (SFX), Roblox_UI_Cute_Goodbye | Roblox | 0,58 / 0,28 | Creator Store, twórca Roblox | 2026-11-10 | wysokość 0,93–1,12 |
+| `skill.<id>.voice` Łowcy (`hunt`, 18) | `rbxassetid://12222170`, `rbxassetid://15675028888`, `rbxassetid://15675037413` | switch.wav, Roblox_UI_Whoosh_02, Roblox_UI_Paper_Swipe | Roblox | 0,15 / 0,49 / 0,62 | Creator Store, twórca Roblox | 2026-11-10 | wysokość 0,88–1,12 |
+| `skill.<id>.voice` trucizny (`venom`) | `rbxassetid://12222170`, `rbxassetid://12222152` | switch.wav, splat.wav | Roblox | 0,15 / 0,22 | Creator Store, twórca Roblox | 2026-11-10 | Łowca, nisko |
+| `skill.<id>.voice` ognia (`fire`) | `rbxassetid://15675012262`, `rbxassetid://15675046931` | Roblox_UI_Whoosh_04, Roblox_UI_Sweep | Roblox | 0,35 / 0,61 | Creator Store, twórca Roblox | 2026-11-10 | Mag, wysokość 0,85–1,09 |
+| `skill.<id>.voice` lodu (`ice`) | `rbxassetid://15675012262`, `rbxassetid://12222140` | Roblox_UI_Whoosh_04, snap.wav | Roblox | 0,35 / 0,26 | Creator Store, twórca Roblox | 2026-11-10 | Mag i pułapka mrozu, 0,91–1,15 |
+| `skill.<id>.voice` błyskawicy (`lightning`) | `rbxassetid://12222140`, `rbxassetid://12221990` | snap.wav, electronicpingshort.wav | Roblox | 0,26 / 0,46 | Creator Store, twórca Roblox | 2026-11-10 | Mag i strzała burzy, 0,88–1,12 |
+| `skill.<id>.voice` arkanów (`arcane`) | `rbxassetid://15675046931`, `rbxassetid://15675012262` | Roblox_UI_Sweep, Roblox_UI_Whoosh_04 | Roblox | 0,61 / 0,35 | Creator Store, twórca Roblox | 2026-11-10 | Mag, wysokość 0,92–1,11 |
+| `skill.impact.fire` | `rbxassetid://12221944` | bass.wav | Roblox | 0,78 | Creator Store, twórca Roblox | 2026-11-10 | dolot pocisku, wyżej (1,08–1,12) |
+| `skill.impact.ice` | `rbxassetid://12222140` | snap.wav | Roblox | 0,26 | Creator Store, twórca Roblox | 2026-11-10 | dolot pocisku, wyżej (1,10–1,14) |
+| `skill.impact.lightning` | `rbxassetid://12221990` | electronicpingshort.wav | Roblox | 0,46 | Creator Store, twórca Roblox | 2026-11-10 | dolot pocisku (1,02–1,06) |
+| `skill.impact.arcane`, `skill.impact.holy` | `rbxassetid://10066968815` | RBLX UI Select 02 (SFX) | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-11-10 | arkana nisko (0,88–0,92), światło wysoko (1,10–1,14) |
+| `skill.impact.venom` | `rbxassetid://12222152` | splat.wav | Roblox | 0,22 | Creator Store, twórca Roblox | 2026-11-10 | dolot pocisku (0,93–0,97) |
+
 ## Dźwięk otoczenia (W27)
 
 Decyzja właściciela (2026-10-20): pętle otoczenia (`src/shared/Data/Ambience.luau`, tabela `IDS`) pochodzą z biblioteki

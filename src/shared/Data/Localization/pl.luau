@@ -1007,7 +1007,6 @@ return {
 	["reveal.ok"] = "OK",
 	["potion.cooldown"] = "Mikstura jeszcze się odnawia.",
 	["potion.none"] = "Nie masz mikstury tego rodzaju.",
-	["potion.notNeeded"] = "Nie potrzebujesz tego teraz.",
 	["potion.error.level"] = "Masz za niski poziom na tę miksturę.",
 	["potion.pick.title"] = "Wybierz miksturę",
 	["potion.pick.empty"] = "Brak mikstur tego rodzaju w plecaku.",
