@@ -12,6 +12,10 @@
 --   the same text within MERGE seconds is one entry with a count (×N); the same error at most once per ERROR_GAP;
 --   in combat the info and success toasts wait up to 10 s, the other servers' banners, the barks and the better-item
 --   card up to 30 s, then they drop (the loot stays in the loot log); errors and alerts never wait.
+-- Review 2026-11-10: an alert has its deadline (UI/Notify.alert: its seconds), so a countdown's "3" pushed back by "2"
+-- never comes back after "Walcz!"; a blow to dodge (tone "danger") goes first among the alerts; a prompt whose silence
+-- costs something (`penalty`: the arena's match offer, 5 min out of the queue) takes the prompt's place from the other
+-- prompts, which wait with their own deadlines and come back.
 
 local NoticeQueue = {}
 
@@ -43,6 +47,7 @@ export type Spec = {
 	windowWaits: boolean?, -- waits while a window is open (the achievement's banner, UI-ZASADY §6)
 	wait: number?, -- the longest wait for a place, else the class's (math.huge: never drops)
 	hold: (number | boolean)?, -- the combat wait: false none, a number its own, nil the class's (HOLD)
+	penalty: boolean?, -- a prompt whose silence costs something: first among the prompts
 	data: any?, -- the caller's own payload (the view to build)
 }
 
@@ -68,6 +73,7 @@ export type Entry = {
 	wait: number, -- the longest wait for a place since `added`
 	crossServer: boolean,
 	windowWaits: boolean,
+	penalty: boolean,
 	shown: boolean,
 	order: number,
 }
@@ -188,9 +194,18 @@ function NoticeQueue.bannerTone(key: string): string
 end
 
 local function effectiveRank(e: Entry): number
+	-- a blow to dodge before the countdown's or a phase's line (each place sorts on its own: these only order alerts)
+	if e.kind == "alert" and e.tone == "danger" then
+		return RANK.alert - 0.5
+	end
 	-- an error toast never waits behind a banner on a phone's one line: only an alert goes first
 	if e.kind == "toast" and e.tone == "error" then
 		return RANK.alert + 0.5
+	end
+	-- the arena's offer before the ready check and the invitations (its silence costs 5 min out of the queue; theirs
+	-- costs nothing, and they keep their deadlines while they wait)
+	if e.kind == "prompt" and e.penalty then
+		return RANK.alert + 0.75
 	end
 	return e.rank
 end
@@ -291,6 +306,10 @@ function NoticeQueue.push(q: Queue, now: number, spec: Spec): Entry?
 				if e.shown and e.seconds and not isError then
 					e.left = e.seconds
 				end
+				-- and its deadline counts from the last push (an alert said again)
+				if spec.deadline and e.ends then
+					e.ends = math.max(e.ends :: number, now + spec.deadline)
+				end
 				return e
 			end
 		end
@@ -326,6 +345,7 @@ function NoticeQueue.push(q: Queue, now: number, spec: Spec): Entry?
 		wait = spec.wait or NoticeQueue.WAIT[kind] or math.huge,
 		crossServer = spec.crossServer == true,
 		windowWaits = spec.windowWaits == true,
+		penalty = spec.penalty == true,
 		shown = false,
 		order = q.seq,
 	}

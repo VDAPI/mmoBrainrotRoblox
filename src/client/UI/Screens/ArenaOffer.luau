@@ -13,6 +13,9 @@
 -- 3v3 one, then "Waiting for the opponent…") with ✓ (greyed in a fight) and ✕ (declines) and the bar; where the match
 -- is played, the opponent or the teams, the unrated warning and the cost of declining wait under 'Więcej ▸'. The
 -- tournament's line with ✓ and ✕ (hides it, as before); its "Decline" waits under 'Więcej ▸'.
+-- Review 2026-11-10: the offer goes before the other prompts (`penalty`, Logic/NoticeQueue): a party invitation
+-- answered in silence held the place for its 30 s while the offer's 15 s ran out, and a silent offer costs 5 min out
+-- of the queue.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -195,6 +198,7 @@ function ArenaOffer.watch(scope: Scope, props: Props)
 			seconds = math.max(1, left),
 			total = Arena.QUEUE.acceptSeconds,
 			keep = true, -- accepted: it waits for the opponent; the offer's end closes it
+			penalty = true, -- no answer costs Arena.QUEUE.declinePenalty out of the queue (ArenaService)
 			line = function(use: Fusion.Use, _left: number): string
 				local now = offerOf(use)
 				if now and now.accepted == true then

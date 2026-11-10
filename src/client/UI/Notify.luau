@@ -56,6 +56,7 @@ export type Spec = {
 	windowWaits: boolean?,
 	wait: number?,
 	hold: (number | boolean)?,
+	penalty: boolean?, -- a prompt whose silence costs something (the arena's offer): first among the prompts
 	w: number?, -- its width in virtual pixels, else its kind's
 	h: number?, -- its height, else its kind's
 	inset: number?, -- a toast: the text's line is this much narrower than the toast (its drawn "i")
@@ -504,6 +505,7 @@ function Notify.push(spec: Spec): Handle?
 		windowWaits = spec.windowWaits,
 		wait = spec.wait,
 		hold = hold,
+		penalty = spec.penalty,
 	})
 	if not entry then
 		return nil
@@ -534,12 +536,17 @@ function Notify.close(id: number)
 end
 
 -- The alert line (at most 28 characters): a boss's blow until its cast ends (Vfx/BossCastBar), the fight's countdown,
--- phases and victory (DungeonController). `color`: the blow's colour (danger), else brass.
+-- phases and victory (DungeonController). `color`: the blow's colour (danger: first among the alerts), else brass.
+-- Review 2026-11-10: its seconds are its deadline too: an alert another one pushed off the line never comes back
+-- after its moment (the countdown's "3" after "Walcz!").
 function Notify.alert(text: string, seconds: number?, color: Color3?): Handle?
+	local time = seconds or NoticeQueue.SECONDS.alert
 	return Notify.push({
 		class = "alert",
 		text = text,
-		seconds = seconds,
+		tone = if color then "danger" else nil,
+		seconds = time,
+		deadline = time,
 		build = function(s: Scope, _live: Live): Instance
 			local tint = color or Theme.Brass.Bright
 			local parts: { Instance } = {

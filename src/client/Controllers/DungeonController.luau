@@ -13,7 +13,8 @@
 -- behind 'Szczegóły'; the ready check is a prompt (Components/Prompt, Screens/ReadyCheck).
 -- Review 2026-11-10: a phone's bar was min(720, W - 16) wide over the portrait, the Auto toggles, the minimap and PvP
 -- and 64 tall, which left M 24 px: now the HP fills the strip with the name and the phase on it and the time at its
--- end (the HP numbers are the target frame's), the channel to break covers it while it runs.
+-- end (the HP numbers are the target frame's), the channel to break covers it while it runs. A new fight message
+-- takes the place of the last one at once.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -62,6 +63,7 @@ local rewardOpen = false -- the reward's full card ('Szczegóły') is open
 local REWARD_SECONDS = 20
 local ANNOUNCE_SECONDS = 3
 local region = scope:Value(nil :: string?)
+local announcement: Notify.Handle? = nil -- the fight's last message on the alert line
 
 local PHONE_TIME = 64 -- a phone's "⌛ m:ss" at the strip's end
 
@@ -230,9 +232,13 @@ local function bossBar(): Instance
 	})
 end
 
--- The fight's messages (countdown, phases, victory, wipe; S103 the story's line) on UI/Notify's alert line.
+-- The fight's messages (countdown, phases, victory, wipe; S103 the story's line) on UI/Notify's alert line; a new one
+-- takes the last one's place at once (the countdown's "3" never comes back after "Walcz!").
 local function showAnnouncement(text: string)
-	Notify.alert(text, ANNOUNCE_SECONDS)
+	if announcement then
+		announcement.close()
+	end
+	announcement = Notify.alert(text, ANNOUNCE_SECONDS)
 end
 
 -- S103: the story's line in the last phase of a boss, for a player on the story quest of that boss (boss id -> quest

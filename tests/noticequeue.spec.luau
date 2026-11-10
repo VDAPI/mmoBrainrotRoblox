@@ -5,6 +5,10 @@
 -- with no window and with windows of 560 x 520, 900 x 620 and 1080 x 700 centred and dragged to the top (and a phone's
 -- full-screen window). With a window open a message stands over it where it fits, else under its title bar, never on
 -- it (owner 2026-10-31, question UI 8).
+-- Review 2026-11-10: the placement builds its contexts the way the client does (TopBand.context from the Toasts
+-- layer's real size, the scale, the top bar and the HUD's boss bar, arena panel and party), with a phone's dungeon boss
+-- bar, the PC party frames and the arena's return panel; an alert goes at its deadline and a blow to dodge goes first;
+-- the arena's offer takes the prompt's place; a modal dialog keeps the messages off.
 
 local HudStack = require("../src/shared/Logic/HudStack")
 local HudZones = require("../src/shared/Logic/HudZones")
@@ -264,6 +268,93 @@ T.describe("NoticeQueue: the policy (fake clock)", function()
 		NoticeQueue.update(q3, 0.4)
 		T.expect(a2.shown and not a1.shown).toBe(true)
 	end)
+
+	T.it("review 2026-11-10: an alert goes at its deadline; a blow to dodge goes first among the alerts", function()
+		-- the dungeon's countdown, each 3 s on the line and pushed a second apart: what one pushed off never comes back
+		local q = NoticeQueue.new("pc")
+		local pushed: { Entry } = {}
+		local after: { number } = {}
+		run(q, 0, 10, 0.25, nil, function(now, shown)
+			local i = math.floor(now + 1e-9)
+			if math.abs(now - i) < 1e-9 and i <= 3 then
+				local text = if i < 3 then tostring(3 - i) else "Walcz!"
+				local e = NoticeQueue.push(q, now, { class = "alert", text = text, seconds = 3, deadline = 3 })
+				table.insert(pushed, e :: Entry)
+				shown = NoticeQueue.update(q, now)
+			end
+			T.expect(#shown <= 1).toBe(true)
+			if #shown == 1 and now < 6 - 1e-9 then
+				T.expect(shown[1].id).toBe(pushed[#pushed].id) -- always the newest
+			end
+			if now >= 6 - 1e-9 then
+				for _, e in shown do
+					table.insert(after, e.id)
+				end
+			end
+		end)
+		T.expect(after).toEqual({})
+		-- a blow to dodge keeps the line against a later phase line, which shows only within its own time
+		local q2 = NoticeQueue.new("pc")
+		local blow = NoticeQueue.push(
+			q2,
+			0,
+			{ class = "alert", text = "Unik!", tone = "danger", seconds = 4, deadline = 4 }
+		) :: Entry
+		NoticeQueue.update(q2, 0)
+		local phase = NoticeQueue.push(q2, 1, { class = "alert", text = "Faza 2", seconds = 5, deadline = 5 }) :: Entry
+		NoticeQueue.update(q2, 1)
+		T.expect(blow.shown and not phase.shown).toBe(true)
+		NoticeQueue.update(q2, 4)
+		T.expect(phase.shown).toBe(true)
+		NoticeQueue.update(q2, 5.5)
+		T.expect(phase.shown).toBe(true)
+		NoticeQueue.update(q2, 6)
+		T.expect(NoticeQueue.find(q2, phase.id)).toBeNil()
+		-- the same alert said again keeps its deadline from the last push
+		local q3 = NoticeQueue.new("pc")
+		local again = NoticeQueue.push(q3, 0, { class = "alert", text = "Unik!", seconds = 3, deadline = 3 }) :: Entry
+		NoticeQueue.update(q3, 0)
+		T.expect(NoticeQueue.push(q3, 2, { class = "alert", text = "Unik!", seconds = 3, deadline = 3 })).toBe(again)
+		NoticeQueue.update(q3, 4)
+		T.expect(again.shown).toBe(true)
+		NoticeQueue.update(q3, 5)
+		T.expect(NoticeQueue.find(q3, again.id)).toBeNil()
+	end)
+
+	T.it(
+		"review 2026-11-10: the arena's offer takes the prompt's place, the invitation waits and comes back",
+		function()
+			for _, device in { "pc", "phone" } :: { NoticeQueue.Device } do
+				local q = NoticeQueue.new(device)
+				local party = NoticeQueue.push(q, 0, { class = "partyInvite", deadline = 30 }) :: Entry
+				NoticeQueue.update(q, 0)
+				T.expect(party.shown).toBe(true)
+				-- the offer 5 s later (15 s to answer, silence costs 5 min out of the queue): it shows at once
+				local offer = NoticeQueue.push(q, 5, { class = "arenaOffer", deadline = 15, penalty = true }) :: Entry
+				NoticeQueue.update(q, 5)
+				T.expect({ device, offer.shown, party.shown }).toEqual({ device, true, false })
+				-- it beats the ready check too; a plain arena prompt (the tournament's invitation) does not
+				local ready = NoticeQueue.push(q, 6, { class = "readyCheck", deadline = 20 }) :: Entry
+				NoticeQueue.update(q, 6)
+				T.expect(offer.shown and not ready.shown).toBe(true)
+				-- answered at 12: the ready check, then the invitation, each within its own deadline
+				NoticeQueue.remove(q, offer.id)
+				NoticeQueue.update(q, 12)
+				T.expect(ready.shown).toBe(true)
+				NoticeQueue.remove(q, ready.id)
+				NoticeQueue.update(q, 13)
+				T.expect(party.shown).toBe(true)
+				NoticeQueue.update(q, 30)
+				T.expect(NoticeQueue.find(q, party.id)).toBeNil()
+			end
+			local q = NoticeQueue.new("pc")
+			local party = NoticeQueue.push(q, 0, { class = "partyInvite", deadline = 30 }) :: Entry
+			NoticeQueue.update(q, 0)
+			local tourney = NoticeQueue.push(q, 1, { class = "arenaOffer", deadline = 90 }) :: Entry
+			NoticeQueue.update(q, 1)
+			T.expect(party.shown and not tourney.shown).toBe(true)
+		end
+	)
 
 	T.it("lets the achievement wait for an open window, and a prompt show until its deadline", function()
 		local q = NoticeQueue.new("pc")

@@ -38,6 +38,7 @@ export type Spec = {
 	answered: ((use: Fusion.Use) -> boolean)?, -- ✓ and ✕ go (accepted, waiting for the others)
 	more: ((s: Scope, phone: boolean) -> Instance)?, -- 'Więcej ▸': what opens under the line
 	moreHeight: number?,
+	penalty: boolean?, -- its silence costs something (the arena's offer): first among the prompts (Logic/NoticeQueue)
 	gone: (() -> ())?,
 }
 
@@ -230,6 +231,7 @@ function Prompt.push(spec: Spec): Notify.Handle?
 	return Notify.push({
 		class = spec.class,
 		deadline = spec.seconds,
+		penalty = spec.penalty,
 		w = TopBand.PROMPT.w,
 		height = function(phone: boolean): number
 			local base = if phone then Prompt.PHONE_HEIGHT else Prompt.HEIGHT
