@@ -61,6 +61,20 @@ HudCover.HeaderBottom = scope:Computed(function(use): number?
 	return bottom
 end)
 
+-- UI plan package B (owner 2026-11-10: "things covering each other"): the open windows' rectangles in screen pixels
+-- (as AbsolutePosition), so a message of the Toasts layer stands over a window where it fits and under its title bar
+-- otherwise, never on it (UI/Notify, Logic/TopBand.slots; owner 2026-10-31, question UI 8).
+HudCover.Rects = scope:Computed(function(use): { HudStack.Rect }
+	use(moved)
+	local out: { HudStack.Rect } = {}
+	for _, root in use(windows) do
+		if root.Parent ~= nil then
+			table.insert(out, rectOf(root))
+		end
+	end
+	return out
+end)
+
 -- Studio check 2026-10-31 (the quest tracker stayed beside the backpack window): a normal window is open. The quest
 -- tracker steps out of sight under any of them, wherever it stands; the other parts only when one covers them.
 HudCover.Open = scope:Computed(function(use): boolean

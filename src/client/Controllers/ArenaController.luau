@@ -1,6 +1,6 @@
 --!strict
 -- Ranked arena (S126, DESIGN-17 §6), client side: the arena window (UI/Screens/ArenaWindow: the HUD menu entry, the
--- key win_arena = U, the Arena Master's dialog), the match offer card (UI/Screens/ArenaOffer) and the queue / match
+-- key win_arena = U, the Arena Master's dialog), the match offer prompt (UI/Screens/ArenaOffer) and the queue / match
 -- panel on the HUD (UI/Screens/Hud/ArenaPanel). Everything reads the state branches `character.arena` and
 -- `arenaLive`; the only question to the server is ArenaStatus (on opening the window and every STATUS_EVERY s while
 -- it is open). The server decides everything (ArenaService): these calls only ask.
@@ -8,7 +8,7 @@
 -- Master's "arena" / "arenashop"), the shop purchase after a confirmation (ArenaShopBuy), AtMaster (the window opened at the
 -- Arena Master: the shop's buttons), the 3v3 team panel on the HUD (UI/Screens/Hud/ArenaTeams).
 -- S130: the Champion's Tournament: the window's "tourney" tab (TourneyInfo every TOURNEY_EVERY s while it is open),
--- signups (TourneySignup), the invitation on the offer card (TourneyRespond; closing it does not decline), leaving a
+-- signups (TourneySignup), the invitation prompt (TourneyRespond; closing it does not decline), leaving a
 -- bracket (TourneyLeave, with a confirmation while still in it); QuestController mounts the HUD panel
 -- (UI/Screens/Hud/TourneyPanel) with these. The Arena Master opens the tournament tab while the signups are open.
 -- State: the runtime branch `tourney`.
@@ -291,12 +291,11 @@ function ArenaController.Init(registry)
 			})
 		end,
 	})
-	ArenaOffer(scope, {
+	-- UI plan package B: the offer and the tournament invitation are prompts in UI/Notify's queue (no own card)
+	ArenaOffer.watch(scope, {
 		Respond = ArenaController.Respond,
-		-- S130: the tournament invitation on the same card
 		Tourney = { Respond = ArenaController.TourneyRespond, Hidden = ArenaController.InviteHidden },
-	}).Parent =
-		UIController.GetLayer("Screens")
+	})
 
 	ArenaPanel(scope, { Leave = ArenaController.Leave, ReturnNow = ArenaController.ReturnNow }).Parent =
 		UIController.GetLayer("Screens")

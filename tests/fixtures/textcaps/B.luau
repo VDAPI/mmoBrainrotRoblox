@@ -129,7 +129,6 @@ return {
 		["friends.join.failed"] = { surface = "toast", chars = 62, reason = "toast pl 61 > 60 chars" },
 		["friends.join.leavesParty"] = { surface = "toast", chars = 72, reason = "toast pl 68 > 60 chars" },
 		["friends.join.notHere"] = { surface = "toast", chars = 100, reason = "toast pl 90 > 60 chars" },
-		["friends.party.accept"] = { surface = "button", chars = 24, reason = "button pl 23 > 18 chars" },
 		["friends.party.closedSelf"] = { surface = "toast", chars = 71, reason = "toast pl 71 > 60 chars" },
 		["friends.party.here"] = { surface = "toast", chars = 69, reason = "toast pl 61 > 60 chars" },
 		["friends.party.invisible"] = { surface = "toast", chars = 90, reason = "toast pl 90 > 60 chars" },

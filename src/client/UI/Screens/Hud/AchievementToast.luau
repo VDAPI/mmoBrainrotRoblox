@@ -1,26 +1,21 @@
 --!strict
 -- S151 (docs/DESIGN.md §20b): the achievement toast (layer Toasts, iron with a brass edge): a header, the name in the
 -- display face, the category and the points, and the reward lines (title, cosmetic, Dragon Shards, gold). The catch-up
--- of old progress uses it with a summary line. It slides down from the top edge, stays Config.Achievements.toastSeconds
--- and goes on a click / touch. PC: 440 x 104 under the top edge; phone (Device.Touch): 340 x 96 at the top, far from the
--- skill buttons. AchievementController shows one at a time. S151b: "View" (for a single achievement) opens the
--- achievements window on it.
--- Studio check 2026-10-31 (it stood over the shop's title bar): AchievementController holds it while a window is open;
--- a window that opens while it shows moves it under the window's title bar (UI/HudCover.HeaderBottom,
--- Logic/TopBand.underHeader).
+-- of old progress uses it with a summary line. It stays Config.Achievements.toastSeconds and goes on a click / touch.
+-- PC: 440 x 104; phone (Device.Touch): 340 x 96. S151b: "View" (for a single achievement) opens the achievements
+-- window on it.
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): it is a banner of
+-- UI/Notify's queue (AchievementController pushes it): the banner's place in the band under the target, one banner at a
+-- time (so it waits for the zone, the area and the server's banners); it waits while a window is open, and a window
+-- that opens while it shows puts it under the window's title bar (docs/UI-ZASADY.md §6). This file keeps its look.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
-local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local HudCover = require(script.Parent.Parent.Parent.HudCover)
-local Scale = require(script.Parent.Parent.Parent.Scale)
+local Notify = require(script.Parent.Parent.Parent.Notify)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
-local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
-local TopBandState = require(script.Parent.Parent.Parent.TopBandState)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -29,219 +24,187 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 -- What the toast shows (texts already in the viewer's language).
 export type View = { header: string, name: string, meta: string, reward: string, id: string? }
 
-export type Api = {
-	frame: Instance,
-	show: (view: View, onDone: () -> ()) -> (),
-	hide: () -> (),
-}
+local AchievementToast = {}
 
-local TOP = 64
+-- Its size on PC and on a touch screen; a phone shows one row of HudLine height in its M zone (the name and "View").
+AchievementToast.SIZE = table.freeze({ pc = Vector2.new(440, 104), touch = Vector2.new(340, 96) })
+AchievementToast.PHONE_H = Theme.Size.HudLine
+
 local ICON = 56
 local VIEW_WIDTH = 96
 
-local AchievementToast = {}
-
--- `onView(id)`: the "View" button of a single achievement (S151b).
-function AchievementToast.new(scope: Scope, onView: ((id: string) -> ())?): Api
-	local view = scope:Value({ header = "", name = "", meta = "", reward = "" } :: View)
-	local token = 0
-	local finished: (() -> ())? = nil
-
-	local size = scope:Computed(function(use): Vector2
-		return if use(Device.Touch) then Vector2.new(340, 96) else Vector2.new(440, 104)
-	end)
-	local hidden = scope:Computed(function(use): UDim2
-		return UDim2.new(0.5, 0, 0, -use(size).Y - 8)
-	end)
-	local box: Frame
-	local inPlace = false -- slid in and not on its way out
-	-- its place: under the top edge, or under the title bar of an open window
-	local shown = scope:Computed(function(use): UDim2
-		local header = use(HudCover.HeaderBottom)
-		local parent = if box then box.Parent else nil
-		local origin = if parent and parent:IsA("GuiObject") then parent.AbsolutePosition.Y else 0
-		local top = TopBand.underBars(TOP, use(Scale.TopBar), if header then header - origin else nil, use(Scale.Value))
-		return UDim2.new(0.5, 0, 0, top)
-	end)
-	scope:Observer(shown):onChange(function()
-		if inPlace and box then
-			TweenService:Create(box, TweenInfo.new(0.2), { Position = Fusion.peek(shown) }):Play()
-		end
-	end)
-
-	local function hide()
-		inPlace = false
-		token += 1
-		local done = finished
-		finished = nil
-		if box then
-			TweenService:Create(box, TweenInfo.new(0.2), { Position = Fusion.peek(hidden) }):Play()
-			local mine = token
-			task.delay(0.25, function()
-				if token == mine then
-					box.Visible = false
-					TopBandState.set("achievement", false) -- UI plan phase 2: the toasts move back up
-				end
-				if done then
-					done()
-				end
-			end)
-		elseif done then
-			done()
-		end
-	end
-
-	-- `right`: room kept free at the right edge (S151b: the "View" button next to the header and the name)
-	local function label(
-		name: string,
-		y: number,
-		h: number,
-		font: Font,
-		textSize: number,
-		color: Color3,
-		key: string,
-		right: number?
-	)
-		return scope:New("TextLabel")({
-			Name = name,
-			Position = UDim2.fromOffset(ICON + 22, y),
-			Size = UDim2.new(1, -(ICON + 30 + (right or 0)), 0, h),
-			BackgroundTransparency = 1,
-			Text = scope:Computed(function(use): string
-				return (use(view) :: any)[key]
-			end),
-			FontFace = font,
-			TextSize = textSize,
-			TextColor3 = color,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextTruncate = Enum.TextTruncate.AtEnd,
-		})
-	end
-
-	box = scope:New("Frame")({
-		Name = "AchievementToast",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = Fusion.peek(hidden),
-		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(use(size).X, use(size).Y)
-		end),
-		BackgroundColor3 = Theme.Iron.Surface,
-		BackgroundTransparency = Theme.HudAlpha,
-		Visible = false,
-		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Brass.Bright, Thickness = Theme.Stroke.Normal }),
-			scope:New("Frame")({
-				Name = "Seal",
-				AnchorPoint = Vector2.new(0, 0.5),
-				Position = UDim2.new(0, 12, 0.5, 0),
-				Size = UDim2.fromOffset(ICON, ICON),
-				BackgroundColor3 = Theme.Iron.Sunken,
-				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-					scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Normal }),
-					scope:New("TextLabel")({
-						Name = "Glyph",
-						Size = UDim2.fromScale(1, 1),
-						BackgroundTransparency = 1,
-						Text = "✦",
-						FontFace = Theme.Fonts.Display,
-						TextSize = Theme.TextSize.Title,
-						TextColor3 = Theme.Brass.Bright,
-					}),
-				},
-			}),
-			label(
-				"Header",
-				8,
-				18,
-				Theme.Fonts.BodyBold,
-				Theme.TextSize.Caption,
-				Theme.Brass.Bright,
-				"header",
-				VIEW_WIDTH + 8
-			),
-			label(
-				"Name",
-				26,
-				28,
-				Theme.Fonts.Display,
-				Theme.TextSize.Large,
-				Theme.Iron.Heading,
-				"name",
-				VIEW_WIDTH + 8
-			),
-			label("Meta", 54, 20, Theme.Fonts.Body, Theme.TextSize.Small, Theme.Iron.TextMuted, "meta"),
-			label("Reward", 74, 22, Theme.Fonts.BodyMedium, Theme.TextSize.Small, Theme.Iron.Text, "reward"),
-			scope:New("TextButton")({
-				Name = "Dismiss",
-				Size = UDim2.fromScale(1, 1),
+-- The look of `view` in the place UI/Notify gives it; `onView(id)`: the "View" button of a single achievement (S151b).
+function AchievementToast.build(view: View, onView: ((id: string) -> ())?): (Scope, Notify.Live) -> Instance
+	return function(scope: Scope, live: Notify.Live): Instance
+		-- `right`: room kept free at the right edge (S151b: the "View" button next to the header and the name)
+		local function label(
+			name: string,
+			y: number,
+			h: number,
+			font: Font,
+			textSize: number,
+			color: Color3,
+			text: string,
+			right: number?
+		)
+			return scope:New("TextLabel")({
+				Name = name,
+				Position = UDim2.fromOffset(ICON + 22, y),
+				Size = UDim2.new(1, -(ICON + 30 + (right or 0)), 0, h),
 				BackgroundTransparency = 1,
-				Text = "",
-				ZIndex = 5,
-				[OnEvent("Activated")] = hide,
-			}),
-			-- S151b: open the achievements window on it (over the dismiss area)
-			scope:New("TextButton")({
-				Name = "View",
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -8, 0, 8),
-				-- a phone tap target is MinTouch high (y 8..52, the Meta line starts at 54)
-				Size = scope:Computed(function(use): UDim2
-					return UDim2.fromOffset(
-						VIEW_WIDTH,
-						if use(Device.Touch) then Theme.Size.MinTouch else Theme.Size.MinTouch - 12
-					)
-				end),
-				AutoButtonColor = false,
-				BackgroundColor3 = Theme.Iron.Raised,
-				Text = Text.T(scope, "ach.toast.view"),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Caption,
-				TextColor3 = Theme.Brass.Bright,
-				ZIndex = 6,
-				Visible = scope:Computed(function(use): boolean
-					return onView ~= nil and (use(view) :: View).id ~= nil
-				end),
-				[OnEvent("Activated")] = function()
-					local id = (Fusion.peek(view) :: View).id
-					hide()
-					if onView and id then
-						onView(id)
-					end
-				end,
+				Text = text,
+				FontFace = font,
+				TextSize = textSize,
+				TextColor3 = color,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+			})
+		end
+		local viewable = onView ~= nil and view.id ~= nil
+		local function openView()
+			live.close()
+			if onView and view.id then
+				onView(view.id)
+			end
+		end
+		if live.phone then
+			-- one row in the M zone: ✦, the name, "View"; a tap elsewhere closes it
+			return scope:New("Frame")({
+				Name = "AchievementToast",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = Theme.HudAlpha,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({
-						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Color = Theme.Brass.Line,
-						Thickness = Theme.Stroke.Thin,
+					scope:New("UIStroke")({ Color = Theme.Brass.Bright, Thickness = Theme.Stroke.Normal }),
+					scope:New("TextLabel")({
+						Name = "Name",
+						Position = UDim2.fromOffset(Theme.Padding.Small, 0),
+						Size = UDim2.new(1, -(Theme.Padding.Small * 2 + (if viewable then VIEW_WIDTH else 0)), 1, 0),
+						BackgroundTransparency = 1,
+						Text = `✦ {view.name}`,
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = Theme.Brass.Bright,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+					scope:New("TextButton")({
+						Name = "Dismiss",
+						Size = UDim2.fromScale(1, 1),
+						BackgroundTransparency = 1,
+						Text = "",
+						ZIndex = 5,
+						[OnEvent("Activated")] = live.close,
+					}),
+					scope:New("TextButton")({
+						Name = "View",
+						AnchorPoint = Vector2.new(1, 0.5),
+						Position = UDim2.new(1, -4, 0.5, 0),
+						Size = UDim2.fromOffset(VIEW_WIDTH, Theme.Size.MinTouch),
+						AutoButtonColor = false,
+						BackgroundColor3 = Theme.Iron.Raised,
+						Text = Text.T(scope, "ach.toast.view"),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Caption,
+						TextColor3 = Theme.Brass.Bright,
+						ZIndex = 6,
+						Visible = viewable,
+						[OnEvent("Activated")] = openView,
+						[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					}),
 				},
-			}),
-		},
-	}) :: Frame
-
-	local function show(nextView: View, onDone: () -> ())
-		token += 1
-		local mine = token
-		finished = onDone
-		view:set(nextView)
-		box.Position = Fusion.peek(hidden)
-		box.Visible = true
-		TopBandState.set("achievement", true) -- UI plan phase 2: the toasts start under it (Logic/TopBand)
-		inPlace = true
-		TweenService:Create(box, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Position = Fusion.peek(shown),
-		}):Play()
-		task.delay(Config.Achievements.toastSeconds, function()
-			if token == mine then
-				hide()
-			end
-		end)
+			})
+		end
+		return scope:New("Frame")({
+			Name = "AchievementToast",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundColor3 = Theme.Iron.Surface,
+			BackgroundTransparency = Theme.HudAlpha,
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+				scope:New("UIStroke")({ Color = Theme.Brass.Bright, Thickness = Theme.Stroke.Normal }),
+				scope:New("Frame")({
+					Name = "Seal",
+					AnchorPoint = Vector2.new(0, 0.5),
+					Position = UDim2.new(0, 12, 0.5, 0),
+					Size = UDim2.fromOffset(ICON, ICON),
+					BackgroundColor3 = Theme.Iron.Sunken,
+					[Children] = {
+						scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+						scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Normal }),
+						scope:New("TextLabel")({
+							Name = "Glyph",
+							Size = UDim2.fromScale(1, 1),
+							BackgroundTransparency = 1,
+							Text = "✦",
+							FontFace = Theme.Fonts.Display,
+							TextSize = Theme.TextSize.Title,
+							TextColor3 = Theme.Brass.Bright,
+						}),
+					},
+				}),
+				label(
+					"Header",
+					8,
+					18,
+					Theme.Fonts.BodyBold,
+					Theme.TextSize.Caption,
+					Theme.Brass.Bright,
+					view.header,
+					VIEW_WIDTH + 8
+				),
+				label(
+					"Name",
+					26,
+					28,
+					Theme.Fonts.Display,
+					Theme.TextSize.Large,
+					Theme.Iron.Heading,
+					view.name,
+					VIEW_WIDTH + 8
+				),
+				label("Meta", 54, 20, Theme.Fonts.Body, Theme.TextSize.Small, Theme.Iron.TextMuted, view.meta),
+				label("Reward", 74, 22, Theme.Fonts.BodyMedium, Theme.TextSize.Small, Theme.Iron.Text, view.reward),
+				scope:New("TextButton")({
+					Name = "Dismiss",
+					Size = UDim2.fromScale(1, 1),
+					BackgroundTransparency = 1,
+					Text = "",
+					ZIndex = 5,
+					[OnEvent("Activated")] = live.close,
+				}),
+				-- S151b: open the achievements window on it (over the dismiss area)
+				scope:New("TextButton")({
+					Name = "View",
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -8, 0, 8),
+					-- a touch screen's tap target is MinTouch high (y 8..52, the Meta line starts at 54)
+					Size = UDim2.fromOffset(
+						VIEW_WIDTH,
+						if Fusion.peek(Device.Touch) then Theme.Size.MinTouch else Theme.Size.MinTouch - 12
+					),
+					AutoButtonColor = false,
+					BackgroundColor3 = Theme.Iron.Raised,
+					Text = Text.T(scope, "ach.toast.view"),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Brass.Bright,
+					ZIndex = 6,
+					Visible = viewable,
+					[OnEvent("Activated")] = openView,
+					[Children] = {
+						scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						scope:New("UIStroke")({
+							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+							Color = Theme.Brass.Line,
+							Thickness = Theme.Stroke.Thin,
+						}),
+					},
+				}),
+			},
+		})
 	end
-
-	return { frame = box, show = show, hide = hide }
 end
 
 return AchievementToast

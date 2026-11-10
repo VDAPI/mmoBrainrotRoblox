@@ -4,6 +4,10 @@
 -- S134g: the skill effects of the item come after the lines.
 -- S30: colours come from the item's rarity; a Mythic item gets the red variant: a darker red backdrop, a
 -- rotating red-pink frame, a pulsing icon that grows bigger and a slower, heavier reveal.
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner question 1):
+-- picking the item up shows one of UI/Notify's cards first (LootController, LegendReveal.summary: the title and the
+-- item's name in the PC corner's card slot, a phone's M zone); the reveal opens from its 'Szczegóły' and closes with
+-- OK or a tap beside it (a phone: a full-screen sheet).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -24,7 +28,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
 
-local Children = Fusion.Children
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -33,6 +37,7 @@ export type Props = {
 	TitleKey: string?, -- S155b: another title (the first valuable drop of a new character)
 	OnEquip: (() -> ())?,
 	Close: () -> (),
+	Sheet: boolean?, -- a phone's full-screen sheet: the panel fills its width from the top, no veil of its own
 }
 
 local REVEAL_STEP = 0.7
@@ -146,6 +151,132 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 		)
 	end
 
+	local sheet = props.Sheet == true
+	local panel = scope:New("Frame")({
+		Name = "Panel",
+		AnchorPoint = if sheet then Vector2.zero else Vector2.new(0.5, 0.5),
+		Position = if sheet then UDim2.new() else UDim2.fromScale(0.5, 0.5),
+		Size = if sheet then UDim2.fromScale(1, 0) else UDim2.fromOffset(560, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Theme.Paper.Surface,
+		Active = true, -- a tap inside never reaches the veil
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }),
+			scope:New("UIStroke")({
+				Thickness = scope:Computed(function(use): number
+					return if mythic then 4 + use(pulse) * 2 else 3
+				end),
+				Color = Theme.Plain,
+				Transparency = scope:Computed(function(use): number
+					return 1 - use(animatedGlow) * 0.9
+				end),
+				[Children] = scope:New("UIGradient")({ Color = frameGradient, Rotation = spin }),
+			}),
+			scope:New("UIPadding")({
+				PaddingTop = UDim.new(0, Theme.Padding.Large),
+				PaddingBottom = UDim.new(0, Theme.Padding.Large),
+				PaddingLeft = UDim.new(0, Theme.Padding.Large),
+				PaddingRight = UDim.new(0, Theme.Padding.Large),
+			}),
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 1,
+				Size = UDim2.new(1, 0, 0, 34),
+				BackgroundTransparency = 1,
+				Text = Text.T(scope, props.TitleKey or (if mythic then "reveal.titleMythic" else "reveal.title")),
+				FontFace = Theme.Fonts.Display,
+				TextSize = if mythic then Theme.TextSize.Title + 6 else Theme.TextSize.Title,
+				TextColor3 = accentText,
+			}),
+			scope:New("Frame")({
+				Name = "Icon",
+				LayoutOrder = 2,
+				Size = scope:Computed(function(use): UDim2
+					local s = if mythic
+						then 96 + use(animatedGlow) * 40 + use(pulse) * 6
+						else 96 + use(animatedGlow) * 24
+					return UDim2.fromOffset(s, s)
+				end),
+				-- S35: the picture sits on the dark panel; the coloured tile only behind the glyph.
+				BackgroundColor3 = scope:Computed(function(use): Color3
+					if not def or IconState.picture(use, def, ItemRoll.elementOf(item)) ~= nil then
+						return Theme.Paper.Surface
+					end
+					return Theme.tint(def.icon.color)
+				end),
+				BackgroundTransparency = 0.3,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+					scope:New("UIStroke")({
+						Thickness = if mythic then 4 else 3,
+						Color = Theme.Plain,
+						[Children] = scope:New("UIGradient")({ Color = frameGradient, Rotation = spin }),
+					}),
+					-- The atlas cell is 128 px: never drawn larger than the frame (<= 142 px).
+					ItemIcon(scope, {
+						Def = def,
+						Element = ItemRoll.elementOf(item),
+						Fallback = "?",
+						Size = UDim2.fromScale(0.86, 0.86),
+					}),
+				},
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 3,
+				Size = UDim2.new(1, 0, 0, 32),
+				BackgroundTransparency = 1,
+				Text = scope:Computed(function(use): string
+					return ItemText.get(use, item.id, item.up)
+				end),
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Large + 2,
+				TextColor3 = accentText,
+			}),
+			rows :: any,
+			scope:New("Frame")({
+				Name = "Buttons",
+				LayoutOrder = 100,
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return use(revealed) >= #stats.bonuses
+				end),
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						Padding = UDim.new(0, Theme.Padding.Medium),
+					}),
+					if props.OnEquip
+						then Button(scope, {
+							Text = Text.T(scope, "reveal.equip"),
+							Variant = "primary",
+							Size = UDim2.fromOffset(200, Theme.Size.ButtonHeight),
+							OnClick = function()
+								local equip = props.OnEquip :: () -> ()
+								props.Close()
+								equip()
+							end,
+						}) :: any
+						else nil,
+					Button(scope, {
+						Text = Text.T(scope, "reveal.ok"),
+						Variant = "secondary",
+						Size = UDim2.fromOffset(160, Theme.Size.ButtonHeight),
+						OnClick = props.Close,
+					}),
+				},
+			}),
+		},
+	})
+	if sheet then
+		return panel
+	end
+	-- the veil closes it too (a tap beside the panel)
 	return scope:New("TextButton")({
 		Name = "LegendReveal",
 		Size = UDim2.fromScale(1, 1),
@@ -153,132 +284,18 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 		Text = "",
 		BackgroundColor3 = if mythic then Theme.Announce.MythicVeil else Theme.Shade,
 		BackgroundTransparency = if mythic then 0.25 else 0.35,
-		[Children] = {
-			scope:New("Frame")({
-				Name = "Panel",
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
-				Size = UDim2.fromOffset(560, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundColor3 = Theme.Paper.Surface,
-				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Large }),
-					scope:New("UIStroke")({
-						Thickness = scope:Computed(function(use): number
-							return if mythic then 4 + use(pulse) * 2 else 3
-						end),
-						Color = Theme.Plain,
-						Transparency = scope:Computed(function(use): number
-							return 1 - use(animatedGlow) * 0.9
-						end),
-						[Children] = scope:New("UIGradient")({ Color = frameGradient, Rotation = spin }),
-					}),
-					scope:New("UIPadding")({
-						PaddingTop = UDim.new(0, Theme.Padding.Large),
-						PaddingBottom = UDim.new(0, Theme.Padding.Large),
-						PaddingLeft = UDim.new(0, Theme.Padding.Large),
-						PaddingRight = UDim.new(0, Theme.Padding.Large),
-					}),
-					scope:New("UIListLayout")({
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						HorizontalAlignment = Enum.HorizontalAlignment.Center,
-						Padding = UDim.new(0, Theme.Padding.Small),
-					}),
-					scope:New("TextLabel")({
-						LayoutOrder = 1,
-						Size = UDim2.new(1, 0, 0, 34),
-						BackgroundTransparency = 1,
-						Text = Text.T(
-							scope,
-							props.TitleKey or (if mythic then "reveal.titleMythic" else "reveal.title")
-						),
-						FontFace = Theme.Fonts.Display,
-						TextSize = if mythic then Theme.TextSize.Title + 6 else Theme.TextSize.Title,
-						TextColor3 = accentText,
-					}),
-					scope:New("Frame")({
-						Name = "Icon",
-						LayoutOrder = 2,
-						Size = scope:Computed(function(use): UDim2
-							local s = if mythic
-								then 96 + use(animatedGlow) * 40 + use(pulse) * 6
-								else 96 + use(animatedGlow) * 24
-							return UDim2.fromOffset(s, s)
-						end),
-						-- S35: the picture sits on the dark panel; the coloured tile only behind the glyph.
-						BackgroundColor3 = scope:Computed(function(use): Color3
-							if not def or IconState.picture(use, def, ItemRoll.elementOf(item)) ~= nil then
-								return Theme.Paper.Surface
-							end
-							return Theme.tint(def.icon.color)
-						end),
-						BackgroundTransparency = 0.3,
-						[Children] = {
-							scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-							scope:New("UIStroke")({
-								Thickness = if mythic then 4 else 3,
-								Color = Theme.Plain,
-								[Children] = scope:New("UIGradient")({ Color = frameGradient, Rotation = spin }),
-							}),
-							-- The atlas cell is 128 px: never drawn larger than the frame (<= 142 px).
-							ItemIcon(scope, {
-								Def = def,
-								Element = ItemRoll.elementOf(item),
-								Fallback = "?",
-								Size = UDim2.fromScale(0.86, 0.86),
-							}),
-						},
-					}),
-					scope:New("TextLabel")({
-						LayoutOrder = 3,
-						Size = UDim2.new(1, 0, 0, 32),
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							return ItemText.get(use, item.id, item.up)
-						end),
-						FontFace = Theme.Fonts.Display,
-						TextSize = Theme.TextSize.Large + 2,
-						TextColor3 = accentText,
-					}),
-					rows :: any,
-					scope:New("Frame")({
-						Name = "Buttons",
-						LayoutOrder = 100,
-						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-						BackgroundTransparency = 1,
-						Visible = scope:Computed(function(use): boolean
-							return use(revealed) >= #stats.bonuses
-						end),
-						[Children] = {
-							scope:New("UIListLayout")({
-								FillDirection = Enum.FillDirection.Horizontal,
-								HorizontalAlignment = Enum.HorizontalAlignment.Center,
-								Padding = UDim.new(0, Theme.Padding.Medium),
-							}),
-							if props.OnEquip
-								then Button(scope, {
-									Text = Text.T(scope, "reveal.equip"),
-									Variant = "primary",
-									Size = UDim2.fromOffset(200, Theme.Size.ButtonHeight),
-									OnClick = function()
-										local equip = props.OnEquip :: () -> ()
-										props.Close()
-										equip()
-									end,
-								}) :: any
-								else nil,
-							Button(scope, {
-								Text = Text.T(scope, "reveal.ok"),
-								Variant = "secondary",
-								Size = UDim2.fromOffset(160, Theme.Size.ButtonHeight),
-								OnClick = props.Close,
-							}),
-						},
-					}),
-				},
-			}),
-		},
+		[OnEvent("Activated")] = props.Close,
+		[Children] = panel,
 	})
 end
 
-return LegendReveal
+-- The card's summary (UI/Notify.card): the title ("Legendary item!", a mythic's or the first drop's own), the item's
+-- name and the rarity's colour.
+local function summary(item: Types.ItemInstance, titleKey: string?): (string, string, Color3)
+	local rarity = Rarities.get(item.rarity)
+	local mythic = rarity.id >= Rarities.MYTHIC
+	local title = Text.now(titleKey or (if mythic then "reveal.titleMythic" else "reveal.title"))
+	return title, ItemText.name(item.id, item.up, item.el), rarity.color
+end
+
+return { view = LegendReveal, summary = summary }
