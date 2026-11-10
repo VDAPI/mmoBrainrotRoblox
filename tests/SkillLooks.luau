@@ -9,6 +9,7 @@
 --                and the set of pieces; a duplicate = two skills of one class equal in all three
 --   PIECE_COST   what one piece may hold at once (Vfx/Library): emitters, beams, lights, decals / ground images; a
 --                cast's sum stays within Config.Vfx.perCast
+--   beamLoadOf   owner 2026-11-10: what a cast's pieces hold against the beam limit (beams and ground images)
 --   juiceCost    owner 2026-11-10: what the skill juice of one cast (Vfx/Juice) holds at once at its peak, the same
 --                columns; it stays within Config.Vfx.juice.perCast
 
@@ -220,6 +221,25 @@ function SkillLooks.costOf(entry: SkillVfx.Entry): Cost
 		end
 	end
 	return total
+end
+
+-- Owner 2026-11-10 (skill juice, review: the reserve check left the pieces' ground images off the beam limit): the
+-- pieces whose decals column holds Decal holders (Vfx/Library.groundDecal, on the decals limit). Every other piece's
+-- decals column holds ground images (rings, magic circles, runes, a whirl's spiral: "surface" holders), which Vfx/Pool
+-- counts against the beam limit.
+SkillLooks.DECAL_PIECES = { cracks = true, groundDecal = true } :: { [string]: boolean }
+
+-- What one cast's impact holds against the device's beam limit: its beams and its ground images (the columns of
+-- costOf, without the decals of DECAL_PIECES).
+function SkillLooks.beamLoadOf(entry: SkillVfx.Entry): number
+	local load = 0
+	for _, name in entry.impact do
+		local cost = SkillLooks.PIECE_COST[name]
+		if cost then
+			load += cost.beams + (if SkillLooks.DECAL_PIECES[name] then 0 else cost.decals)
+		end
+	end
+	return load
 end
 
 -- Owner 2026-11-10 (skill juice; in group fights on a phone the juice took the pools the skills' own pieces need): what

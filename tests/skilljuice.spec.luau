@@ -457,26 +457,42 @@ describe("The juice gives way (owner 2026-11-10)", function()
 		expect(SkillJuice.room(30, 24, 0.4)).toBe(false)
 		expect(SkillJuice.room(0, 0, 0.5)).toBe(false)
 		expect(SkillJuice.room(5, 6, 0)).toBe(true)
-		-- on every device the reserve holds one cast's own pieces (Config.Vfx.perCast) and the rest one cast's juice
-		-- (Config.Vfx.juice.perCast; its ground ring is a ground image, on the beam limit)
+		-- on every device the reserve holds one cast's own pieces and the rest one cast's juice (Config.Vfx.juice.perCast;
+		-- its ground ring is a ground image, on the beam limit). Emitters and lights: Config.Vfx.perCast. The beam limit
+		-- also carries the pieces' ground images (Vfx/Pool: a "surface" holder counts as a beam), which perCast keeps in
+		-- its decals column with the real decals, so 3 beams and 3 ground images within perCast would not fit a phone's
+		-- 5: there every skill's own beams and ground images must fit (SkillLooks.beamLoadOf)
 		local reserve = Config.Vfx.juice.reserve
 		local pieces, juice = Config.Vfx.perCast, Config.Vfx.juice.perCast
+		local looks = 0
 		for _, device in { "desktop", "touch" } do
 			local rows = {
-				{ "emitters", Config.Vfx.maxEmitters[device], pieces.emitters, juice.emitters },
-				{ "beams", Config.Vfx.maxBeams[device], pieces.beams, juice.beams + juice.decals },
-				{ "lights", Config.Vfx.maxLights[device], pieces.lights, juice.lights },
+				{ "emitters", Config.Vfx.maxEmitters[device], juice.emitters },
+				{ "beams", Config.Vfx.maxBeams[device], juice.beams + juice.decals },
+				{ "lights", Config.Vfx.maxLights[device], juice.lights },
 			}
 			for _, row in rows do
-				local name, limit, piecesNeed, juiceNeed = row[1], row[2], row[3], row[4]
+				local name, limit, juiceNeed = row[1], row[2], row[3]
 				local kept = SkillJuice.reserve(limit, reserve[name])
-				expect({ device, name, kept >= piecesNeed, limit - kept >= juiceNeed }).toEqual({
-					device,
-					name,
-					true,
-					true,
-				})
+				expect({ device, name, limit - kept >= juiceNeed }).toEqual({ device, name, true })
+				if name == "beams" then
+					for id, entry in SkillVfx do
+						looks += 1
+						expect({ device, id, SkillLooks.beamLoadOf(entry) <= kept }).toEqual({ device, id, true })
+					end
+				else
+					local piecesNeed = if name == "emitters" then pieces.emitters else pieces.lights
+					expect({ device, name, kept >= piecesNeed }).toEqual({ device, name, true })
+				end
 			end
+		end
+		-- every look was checked on both devices; a ring is a ground image, cracks and a ground decal real decals (the
+		-- decals limit)
+		expect(looks > 100).toBe(true)
+		expect(SkillLooks.beamLoadOf({ impact = { "shockwave", "cracks", "groundDecal", "beam" } } :: any)).toBe(2)
+		for name in SkillLooks.DECAL_PIECES do
+			local cost = SkillLooks.PIECE_COST[name]
+			expect({ name, cost ~= nil and cost.decals > 0 }).toEqual({ name, true })
 		end
 	end)
 
