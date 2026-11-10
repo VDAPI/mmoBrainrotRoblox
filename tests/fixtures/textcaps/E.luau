@@ -247,6 +247,5 @@ return {
 		["tip.1"] = { surface = "loadingTip", chars = 95, reason = "loadingTip pl 95 > 80 chars" },
 		["tip.2"] = { surface = "loadingTip", chars = 90, reason = "loadingTip pl 90 > 80 chars" },
 		["wardrobe.hint"] = { surface = "-", chars = 67, reason = "em dash" },
-		["worldboss.card.every"] = { surface = "banner", chars = 90, reason = "banner pl 90 > 56 chars" },
 	},
 }

@@ -7,7 +7,9 @@
 return {
 	rules = {
 		{ pattern = "^loot%.announce", surface = "banner" },
-		{ pattern = "^worldboss%.", surface = "banner" },
+		-- the zone banner's note in a world boss's circle (Logic/WorldBoss.zoneNote, Hud/ZoneBanner); the boss's own
+		-- announcements are literal keys at AnnounceService's sites
+		{ pattern = "^worldboss%.safeZone$", surface = "banner" },
 		{ pattern = "%.announceGlobal$", surface = "banner" },
 		{ pattern = "^combat%.levelLock$", surface = "toast" },
 		{ pattern = "^combat%.supportLock$", surface = "toast" },
@@ -207,10 +209,8 @@ return {
 		["wanderer.announce.left"] = { surface = "banner", chars = 84, reason = "banner pl 73 > 56 chars" },
 		["wanderer.announce.warn"] = { surface = "banner", chars = 85, reason = "banner pl 81 > 56 chars" },
 		["worldboss.left"] = { surface = "banner", chars = 64, reason = "banner pl 60 > 56 chars" },
-		["worldboss.mailed"] = { surface = "banner", chars = 64, reason = "banner pl 60 > 56 chars" },
-		["worldboss.pending"] = { surface = "banner", chars = 88, reason = "banner pl 87 > 56 chars" },
-		["worldboss.reward"] = { surface = "banner", chars = 94, reason = "banner pl 93 > 56 chars" },
-		["worldboss.rewardCard.share"] = { surface = "banner", chars = 91, reason = "banner pl 88 > 56 chars" },
+		["worldboss.mailed"] = { surface = "toast", chars = 64, reason = "toast en 64 > 60 chars" },
+		["worldboss.pending"] = { surface = "toast", chars = 88, reason = "toast pl 87 > 60 chars" },
 		["worldboss.rewardCard.share.short"] = { surface = "card", chars = 50, reason = "card pl 42 > 40 chars" },
 		["worldboss.slain"] = { surface = "banner", chars = 74, reason = "banner pl 73 > 56 chars" },
 		["worldboss.spawn"] = { surface = "banner", chars = 77, reason = "banner pl 77 > 56 chars" },

@@ -313,6 +313,20 @@ describe("textcaps T4: coverage of the scan", function()
 		fail(problems, "known sites")
 	end)
 
+	it("keeps keys off the surfaces the code never shows them on", function()
+		local cases = {
+			{ "worldboss.card.every", "banner" }, -- the (i) of the world boss's map card, not an announcement
+			{ "worldboss.rewardCard.share", "banner" }, -- the (i) of BossReward's share line
+		}
+		local problems = {}
+		for _, case in cases do
+			if has(TextScan.surfaces(case[1]), case[2]) then
+				table.insert(problems, `{case[1]}: mapped to {case[2]}`)
+			end
+		end
+		fail(problems, "surfaces a rule or a site gave by mistake")
+	end)
+
 	it("gives each key the first package of the plan that reads it, else its rule's, else E", function()
 		expect(TextScan.owner("hud.auto")).toBe("A") -- Hud/AutoGroup
 		expect(TextScan.owner("contract.ready")).toBe("B") -- a toast: B's band shows it
@@ -320,7 +334,7 @@ describe("textcaps T4: coverage of the scan", function()
 		expect(TextScan.owner("rework2.body")).toBe("C") -- ReworkController
 		expect(TextScan.owner("alchemy.group.blessing")).toBe("D") -- AlchemyWindow
 		expect(TextScan.owner("quest.side_granary.p1")).toBe("E") -- E's rule
-		expect(TextScan.owner("worldboss.pending")).toBe("B") -- B's rule
+		expect(TextScan.owner("worldboss.safeZone")).toBe("B") -- B's rule: the zone banner's note
 		expect(TextScan.owner("no.such.key.anywhere")).toBe("E")
 		expect(TextScan.ownerOfFile("src/client/UI/Screens/Hud/QuestTracker.luau")).toBe("A")
 		expect(TextScan.ownerOfFile("src/client/UI/Screens/Hud/AreaBanner.luau")).toBe("B")
