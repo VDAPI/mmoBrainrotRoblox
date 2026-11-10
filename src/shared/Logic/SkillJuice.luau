@@ -8,7 +8,8 @@
 -- phone the juice took the shared effect pools, so skill pieces, hit sparks and boss breaths were dropped): which
 -- layers a flare and a punch play (flareLayers / punchLayers: the extras only for our own skills near the camera, a
 -- later wave of the same cast only its core and ring) and whether a layer may take one more of a pool (room: never the
--- reserve of the device's limit, Config.Vfx.juice.reserve).
+-- reserve of the device's limit, Config.Vfx.juice.reserve); which strike of a storm is its first (stormCast /
+-- firstStrike, per caster and skill).
 
 local Config = require("../Config")
 local GraphicsLevel = require("./GraphicsLevel")
@@ -232,6 +233,37 @@ end
 -- the skills' own pieces, hit sparks, boss breath layers and telegraph lights (the juice is what gives way).
 function SkillJuice.room(used: number, limit: number, share: number): boolean
 	return used < limit - SkillJuice.reserve(limit, share)
+end
+
+-- The key of one caster's skill in the ledgers below.
+local function castKey(casterId: string, skillId: string): string
+	return casterId .. "|" .. skillId
+end
+
+-- Owner 2026-11-10 (skill juice; review: a skill cast before a storm's first strike landed made that strike a later
+-- one, so it lost its full punch and the lead sound and shake): the storms (SkillVfx.strike: Thunderstorm's and
+-- Tempest's bolts, Meteor Storm's rocks) still waiting for their first strike, kept per caster and skill in the
+-- caller's ledger. A cast of another skill in between neither hides nor resets it (the GCD is 0.5 s, Meteor Storm's
+-- first rock lands about 1.35 s after its cast); the first strike takes the entry out.
+export type Storms = { [string]: boolean }
+
+-- `casterId` cast the storm `skillId`: its next strike is its first.
+function SkillJuice.stormCast(storms: Storms, casterId: string, skillId: string)
+	storms[castKey(casterId, skillId)] = true
+end
+
+-- Whether a strike of the storm `skillId` by `casterId` is the first of its cast (and marks the cast struck). A strike
+-- of a cast whose start this client did not see, or without a caster, counts as a later one.
+function SkillJuice.firstStrike(storms: Storms, casterId: string?, skillId: string): boolean
+	if not casterId then
+		return false
+	end
+	local key = castKey(casterId, skillId)
+	if storms[key] then
+		storms[key] = nil
+		return true
+	end
+	return false
 end
 
 -- How hard a blow of `strength` landing `distance` studs away shakes our camera: fading to nothing at shakeRange;

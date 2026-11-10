@@ -397,6 +397,30 @@ describe("The juice gives way (owner 2026-11-10)", function()
 		end
 	end)
 
+	-- review: Meteor Storm's first rock lands about 1.35 s after its cast, the GCD is 0.5 s
+	it("a storm's first strike is kept per caster and skill: a skill cast meanwhile does not take it", function()
+		local storms: SkillJuice.Storms = {}
+		SkillJuice.stormCast(storms, "mage", "meteorStorm")
+		-- the Mage casts Fireball while the first rock still falls; another Mage's storm is not ours
+		expect(SkillJuice.firstStrike(storms, "mage", "fireball")).toBe(false)
+		expect(SkillJuice.firstStrike(storms, "other", "meteorStorm")).toBe(false)
+		expect(SkillJuice.firstStrike(storms, "mage", "meteorStorm")).toBe(true)
+		-- the later rocks, a strike without a caster, nothing kept once struck
+		expect(SkillJuice.firstStrike(storms, "mage", "meteorStorm")).toBe(false)
+		expect(SkillJuice.firstStrike(storms, nil, "meteorStorm")).toBe(false)
+		expect(next(storms)).toBeNil()
+		-- two storms of one caster wait apart; a new cast opens again
+		SkillJuice.stormCast(storms, "mage", "meteorStorm")
+		SkillJuice.stormCast(storms, "mage", "tempest")
+		expect(SkillJuice.firstStrike(storms, "mage", "tempest")).toBe(true)
+		expect(SkillJuice.firstStrike(storms, "mage", "meteorStorm")).toBe(true)
+		-- the client keeps the storms apart from the caster's last cast
+		local vfx = fs.readFile("src/client/Controllers/VfxController.luau")
+		expect(string.find(vfx, "SkillJuice.stormCast(stormsAwaiting, id, skill.id)", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "SkillJuice.firstStrike(stormsAwaiting,", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "cast.struck", 1, true)).toBeNil()
+	end)
+
 	it("one cast's juice at its peak stays within Config.Vfx.juice.perCast (every style, weight and view)", function()
 		local budget = Config.Vfx.juice.perCast
 		local worst = { emitters = 0, beams = 0, lights = 0, decals = 0 }

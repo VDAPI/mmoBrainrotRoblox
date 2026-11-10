@@ -153,10 +153,14 @@ local FALLS: { [string]: boolean } = { meteor = true }
 type Snare = { at: Vector3, stop: () -> (), ends: number }
 local snares: { [string]: { Snare } } = {}
 -- S115: the waves (`w`) of each caster's last cast, for impacts that do not carry them (Volley's arrows, Cataclysm's
--- circle); `move` = cast while walking (`mv`), `struck` = the storm's first strike came (firstStrike: its full punch;
--- with SkillVfx.leadStrike its sound and shake)
-type CastInfo = { skill: string, w: number, move: boolean, struck: boolean? }
+-- circle); `move` = cast while walking (`mv`)
+type CastInfo = { skill: string, w: number, move: boolean }
 local castWaves: { [string]: CastInfo } = {}
+-- Owner 2026-11-10 (skill juice, review: a skill cast before Meteor Storm's first rock landed replaced the last cast
+-- above, so the rock played as a later one): the storms of each caster still waiting for their first strike, per
+-- caster and skill (Logic/SkillJuice.stormCast / firstStrike: its full punch; with SkillVfx.leadStrike its sound and
+-- shake)
+local stormsAwaiting: SkillJuice.Storms = {}
 -- Owner 2026-11-10 (skill juice; an aim cut short still burst its release flare at the hands): the cast token of each
 -- caster id. A fizzle (an aim cut short by moving, a stun or an interrupt; a windup cut by death or a stun) and the
 -- caster's death bump it (cutShort), so what a cast scheduled for its release (the juice flare, the gathering's pop)
@@ -598,6 +602,9 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 	local id = casterKey(data)
 	if id then
 		castWaves[id] = { skill = skill.id, w = tonumber(data.w) or skill.hits or 1, move = tonumber(data.mv) ~= nil }
+		if entry and entry.strike then
+			SkillJuice.stormCast(stormsAwaiting, id, skill.id) -- owner 2026-11-10: its first strike is still to come
+		end
 	end
 	if not Pool.take() then
 		return
@@ -1440,15 +1447,10 @@ end
 -- Whether a storm's strike (one event per wave: Thunderstorm's and Tempest's bolts, Meteor Storm's rocks) is the first
 -- of its cast; marks the cast struck. A strike of a cast whose start we did not see counts as a later one. Owner
 -- 2026-11-10 (skill juice): the first strike punches fully, the later ones, like later waves, only flash their core
--- and ring; SkillVfx.leadStrike gives the first one the main sound and shake.
+-- and ring; SkillVfx.leadStrike gives the first one the main sound and shake. Kept per caster and skill
+-- (stormsAwaiting), so another skill cast while the storm gathers does not take it.
 local function firstStrike(data: { [string]: any }, skill: SkillData.SkillDef): boolean
-	local id = casterKey(data)
-	local cast = if id then castWaves[id] else nil
-	if not cast or cast.skill ~= skill.id or cast.struck then
-		return false
-	end
-	cast.struck = true
-	return true
+	return SkillJuice.firstStrike(stormsAwaiting, casterKey(data), skill.id)
 end
 
 local function onExtra(data: { [string]: any }, skill: SkillData.SkillDef, caster: Model?)
