@@ -11,6 +11,7 @@ local HudStack = require("../src/shared/Logic/HudStack")
 local HudZones = require("../src/shared/Logic/HudZones")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
+local TextScan = require("./TextScan")
 
 type Rect = HudZones.Rect
 type State = HudZones.State
@@ -432,12 +433,7 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		T.expect(thumb.bottom).toBeNear(401.2, 0.05)
 	end)
 
-	T.it("names elements of Screens/Hud and places pc returns", function()
-		local sources = {}
-		for _, file in fs.readDir("src/client/UI/Screens/Hud") do
-			table.insert(sources, fs.readFile(`src/client/UI/Screens/Hud/{file}`))
-		end
-		local all = table.concat(sources, "\n")
+	T.it("names elements of package A's files in Screens/Hud and places pc returns", function()
 		local zones = HudZones.pc(1920, 1022, {
 			target = "player",
 			arena = "match",
@@ -450,12 +446,17 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		for _, p in HudZones.list(zones) do
 			named[p.name] = true
 		end
-		for name, place in HudZones.ELEMENTS do
-			if not string.find(all, `Name = "{name}"`, 1, true) then
-				error(`no element {name} in Screens/Hud`)
+		for name, element in HudZones.ELEMENTS do
+			local path = `src/client/UI/Screens/Hud/{element.file}.luau`
+			-- package A moves them (B's bark reads barkSlot in its own file): the plan's path table
+			if TextScan.ownerOfFile(path) ~= "A" then
+				error(`{name}: {path} is not package A's`)
 			end
-			if not named[place] then
-				error(`{name}: pc has no place {place}`)
+			if not string.find(fs.readFile(path), `Name = "{name}"`, 1, true) then
+				error(`no element {name} in {path}`)
+			end
+			if not named[element.place] then
+				error(`{name}: pc has no place {element.place}`)
 			end
 		end
 	end)

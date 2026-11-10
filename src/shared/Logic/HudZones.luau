@@ -152,24 +152,30 @@ HudZones.MESSAGE = table.freeze({ width = 980, bottom = 0.4, alert = 44 })
 -- model of Roblox's dynamic thumbstick [inferred]. Kept here as data; package A makes HudAnchors read it.
 HudZones.THUMB = table.freeze({ x = 0.04, y = 0.58, w = 0.26, h = 0.34 })
 
--- The elements of src/client/UI/Screens/Hud that are to stand at a HudZones place (their Name, then the place),
--- once package A moves them; the party rows (UI/Screens/PartyFrames) and the boss bar (DungeonController) live
--- outside Screens/Hud. The menu's root holds the minimap, the guide bar and the waiting row in its list.
-HudZones.ELEMENTS = table.freeze({
-	Portrait = "portrait",
-	AutoButton = "auto",
-	AutoPanel = "autoPopover",
-	EffectsRow = "effects",
-	BarkToast = "bark",
-	TargetFrame = "target",
-	PlayerMenu = "targetActions",
-	ArenaMatch = "arenaPanel",
-	ArenaReturn = "arenaPanel",
-	Menu = "menuBar",
-	CastBar = "castLine",
-	ActionBar = "actionBar",
-	Exp = "expBar",
-} :: { [string]: string })
+-- The elements of src/client/UI/Screens/Hud that package A moves onto a HudZones place, by their Name: the place and
+-- the file under Screens/Hud that builds them (a Name can repeat in another file: the bark's NPC portrait). Only A's
+-- files: the NPC bark (Hud/BarkToast) is package B's, which reads barkSlot there; the party rows
+-- (UI/Screens/PartyFrames) and the boss bar (DungeonController) live outside Screens/Hud. The menu's root holds the
+-- minimap, the guide bar and the waiting row in its list; the target frame stands at addFrame under the boss bar.
+export type Element = { place: string, file: string }
+local elements: { [string]: Element } = {
+	Portrait = { place = "portrait", file = "init" },
+	AutoButton = { place = "auto", file = "AutoGroup" },
+	AutoPanel = { place = "autoPopover", file = "AutoGroup" },
+	EffectsRow = { place = "effects", file = "init" },
+	TargetFrame = { place = "target", file = "TargetFrame" },
+	PlayerMenu = { place = "targetActions", file = "TargetFrame" },
+	ArenaMatch = { place = "arenaPanel", file = "ArenaPanel" },
+	ArenaReturn = { place = "arenaPanel", file = "ArenaPanel" },
+	Menu = { place = "menuBar", file = "init" },
+	CastBar = { place = "castLine", file = "CastBar" },
+	ActionBar = { place = "actionBar", file = "init" },
+	Exp = { place = "expBar", file = "init" },
+}
+for _, element in elements do
+	table.freeze(element)
+end
+HudZones.ELEMENTS = table.freeze(elements)
 
 local function box(left: number, top: number, w: number, h: number): Rect
 	return { left = left, top = top, right = left + w, bottom = top + h }
