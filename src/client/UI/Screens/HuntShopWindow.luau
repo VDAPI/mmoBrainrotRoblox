@@ -128,11 +128,12 @@ local function HuntShopWindow(scope: Scope, props: Props): Fusion.Child
 		end
 		if entry.kind == "chest" then
 			local marks = Contracts.stateOf({ contract = Fusion.peek(contract) }).marks
+			-- owner 2026-11-10 (too much text): the question and the price stay on top, what the chest holds goes
+			-- under the modal's "Więcej ▸" (a modal body is at most 90 characters, its details 240)
 			props.ShowModal({
 				Title = Text.now("huntshop.title"),
-				Message = Text.now("huntshop.confirm", { name = name, price = price, left = marks - price })
-					.. "\n"
-					.. Text.now(`item.{entry.key}.desc`),
+				Message = Text.now("huntshop.confirm", { name = name, price = price, left = marks - price }),
+				Details = Text.now(`item.{entry.key}.desc`),
 				ConfirmText = Text.now("huntshop.buy"),
 				CancelText = Text.now("quest.back"),
 				OnConfirm = function(): (boolean, string?)
