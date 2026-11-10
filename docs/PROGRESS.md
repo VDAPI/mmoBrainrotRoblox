@@ -58,6 +58,15 @@
   D 237, E 203) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na strefach
   postaci i menu, przycisk celu dotyku w minimapie, pas wiadomości pod panelem areny i paskiem bossa niższy niż linia
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
+- **Plan UI 2026-11-10, pakiet C (okna i komponenty):** ramka okna z `Logic/WindowFrame` (na dotyku pod paskiem
+  Robloxa, na telefonie nagłówek 44 i ✕ 52×44, tytuł w jednej linii, przeciąganie pod paskiem), opcjonalne `Footer`,
+  `Scroll` i `HeaderAction`, pary usługi i plecaka z `WindowFrame.pair`, przełącznik „Plecak” / „◂ <usługa>” na
+  dotyku, modal z tytułem i ✕ w nagłówku, „Więcej ▸” i stopką, dymki z `Logic/Popover`, zakładki 44 przewijane w bok,
+  przyciski w jednej linii; nieobejrzane w Studio (nagłówek i ✕ telefonu pod paskiem Robloxa, przełącznik usługi i
+  plecaka, odsuwanie usługi na PC, modal z długimi szczegółami na niskim ekranie, strzałki zakładek dziennika, tooltip
+  przedmiotu na dotyku, przewijane (i), „…” na przyciskach). Okna przechodzą na stopkę, przewijanie, `ListRow` `Tall` i
+  zakładki bez własnej wysokości z pakietami D i E; propozycja planu dla plecaka-towarzysza czeka na właściciela
+  (DECYZJE).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa

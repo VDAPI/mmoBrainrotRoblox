@@ -14866,3 +14866,51 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `UI/Components/Section`, `UI/Theme`, `Controllers/WindowManager`, `tests/TextScan.luau`,
   `tests/fixtures/textcaps/A|B|C|D|E.luau`, `tests/textcaps.spec.luau`, `tests/hudzones.spec.luau`,
   `tests/uiframe.spec.luau`, `tests/sectionfold.spec.luau`, `tests/uifit.spec.luau`, `tools/balance_reasons.luau`.
+
+### Plan UI 2026-11-10, pakiet C: okna, modale, dymki i komponenty (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Pakiet C przenosi ramkę okna, modal, dymki i wspólne komponenty na API pakietu F (`Logic/WindowFrame`,
+  `Logic/Popover`); okna pakietów D i E przechodzą na nowe części same, a teksty z listy C
+  (`tests/fixtures/textcaps/C.luau`) skraca osobny przebieg.
+- Okno (`Components/Window`): na dotyku od dołu paska Robloxa (`Scale.TopBar`) do dołu warstwy; na telefonie nagłówek
+  44, odstęp 14, tytuł Body 20 i ✕ 52×44, gdzie indziej 52, 22, Large 24 i 44×44; tytuł w jednej linii z „…”;
+  przeciąganie i zmiana ekranu przez `WindowFrame.clampDrag` (nagłówek co najmniej 8 pod paskiem, 80 px na ekranie).
+  Nowe, opcjonalne `Footer` (przyciski przypięte pod treścią, 8 pod nią, z linią), `Scroll` (jedno przewijanie w
+  pionie), `HeaderAction` (przycisk w nagłówku przed ✕) i `Place` (przesunięcie jako wartość, którą zmienia
+  `WindowManager`); `build` w `WindowManager.Register` może zwrócić `Window.Parts`. `WindowFrame` dostał `CLOSE_WIDE`,
+  `FOOTER_GAP`, `body`, `modal`, `tabFit`, `tabRow`, `TAB_LEVELS` i `TAB_GAP`, a `Popover` funkcję `away`.
+- `WindowManager`: pary z `WindowFrame.pair` bez własnego `GAP`; otwarty plecak przesuwa się do nowej usługi, a
+  usługa odsuwa się w bok, gdy gracz otwiera plecak obok niej (wartość `place`, bez zamykania okna). Na dotyku
+  przełącznik w nagłówku: „Plecak” na usłudze (także po ✕ na plecaku), „◂ <usługa>” na plecaku
+  (`WindowRules.partner`, klucze `ui.window.backpack` i `ui.window.back`). `Notice` zostaje zaślepką (pytanie UI 8).
+- Modal: tytuł i ✕ w żelaznym nagłówku (✕ tylko w oknie z „Anuluj”, działa jak Esc), treść, „Więcej ▸”, pole i
+  przełącznik w przewijanym środku, przyciski w stopce; szerokość `ModalWidth` (na wąskim ekranie mniej), wysokość
+  najwyżej warstwa minus pasek minus 16 (`WindowFrame.modal`); błąd przewija środek do siebie. Zamiana
+  błogosławieństwa: na wierzchu „Obecne błogosławieństwo przepadnie.”, zasada pod „Więcej ▸”
+  (`blessing.replace.details`); w oknie przebudowy (`rework2`) akapit maga przeszedł do szczegółów.
+- Dymki: `Tooltip` mierzy się i staje według `Popover.place` (18 w prawo i 22 w dół od kursora, na dotyku nad
+  elementem) w `Tooltip.SafeArea` (warstwa pod paskiem Robloxa); `ItemTooltip` na PC 20 i 20 od kursora z odbiciem
+  przy krawędzi i zmierzoną wysokością, na dotyku `Popover.away` (połowa ekranu dalej od slotu, idzie za slotem przy
+  przewijaniu, omija ramki z `ItemTooltip.avoid`); `InfoTip` w bezpiecznym obszarze, do 8 linii, dalej przewijany.
+- Komponenty: `Button` w jednej linii (gdy napis się nie mieści, mały odstęp od brzegu, na końcu „…”), `Tabs`
+  (`TabHeight` 44, rząd w poziomym przewijaniu, wygląd rzędu z `WindowFrame.tabFit`, strzałki ◂ / ▸, wybrana zakładka
+  przewijana do widoku), `SideTabs` (wiersze `TabHeight`), `ListRow` (`Tall`: 64, token `Theme.Size.RowHeightTall`),
+  `TextInput` (pole wypełnia ramkę niższą niż pole z linią błędu), `Section` (`Theme.Size.SectionHeader`, tytuł w
+  jednej linii), `Details` (nagłówek „Więcej ▸ / Mniej ▾”, własne napisy tylko w starszych oknach).
+- Testy: `uiframe.spec` (nagłówek i ✕ telefonu, stopka, modal na każdym ekranie, tooltip przedmiotu na dotyku na
+  drugiej połowie ekranu i poza paskiem przycisków, (i) do 8 linii, tokeny zakładek, komponenty czytają `WindowFrame` i
+  `Popover`; `RATCHET` pusty), `windowrules.spec` (przełącznik telefonu), `uifit.spec` (F5 rząd zakładek, F6 jedna
+  linia).
+- Odstępstwa od planu:
+  - plecak-towarzysz zostaje przy każdej usłudze poza depozytem: DESIGN §23 („Jedno główne okno naraz”, S18, S29)
+    wygrywa z planem, który chciał go tylko przy sklepie i handlu; propozycja w DECYZJE czeka na właściciela;
+  - `ListRow` `Height` i własne napisy `Details` (`MoreText`, `LessText`) zostają dla okien, które ich jeszcze używają
+    (pakiety D i E), a `Tabs` z rozmiarem od wywołującego bierze jego wysokość, dopóki okno nie przejdzie na
+    `TabHeight`;
+  - przycisk nie zmniejsza tekstu, więc za długi napis kończy się „…”; za długie napisy stoją na listach pakietów w
+    `tests/fixtures/textcaps`;
+  - `HudCover.HeaderBottom` (pakiet B) liczy dalej nagłówek 52, choć na telefonie ma on 44 (komunikaty stoją przez to
+    8 px niżej).
+- **Pliki:** `UI/Components/Window|Modal|Tooltip|ItemTooltip|InfoTip|Tabs|SideTabs|Button|ListRow|TextInput|Section|Details`,
+  `UI/Theme`, `Controllers/WindowManager|ItemController|ReworkController`, `Logic/WindowFrame|Popover|WindowRules`,
+  lokalizacja (pl, en), `tests/uiframe.spec.luau`, `tests/windowrules.spec.luau`, `tests/uifit.spec.luau`.
