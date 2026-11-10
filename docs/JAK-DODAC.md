@@ -322,3 +322,12 @@
   oddania), mówi to w tytule albo w `Summary`, a `WorldLayout` liczy tę wysokość. Nowy typ celu questu
   (`quest.obj.<typ>`, linia tropiciela na każdym urządzeniu) i tekst questu nie mają nazw klawiszy ani słów sterowania
   („(F)”, „kliknij”, „dwuklik”; `tests/dialogue.spec`).
+- **Okno pakietu E ze stopką** (2026-11-10, plan UI, pakiet E po pakiecie C): ekran zwraca `Window.Parts` z główną akcją
+  w `Footer` (przycisk `Theme.Size.ButtonHeight` wysoki, bez własnej pozycji; linia stanu obok niego dostaje
+  `UIFlexItem` z `Fill`) i `Scroll = true`, gdy treść może być dłuższa niż okno na telefonie (treść to wtedy lista z
+  `UIListLayout` albo części z `AutomaticSize`, bez własnego `ScrollingFrame`). Prostokąty w `Logic/WorldLayout` liczy
+  się z treści nad stopką (`WindowFrame.body(ramka, true)`), wiersze to `WorldLayout.ROW` (48) albo `ROW_TALL` (64),
+  paski zakładek `WindowFrame.tabStrip`. Okno dopisz do testu „footer windows” w `tests/worldlayout.spec.luau` (id z
+  `WindowManager.Register`, plik ekranu, czy przewija): stopka stoi na ekranie pod paskiem Robloxa i w oknie, a nad nią
+  mieszczą się co najmniej 2 wiersze na telefonie i 5 na PC. Toast, który odsyła do okna, nazywa okno albo menu ☰, bez
+  klawisza PC (`tests/dialogue.spec`).

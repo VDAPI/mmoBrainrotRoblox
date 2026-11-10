@@ -15059,3 +15059,20 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Controllers/WorldController`, `Controllers/RankingsController`, `docs/UI-ZASADY.md` (§4),
   `tests/worldlayout.spec.luau`, `tests/dialogue.spec.luau`, `tests/shorttext3.spec.luau`,
   `tests/fixtures/textcaps/E.luau`, `tests/wikidump.spec.luau`, `tools/WikiData/Quests.luau`, dane wiki.
+- Adopcja części okna pakietu C (2026-11-10, gałąź `ui-e-adopt`): okna dialogowe pakietu zwracają `Window.Parts`. Loch:
+  linie i drużyna przewijają się w oknie (na telefonie lista członków była ucięta), „Wejdź” w stopce. Krwawy Księżyc:
+  kolumna przewija się, w stopce miejsce gracza (okno nie ma akcji), zasady i nagrody to sekcja `bloodMoonRules`
+  (zwinięta). Nagroda dnia: nagłówek, odebrana nagroda i karty przewijają się, w stopce linia postaci, która odbiera, i
+  „Odbierz” (po odbiorze jutrzejszy dzień z odliczaniem). Co nowego: nagłówek i wpisy przewijają się, otwarty tylko
+  najnowszy, „Do gry” w stopce. „Wkrótce” tylko przewija (dziś nikt go nie otwiera). Tak samo „Dokąd?” (lista regionów
+  bierze resztę okna, „Ruszaj” w stopce), rozmowa z questem, nowy list (opłata i „Wyślij”) i zakładanie gildii. Karta
+  postaci: „Usuń” (100) i „Graj” w jednym rzędzie stopki pod kreską. Dziennik ma 680 szerokości: przy 640 polskie
+  zakładki potrzebowały 593 px przy 592 miejsca i rząd przewijał się ze strzałkami. Rankingi na telefonie: filtr klas w
+  pasku tytułu (`HeaderAction`). Wiersze 48 i 64 (wysokości `ListRow`) w osiągnięciach, bestiariuszu, grupie, dzienniku
+  łupu, poczcie i ustawieniach (znajomi zostają przy 56); paski zakładek mają wysokość z pakietu C
+  (`Theme.Size.TabHeight`, `WindowFrame.tabStrip`) w osiągnięciach, arenie, grupie (było 40), przepustce, Krwawym
+  Księżycu, tablicy zleceń, gildii i u znajomych. „Jak zdobywać EXP gildii” to sekcja `guildSources`. Toasty
+  `skills.toast.many`, `bp.toast.many`, `unlock.arena`, `unlock.mounts` i `guild.sys.goalDone` bez klawisza PC (pl i en,
+  `dialogue.spec`). `worldlayout.spec` ma 18 testów (nowe: okna ze stopką, zakładki dziennika). Poza pakietem zostają do
+  przeglądu końcowego: surowe id trybu w `Hud/ArenaPanel` (A) i w toaście `arena.joined` (B) oraz „(L)” w
+  `quest.side.error.limit` (B). Bramka zielona: 10270 testów, `wikidump --check` aktualny.
