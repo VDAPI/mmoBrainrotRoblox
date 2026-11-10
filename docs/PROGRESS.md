@@ -82,7 +82,7 @@
   ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy, rankingi na PC z otwartym podium,
   wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem, przyciski kolejki
   areny, modal portalu z dwoma zagrożeniami). Okna dialogowe pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego,
-  Wkrótce) czekają na stopkę i przewijanie okna z pakietu C.
+  Wkrótce) jeszcze nie przeszły na stopkę i przewijanie okna z pakietu C.
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa

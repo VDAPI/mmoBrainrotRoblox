@@ -15045,6 +15045,13 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   okien, podium otwarte jak domyślnie, linia nagród, telefon w rankingach i przepustce, etykiety przełączników, zwijanie
   regionów po wyborze, tytuł zwiniętego bloku łowów, modal portalu), `dialogue.spec` dwa nowe (słowa sterowania i
   klawisze w celach, tekstach i stronach questów). Bramka zielona: 10256 testów, `wikidump --check` aktualny.
+- Scalenie z `main` po pakiecie C (2026-11-10): konflikty tylko na końcach `DECYZJE`, `SESJE`, `PROGRESS` i
+  `JAK-DODAC`, gdzie oba pakiety dopisały swój wpis (najpierw C, który wszedł pierwszy, potem E); lokalizacja scaliła się
+  sama, bo pakiety zmieniały różne klucze. Pakiet C wstawił w `Components/Section` token `Theme.Size.SectionHeader` (32)
+  w miejsce liczby nagłówka sekcji na PC, więc `worldlayout.spec` sprawdza teraz, że `Section` czyta ten token, a token
+  równa się `WorldLayout.SECTION.header`. Okno na telefonie ma teraz naprawdę nagłówek 44 i odstęp 14
+  (`WindowFrame.rect` z `compact`), z którymi `worldlayout.spec` liczył od początku. Bramka zielona: 10267 testów,
+  `wikidump --check` aktualny.
 - **Pliki:** `Logic/WorldLayout`, `Logic/Dialogue`, `Data/Folds/World|Menu`, `Data/Localization/pl|en`, okna
   `RankingsWindow`, `SeasonPass`, `AchievementsWindow/*`, `QuestBoard`, `QuestDialog`, `QuestJournal`, `NpcDialog`,
   `PartyWindow`, `FriendsWindow`, `PartyFinder`, `CharacterSelect/*`, `EmoteWheel`, `FishingGame`, `GameMenu`,
