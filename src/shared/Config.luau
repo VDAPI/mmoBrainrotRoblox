@@ -854,7 +854,9 @@ local Config = {
 		-- from the camera within which the owner's NPC models breathe and gesture (NpcAnimController; farther ones keep
 		-- their relaxed stance), `npcRate` = their pose updates per second; W31: every NPC figure moves (the R15 ones in
 		-- their outfits too), `npcMax` = at most this many of the nearest at once; owner 2026-11-10 ("the NPCs we walk
-		-- up to look laggy"): the `npcSmooth` nearest within `npcSmoothRadius` studs move every frame.
+		-- up to look laggy"): the `npcSmooth` nearest within `npcSmoothRadius` studs move every frame; owner 2026-11-10
+		-- ("modele poruszają się nie poruszając głową"): the `heads` nearest monsters without bones within `headRadius`
+		-- studs turn their heads (client/Anim/MeshHead: a bone added in code; the others move as one piece).
 		levels = {
 			low = {
 				bloom = 0,
@@ -877,6 +879,8 @@ local Config = {
 				npcMax = 6,
 				npcSmooth = 2,
 				npcSmoothRadius = 30,
+				heads = 0,
+				headRadius = 0,
 			},
 			medium = {
 				bloom = 0.6,
@@ -899,6 +903,8 @@ local Config = {
 				npcMax = 12,
 				npcSmooth = 4,
 				npcSmoothRadius = 45,
+				heads = 4,
+				headRadius = 60,
 			},
 			high = {
 				bloom = 1,
@@ -921,6 +927,8 @@ local Config = {
 				npcMax = 20,
 				npcSmooth = 8,
 				npcSmoothRadius = 60,
+				heads = 8,
+				headRadius = 90,
 			},
 		},
 		-- Seconds the post effects tween when the map or the level changes.

@@ -49,6 +49,11 @@
 
 ## Niedokończone (kod)
 
+- **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
+  (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
+  `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa
+  się przy `ApplyMesh`, gdzie wypada szyja na prawdziwych modelach, uszy i oczy z głową, nogi i skrzydła na miejscu,
+  śmierci pająka i skorpiona, koszt kilku głów naraz). Lista: `docs/SESJE.md` „Głowy potworów bez kości”.
 - **Dynamika umiejętności (2026-11-10, ANIMACJE §16):** błysk przy rzuceniu, uderzenie (drobiny, obłok, pierścień,
   światło), głos rzucenia, dźwięk dolotu pocisku i płynny wstrząs kamery dla każdej aktywnej umiejętności (`Vfx/Juice`,
   `Data/SkillJuice`, `Logic/SkillJuice`, `Logic/CameraShake`, `tests/skilljuice.spec`); nieobejrzane i nieodsłuchane w

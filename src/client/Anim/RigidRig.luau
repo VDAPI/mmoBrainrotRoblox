@@ -8,6 +8,8 @@
 -- root's `Muzzle` with the body while it acts. The rig has the shape of client/Anim/QuadRig's (`motion`, `mod`,
 -- `kind`), so AnimationController and AnimLab drive it like the others. A model whose legs fold in its death
 -- (Data/RigidRigs `fold`: spider, scorpion) bends its mesh then through client/Anim/MeshFold (only while it dies).
+-- A model whose head turns (Data/RigidRigs `gaze`, owner 2026-11-10) hangs it on a bone added in code through
+-- client/Anim/MeshHead (the nearest few looks): it looks at its target, glances about, sniffs, nods and flinches.
 -- A crawler whose model has leg bones (Data/OctoRigs: the rigged caveSpider, picked by the bones present, so the old
 -- rigid model of the same id keeps the paths above) walks them through Logic/OctoMotion over the same recipe: the
 -- root's move each frame plants the feet in the world, a ray finds the ground under a foot as it steps (the nearest
@@ -20,6 +22,7 @@ local Workspace = game:GetService("Workspace")
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local MeshFold = require(script.Parent.MeshFold)
+local MeshHead = require(script.Parent.MeshHead)
 local MonsterMove = require(ReplicatedStorage.Shared.Logic.MonsterMove)
 local OctoMotion = require(ReplicatedStorage.Shared.Logic.OctoMotion)
 local OctoPose = require(ReplicatedStorage.Shared.Logic.OctoPose)
@@ -113,6 +116,9 @@ export type Rig = {
 	lab: boolean,
 	legs: MeshFold.Handle?, -- the legs curl in on its death (client/Anim/MeshFold)
 	octo: Legs?, -- the legs walk on their bones (Data/OctoRigs)
+	head: MeshHead.Handle?, -- the head turns on a bone added in code (client/Anim/MeshHead)
+	input: RigidMotion.Input?, -- the input of the frame being posed
+	dying: boolean, -- a held action plays (a death), or the legs' fold still has the mesh: the head stays off
 }
 
 -- Every live rig by its motion (weak: a look destroyed takes its rig along).
@@ -187,7 +193,7 @@ local function chainsOf(model: string, look: Model, primary: BasePart): (RigidMo
 		return nil, byName
 	end
 	for _, item in look:GetDescendants() do
-		if item:IsA("Bone") and not byName[item.Name] then
+		if item:IsA("Bone") and not byName[item.Name] and not MeshHead.owns(item) then
 			byName[item.Name] = item
 			item.Transform = CFrame.identity
 		end
@@ -270,7 +276,7 @@ local function legsOf(
 	bones: { [string]: Bone }
 ): Legs?
 	for _, item in look:GetDescendants() do
-		if item:IsA("Bone") and not bones[item.Name] then
+		if item:IsA("Bone") and not bones[item.Name] and not MeshHead.owns(item) then
 			bones[item.Name] = item
 		end
 	end
@@ -394,8 +400,15 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 	local mesh: MeshPart? = nil
 	local size = Vector3.one
 	local axes = { 1, 2, 3 }
-	local skinned = next(bones) ~= nil or look:FindFirstChildWhichIsA("Bone", true) ~= nil
+	-- (the bones client/Anim/MeshHead added to a look rigged before are not the model's)
+	local skinned = next(bones) ~= nil
+	for _, item in look:GetDescendants() do
+		if not skinned and item:IsA("Bone") and not MeshHead.owns(item) then
+			skinned = true
+		end
+	end
 	local legs: MeshFold.Handle? = nil
+	local head: MeshHead.Handle? = nil
 	if #parts == 1 and parts[1]:IsA("MeshPart") and not skinned then
 		local part = parts[1] :: MeshPart
 		mesh = part
@@ -405,6 +418,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 		axes = { axisOf(rel.XVector), axisOf(rel.YVector), axisOf(rel.ZVector) }
 		body.squash = true
 		legs = MeshFold.attach(model, part, rel, size, seed)
+		head = MeshHead.attach(model, look, part, rel, seed, monster == nil)
 	end
 	local opaque = {}
 	for i, part in parts do
@@ -460,6 +474,9 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 		lab = monster == nil,
 		legs = legs,
 		octo = octo,
+		head = head,
+		input = nil,
+		dying = false,
 	}
 	rig.mod = RigidRig.Mod
 	if monster and monster:GetAttribute("Dead") ~= true then
@@ -556,14 +573,22 @@ end
 
 -- What the game's input lacks, read from the monster (AnimLab: only the squash and the legs).
 local function augment(rig: Rig, input: RigidMotion.Input)
+	rig.input = input
+	local held = input.action
+	local heldAction = if held then rig.motion.style.actions[held.name] else nil
+	local dying = held ~= nil and heldAction ~= nil and heldAction.hold == true and input.now >= held.start
+	rig.dying = dying
 	local legs = rig.legs
 	if legs then
-		-- a death (a held action) folds the legs where the mesh can be bent; the body learns the folded boxes
-		local run = input.action
-		local action = if run then rig.motion.style.actions[run.name] else nil
-		local dying = run ~= nil and action ~= nil and action.hold == true and input.now >= run.start
+		-- a death (a held action) folds the legs where the mesh can be bent; the body learns the folded boxes (the
+		-- head's mesh off first: the fold bends the look's own)
+		if dying and rig.head then
+			MeshHead.stop(rig.head)
+		end
 		input.fold = MeshFold.share(legs, dying)
 		rig.motion.body.folds = MeshFold.folds(legs)
+		-- (and it stays off while the fold's mesh is on: AnimLab's death played again, the legs unfolding)
+		rig.dying = dying or legs.state == "loading" or legs.state == "live"
 	elseif rig.octo then
 		-- the leg bones draw the whole fold
 		input.fold = 1
@@ -797,6 +822,9 @@ function RigidRig.apply(rig: Rig, posed: RigidMotion.Posed)
 			s[1], s[2], s[3] = sx, sy, sz
 			local a, size = rig.axes, rig.size
 			mesh.Size = Vector3.new(size.X * s[a[1]], size.Y * s[a[2]], size.Z * s[a[3]])
+			if rig.head then
+				MeshHead.resize(rig.head)
+			end
 		end
 	end
 	local alpha = posed.alpha
@@ -822,6 +850,13 @@ function RigidRig.apply(rig: Rig, posed: RigidMotion.Posed)
 	if rig.octo then
 		writeLegs(rig.octo)
 	end
+	local head = rig.head
+	if head then
+		-- the look's PrimaryPart as posed: under the server's root (its motor or weld), else AnimLab's stage
+		local part0 = if motor then motor.Part0 elseif weld then weld.Part0 else nil
+		local restAt = if part0 then part0.CFrame * rig.c0 else rig.base
+		MeshHead.drive(head, rig.motion, rig.input, posed, restAt * t, restAt, rig.monster, rig.dying)
+	end
 	local muzzle = rig.muzzle
 	if muzzle then
 		if posed.acting then
@@ -845,6 +880,9 @@ function RigidRig.clear(rig: Rig)
 	if rig.mesh then
 		rig.mesh.Size = rig.size
 		rig.scaled[1], rig.scaled[2], rig.scaled[3] = 1, 1, 1
+	end
+	if rig.head then
+		MeshHead.stop(rig.head)
 	end
 	for i, part in rig.parts do
 		part.Transparency = rig.opaque[i]

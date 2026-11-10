@@ -14584,3 +14584,58 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Data/SkillJuice`, `Data/Sfx`, `Logic/SkillJuice`, `Logic/CameraShake`, `Config`, `Vfx/Juice`,
   `Vfx/CameraShake`, `VfxController`, `CombatFxController`, `tools/balance_reasons.luau`, `tests/skilljuice.spec`,
   `tests/skillmotion.spec`, `docs/ANIMACJE.md` §16, `docs/ASSETS.md`.
+
+### Głowy potworów bez kości (2026-11-10)
+
+- Pytanie właściciela: „modele poruszają się nie poruszając głową tak 2d, to przez modele generowane za pomocą tripio
+  czy przez roblox tez by sie tak zachowywały?”. Przyczyna: te modele to jedna siatka bez kości, więc szablon
+  `Logic/RigidMotion` rusza nimi w całości. Model z Roblox bez kości zachowywałby się tak samo; modele z kośćmi szyi
+  (wilk, niedźwiedź, smok) ruszają głową. Teraz głowę dostają w kodzie, bez nowych modeli.
+- `client/Anim/MeshHead`: raz na siatkę (w tle, porcjami) rosnąca EditableMesh wyglądu, `Logic/NeckBend.plan` znajduje
+  głowę, `AddBone` dodaje kości `MeshRoot` (środek pudła siatki) i `MeshHead` (staw szyi), każdy wierzchołek dostaje
+  skórę (ciało na korzeniu, głowa na kości głowy, szyja z przejściem wag), potem `CreateMeshPartAsync`. Najbliższe
+  wyglądy (`Config.Graphics` `heads` / `headRadius`: wysoka 8 w 90 studach, średnia 4 w 60, niska żaden; obiekt AnimLab
+  zawsze) dostają Bones o tych nazwach i `ApplyMesh` (tekstura zostaje, własna siatka czeka na oddanie). Poza budżetem i
+  w śmierci głowa wraca do spoczynku, a wygląd dostaje swoją siatkę z powrotem; przy składaniu nóg (pająk, skorpion) od
+  razu, a w AnimLab głowa czeka, aż nogi oddadzą siatkę. Siatka zwalniana 20 s po zniknięciu ostatniego wyglądu.
+- `Logic/NeckBend` (czyste): czubek pyska z przodu (oś patrzenia uniesiona o `rise`, pas środka `mid`, bez stóp przy
+  ziemi `floor` i boków `side`), szyja tam, gdzie przekrój pierwszy raz się zwęża w oknie `seek` (inaczej na długości
+  `neck`), przejście `blend`, staw cofnięty o `pivot`; luźne kawałki w pudle głowy (oczy, uszy) idą z głową; widoki z
+  boku i z góry do Studio.
+- `Logic/HeadGaze` (czyste): na cel (gracz z aggro, w AnimLab aktor) w granicach `yaw` / `up` / `down` z szybkością
+  `rate`; w spokoju spojrzenia w bok (`glance`, mniej w marszu; wrona i nietoperz przekrzywiają głowę o `tilt`),
+  czasem na lokalnego gracza w 25 studach, na stojąco węszenie (`sniff`); kiwanie z krokami (`nod`), drgnięcie od
+  ciosu (`flinch`), ogłuszony zwiesza głowę i kołysze nią (także z celem), część pochylenia ciała oddana (`steady`), w
+  śmierci wraca do spoczynku, zamrożony stoi. Spojrzenia z zegara i ziarna, więc w AnimLab za każdym razem takie same.
+- `Data/RigidRigs.gaze` dla 11 modeli bez kości: rabbit, lynx (też snowLeopard), swampToad, basilisk, salamander,
+  bogSerpent, rotEnt, caveSpider i desertScorpion (tylko lekki obrót przodu, ±10–12°), carrionCrow i bloodBat (stare
+  modele bez kości). frostWyrm, caveSpider z kośćmi (OctoRigs) i nowa wrona i nietoperz ze skrzydłami na kościach: bez
+  zmian. `RigidRig`: kości `MeshRoot` / `MeshHead` nie są kośćmi modelu (łańcuchy, nogi, sprawdzenie skóry), głowa co
+  klatkę za ciałem, kości za rozmiarem przy zgnieceniu.
+- Bez EditableMesh (stary klient, wyłączone „Allow Mesh / Image APIs”, siatka, której gra nie może czytać, budżet
+  pamięci), bez znalezionej głowy, gdy silnik nie przyjmie kości albo skóry albo część po `ApplyMesh` nie ma skóry:
+  wygląd rusza się w całości jak dotąd, bez błędu; Studio drukuje powód raz na siatkę.
+- Testy: `neckbend.spec` (kot z szyją, uszami i oczami, ropucha bez szyi, ptak, pająk, odmowy, dane równe modelom bez
+  kości z `tools/anim/rigs`) i `headgaze.spec` na syntetycznych siatkach `tests/NeckBendMesh`. Nieobejrzane w Studio.
+- **Lista do Studio (laptop, Studio przez MCP, bez myszy):**
+  1. Play przez „Graj”, `/animlab on`, `/animlab mob <id> idle`. W Output linia `[MeshHead] <model>: N of M vertices
+     turn with the head …` z widokiem z boku i z góry (H głowa, + przejście, # ciało, * staw); `no head (…)` albo `the
+     head was not put on a look (…)` to powód do zapisania. Na wyglądzie (klient) atrybuty `HeadState` (loading, rest,
+     live), `HeadYaw`, `HeadPitch`.
+  2. Zrzut z boku (`screen_capture` z `camera_position`) przed i po `HeadState = live`: wygląd nie może się przesunąć
+     ani zmienić rozmiaru czy tekstury (korzeń w środku pudła siatki i `ApplyMesh` z zachowanym Size to założenia).
+  3. Stany: `alert` (głowa na aktora), `idle` (spojrzenia i węszenie, zrzuty co 1–2 s), `walk` i `run` (kiwanie z
+     krokami), `hitLeft` i `hitBack` (drgnięcie od ciosu), `stun` (głowa nisko, kołysze się), `freeze` (stoi), `death`
+     (wraca do spoczynku, potem `HeadState = rest`), `fight` (cała walka bez szarpnięć).
+  4. Na zrzucie z obróconą głową: uszy, oczy, dziób i rogi idą z głową; nogi, skrzydła, ogon i grzbiet stoją; szyja
+     wygina się bez rozdarcia.
+  5. Rodzaje: `rabbit`, `lynx`, `snowLeopard`, `swampToad`, `basilisk`, `salamander`, `bogSerpent`, `rotEnt`,
+     `caveSpider` i `desertScorpion` (do tego `death`, `idle`, `death` po kolei: nogi składają się jak dotąd, po śmierci
+     głowa wraca), `carrionCrow` i `bloodBat` (tylko gdy w Assets są stare modele bez kości).
+  6. W świecie: kilka potworów jednego rodzaju (głowy tylko u najbliższych), jakość niska (głowy wracają do spoczynku,
+     wyglądy dostają swoje siatki), zwłoki znikają jak dotąd.
+  7. Strojenie bez kodu: `Data/RigidRigs` pole `gaze` (szukanie: `rise`, `mid`, `floor`, `side`, `seek`, `neck`,
+     `blend`, `pivot`; ruch: `yaw`, `up`, `down`, `glance`, `tilt`, `sniff`, `nod`, `flinch`, `steady`, `rate`).
+- **Pliki:** `client/Anim/MeshHead`, `client/Anim/RigidRig`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs`,
+  `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`, `tests/NeckBendMesh.luau`,
+  `docs/ANIM-WZORCE.md` §6.5.
