@@ -7,8 +7,10 @@
 -- keeps 280 px of content. Popovers: next to anchors on a 12 x 8 grid of every screen they stay inside the safe area
 -- less 8, never cover their anchor, flip above when there is no room below and keep off a rectangle they are told to
 -- avoid. UI package C owns this spec after package F: it empties RATCHET.
--- UI package C (2026-11-10): the window chrome reads WindowFrame (source checks), a phone's title bar is 44 px with a
--- 52 x 44 ✕, and a modal stays under the top bar and inside the screen (its body scrolls past that).
+-- UI package C (2026-11-10): the components read these modules (source checks), a phone's title bar is 44 px with a
+-- 52 x 44 ✕, a modal stays under the top bar and inside the screen (its body scrolls past that), and on a touch
+-- screen the item tooltip takes the half of the screen away from the tapped slot (Popover.away) and keeps off a
+-- window's action buttons.
 
 local fs = require("@lune/fs")
 
@@ -202,11 +204,12 @@ local function pairProblems(service: WindowFrame.Size, backpack: WindowFrame.Siz
 	return problems
 end
 
--- The popovers of the UI: an (i) note's box (Theme.Size.InfoTipWidth, up to 8 lines), the compact item tooltip
--- (Theme.Size.TooltipWidth; about 300 tall [estimate]: at most 10 lines of 60, package D's tooltip.spec) and a plain
--- tooltip (Components/Tooltip: at most 360 wide); anchors are touch targets and item slots (MinTouch, SlotSize).
+-- The popovers of the UI: an (i) note's box (Theme.Size.InfoTipWidth; Components/InfoTip: 8 lines of Small + 4 and
+-- its padding, then it scrolls), the compact item tooltip (Theme.Size.TooltipWidth; about 300 tall [estimate]: at
+-- most 10 lines of 60, package D's tooltip.spec) and a plain tooltip (Components/Tooltip: at most 360 wide); anchors
+-- are touch targets and item slots (MinTouch, SlotSize).
 local POPOVERS = {
-	{ name = "info", w = 320, h = 160 },
+	{ name = "info", w = 320, h = 8 * (17 + 4) + 2 * 8 },
 	{ name = "item", w = 340, h = 300 },
 	{ name = "tooltip", w = 360, h = 80 },
 }
@@ -432,7 +435,7 @@ T.describe("Windows (L7, owner 2026-11-10)", function()
 		T.expect({ levels[1].size, levels[2].size, levels[3].size }).toEqual({ text.Body, text.Body, text.Small })
 	end)
 
-	T.it("is what the window chrome reads (UI package C)", function()
+	T.it("is what the window chrome and the popovers read (UI package C)", function()
 		local function calls(path: string, needles: { string }): string
 			local source = fs.readFile(path)
 			for _, needle in needles do
@@ -460,6 +463,14 @@ T.describe("Windows (L7, owner 2026-11-10)", function()
 		path = "src/client/Controllers/WindowManager.luau"
 		lacks(path, calls(path, { "WindowFrame.pair(", "WindowRules.partner(" }), { "local GAP = " })
 		calls("src/client/UI/Components/Modal.luau", { "WindowFrame.modal(", "WindowFrame.CLOSE_WIDE" })
+		calls("src/client/UI/Components/Tabs.luau", { "WindowFrame.tabFit(", "WindowFrame.TAB_GAP" })
+		for _, name in { "Tooltip", "ItemTooltip", "InfoTip" } do
+			path = `src/client/UI/Components/{name}.luau`
+			lacks(path, calls(path, { "Popover.place(" }), { "local OFFSET = " })
+		end
+		calls("src/client/UI/Components/ItemTooltip.luau", { "Popover.away(", "function ItemTooltip.avoid(" })
+		path = "src/client/UI/Components/InfoTip.luau"
+		lacks(path, calls(path, { "local MAX_LINES = 8\n", "Tooltip.SafeArea" }), { "local MARGIN = ", "local GAP = " })
 	end)
 end)
 
@@ -545,12 +556,62 @@ T.describe("Popovers (L8, owner 2026-11-10)", function()
 		T.expect(took).toBe("right")
 		T.expect(tip.left).toBe(818)
 		T.expect(tip.top).toBe(422)
-		local source = fs.readFile("src/client/UI/Components/ItemTooltip.luau")
-		T.expect(string.find(source, "local OFFSET = Vector2.new(20, 20)", 1, true) ~= nil).toBe(true)
-		source = fs.readFile("src/client/UI/Components/Tooltip.luau")
-		T.expect(string.find(source, "local OFFSET = Vector2.new(18, 22)", 1, true) ~= nil).toBe(true)
-		source = fs.readFile("src/client/UI/Components/InfoTip.luau")
-		T.expect(string.find(source, "local MARGIN = 8", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(source, "local GAP = 6", 1, true) ~= nil).toBe(true)
 	end)
+
+	T.it(
+		"on touch, the item tooltip takes the half away from the tapped slot and keeps off the action buttons",
+		function()
+			local size = { w = ITEM_TOOLTIP.w, h = ITEM_TOOLTIP.h }
+			local touch = 0
+			for _, screen in screens() do
+				if not screen.touch then
+					continue
+				end
+				touch += 1
+				local safe = { left = 0, top = screen.bar, right = screen.w, bottom = screen.h }
+				local area = { left = 8, top = screen.bar + 8, right = screen.w - 8, bottom = screen.h - 8 }
+				local middle = screen.w / 2
+				for _, side in ANCHORS do
+					for _, anchor in grid(safe, side) do
+						local where = `{screen.name}, slot {show(anchor)}`
+						local rect, took = Popover.away(anchor, size, safe)
+						if not inside(rect, area) then
+							error(`{where}: {show(rect)} leaves the safe area less 8`)
+						end
+						local far: Popover.Side = if (anchor.left + anchor.right) / 2 < middle then "right" else "left"
+						if took ~= far then
+							error(`{where}: went {took}, not to the far half`)
+						end
+						-- the far half has room for it (the slot does not reach across the middle): there, clear of the slot
+						local room = if far == "right"
+							then area.right - math.max(middle, anchor.right) - Popover.GAP
+							else math.min(middle, anchor.left) - Popover.GAP - area.left
+						if room >= size.w then
+							local onFar = if far == "right" then rect.left >= middle else rect.right <= middle
+							if overlaps(rect, anchor) or not onFar then
+								error(`{where}: {show(rect)} is not on the far half, clear of the slot`)
+							end
+							-- a strip of buttons across the place it took: under or over it when there is room
+							local strip = {
+								left = 0,
+								top = rect.top + size.h / 2 - 26,
+								right = screen.w,
+								bottom = rect.top + size.h / 2 + 26,
+							}
+							local below = strip.bottom + Popover.GAP + size.h <= area.bottom
+							local above = strip.top - Popover.GAP - size.h >= area.top
+							local moved = Popover.away(anchor, size, safe, { avoid = strip })
+							if not inside(moved, area) then
+								error(`{where}: {show(moved)} leaves the safe area less 8`)
+							end
+							if (below or above) and overlaps(moved, strip) then
+								error(`{where}: {show(moved)} covers the buttons {show(strip)}`)
+							end
+						end
+					end
+				end
+			end
+			T.expect(touch > 0).toBe(true)
+		end
+	)
 end)

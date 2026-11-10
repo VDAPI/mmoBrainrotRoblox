@@ -20,6 +20,11 @@
 -- main value, the first stat rows, trait and effects in one line each, a price only where it matters). Holding the
 -- details key shows the full tooltip (and pins it, as above); on touch the "More ▸" / "Less ▾" row switches, and every
 -- new item starts compact again.
+-- Owner 2026-11-10 ("things covering each other"), UI package C: the tooltip stands where Logic/Popover puts it, from
+-- its measured height. PC: 20 right of and 20 under the cursor (Popover.ITEM), left of it at the right edge, rising at
+-- the bottom, always 8 inside the safe area (it was placed for a 200-px tooltip and ran off the bottom). Touch: on the
+-- half of the screen away from the tapped slot (Popover.away; it stood at a fixed place left of the middle, over the
+-- slots of a window there), off the rectangle a window registers with ItemTooltip.avoid (its Załóż / Użyj buttons).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -38,12 +43,14 @@ local ItemScore = require(ReplicatedStorage.Shared.Logic.ItemScore)
 local ItemTraits = require(ReplicatedStorage.Shared.Data.ItemTraits)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Keybinds = require(script.Parent.Parent.Keybinds)
+local Popover = require(ReplicatedStorage.Shared.Logic.Popover)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local RarityFrame = require(script.Parent.RarityFrame)
 local Scale = require(script.Parent.Parent.Scale)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local Tooltip = require(script.Parent.Tooltip)
 local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
@@ -57,8 +64,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local ItemTooltip = {}
 
-local WIDTH = 340
-local OFFSET = Vector2.new(20, 20)
+local WIDTH = Theme.Size.TooltipWidth
 local ICON_SIZE = 44 -- S35: item picture next to the name (the atlas cell is 128 px)
 -- S135: the tooltip is on iron (dark surface, parchment-coloured text, brass edge); colours from the roles.
 local DARK = Theme.Iron.Text
@@ -96,7 +102,13 @@ end
 local moduleScope = Fusion.scoped(Fusion)
 local shown = moduleScope:Value(nil :: ItemInstance?)
 local emptyText = moduleScope:Value(nil :: string?)
-local position = moduleScope:Value(Vector2.zero)
+-- What the tooltip stands next to (layer virtual pixels): the cursor (Popover.cursor) or, on touch, the tapped slot.
+local anchorRect = moduleScope:Value(Popover.cursor(0, 0, 0))
+local onTouch = moduleScope:Value(false)
+-- Touch: the slot objects by slot id (the tapped one is the anchor) and the rectangles windows ask the tooltip to keep
+-- off (ItemTooltip.avoid), in the order they were registered.
+local slotObjects: { [string]: GuiObject } = {}
+local avoided: { GuiObject } = {}
 local shownCtx = moduleScope:Value(nil :: TooltipModel.Ctx?)
 local merchantOpen = moduleScope:Value(false)
 local GAP = 8
@@ -493,12 +505,41 @@ end
 
 -- Show / hide -----------------------------------------------------------------------------------------------
 
-local function show(object: GuiObject, item: ItemInstance?, text: string?, at: Vector2, ctx: TooltipModel.Ctx?)
+-- The cursor at screen point (x, y) as the tooltip's anchor.
+local function cursor(x: number, y: number): Popover.Rect
+	local at = Scale.toVirtual(Vector2.new(x, y))
+	return Popover.cursor(at.X, at.Y, Popover.ITEM.drop)
+end
+
+local function show(object: GuiObject, item: ItemInstance?, text: string?, at: Popover.Rect, ctx: TooltipModel.Ctx?)
 	owner = object
 	shownCtx:set(ctx)
 	shown:set(item)
 	emptyText:set(if item then nil else text)
-	position:set(at)
+	anchorRect:set(at)
+	onTouch:set(false)
+end
+
+-- The first registered rectangle to keep off that is on the screen now (layer virtual pixels).
+local function avoidRect(): Popover.Rect?
+	for _, object in avoided do
+		if object.Visible and object:IsDescendantOf(game) and object.AbsoluteSize.X > 0 then
+			return Tooltip.rectOf(object)
+		end
+	end
+	return nil
+end
+
+-- UI package C: while `object` is on the screen, the touch tooltip keeps off it when there is room (a window's action
+-- buttons for the selected item: Załóż, Użyj, ...). Until `scope` is cleaned up.
+function ItemTooltip.avoid(scope: Scope, object: GuiObject)
+	table.insert(avoided, object)
+	table.insert(scope, function()
+		local index = table.find(avoided, object)
+		if index then
+			table.remove(avoided, index)
+		end
+	end)
 end
 
 local function hide(object: GuiObject?)
@@ -543,8 +584,7 @@ function ItemTooltip.attach(
 				local text = if empty then Fusion.peek(empty) else nil
 				local item = getItem()
 				if item or text then
-					local at = Scale.toVirtual(Vector2.new(x, y))
-					show(object, item, text, at, if getCtx then getCtx() else nil)
+					show(object, item, text, cursor(x, y), if getCtx then getCtx() else nil)
 					overOwner = true
 				end
 			end
@@ -554,7 +594,7 @@ function ItemTooltip.attach(
 		scope,
 		object.MouseMoved:Connect(function(x, y)
 			if owner == object and not Fusion.peek(pinned) then
-				position:set(Scale.toVirtual(Vector2.new(x, y)))
+				anchorRect:set(cursor(x, y))
 			end
 		end)
 	)
@@ -574,6 +614,7 @@ function ItemTooltip.attach(
 	end)
 	-- Touch: the selected slot shows its tooltip (DragDrop.Selected).
 	getters[slotId] = getItem
+	slotObjects[slotId] = object
 	if getCtx then
 		ctxGetters[slotId] = getCtx
 	end
@@ -582,17 +623,16 @@ function ItemTooltip.attach(
 			getters[slotId] = nil
 			ctxGetters[slotId] = nil
 		end
+		if slotObjects[slotId] == object then
+			slotObjects[slotId] = nil
+		end
 	end)
+	-- Touch: the tooltip follows its slot while the list under it scrolls.
 	table.insert(
 		scope,
 		object:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
-			if owner == object and Fusion.peek(Device.Touch) then
-				local root = layerRoot
-				position:set(
-					if root
-						then Scale.toLayer(object.AbsolutePosition, root)
-						else Scale.toVirtual(object.AbsolutePosition)
-				)
+			if Fusion.peek(onTouch) and slotObjects[Fusion.peek(DragDrop.Selected) or ""] == object then
+				anchorRect:set(Tooltip.rectOf(object))
 			end
 		end)
 	)
@@ -609,13 +649,20 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		local getter = selected and getters[selected]
 		local item = getter and getter()
 		if item and not blocked then
-			local screen = Fusion.peek(Scale.VirtualSize)
 			owner = nil
 			local ctxGetter = selected and ctxGetters[selected]
 			shownCtx:set(if ctxGetter then ctxGetter() else nil)
 			shown:set(item)
 			emptyText:set(nil)
-			position:set(Vector2.new(screen.X / 2 - WIDTH - OFFSET.X, 70))
+			-- the tapped slot (unknown: the top of the screen's left half, so the tooltip takes the right one)
+			local slot = selected and slotObjects[selected]
+			local safe = Fusion.peek(Tooltip.SafeArea)
+			anchorRect:set(
+				if slot
+					then Tooltip.rectOf(slot)
+					else { left = safe.left, top = safe.top, right = safe.left, bottom = safe.top }
+			)
+			onTouch:set(true)
 		else
 			hide(nil)
 		end
@@ -693,6 +740,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 			end) :: any,
 		},
 	})
+	local rootSize = scope:Value(Vector2.zero)
 	local root = scope:New("Frame")({
 		Name = "ItemTooltip",
 		Parent = parent,
@@ -703,15 +751,22 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 			return (use(shown) ~= nil or use(emptyText) ~= nil) and use(DragDrop.Dragging) == nil
 		end),
 		ZIndex = 200,
+		-- Logic/Popover from the measured size: beside the cursor on PC, the half away from the slot on touch
 		Position = scope:Computed(function(use): UDim2
-			local p: Vector2 = use(position)
-			local screen: Vector2 = use(Scale.VirtualSize)
-			local x = p.X + OFFSET.X
-			if x + WIDTH > screen.X - 8 then
-				x = p.X - OFFSET.X - WIDTH
-			end
-			return UDim2.fromOffset(math.max(8, x), math.max(8, math.min(p.Y + OFFSET.Y, screen.Y - 200)))
+			local own = use(rootSize) / use(Scale.Value)
+			local size = { w = math.max(own.X, WIDTH), h = own.Y }
+			local safe = use(Tooltip.SafeArea)
+			local rect = if use(onTouch)
+				then Popover.away(use(anchorRect), size, safe, { avoid = avoidRect() })
+				else Popover.place(
+					use(anchorRect),
+					size,
+					safe,
+					{ prefer = "right" :: Popover.Side, gap = Popover.ITEM.gap }
+				)
+			return UDim2.fromOffset(rect.left, rect.top)
 		end),
+		[Out("AbsoluteSize")] = rootSize,
 		[Children] = {
 			scope:New("UIListLayout")({
 				FillDirection = Enum.FillDirection.Horizontal,

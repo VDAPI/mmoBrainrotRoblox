@@ -1,5 +1,8 @@
 --!strict
 -- Single-line text box bound to a Fusion Value, with placeholder, max length and an error line.
+-- UI plan 2026-11-10 (package C): the box fills a frame too low for the box and the error line under it (a 44-px
+-- frame drew a 52-px box over what stood below); the error line then hangs under the frame. Placeholder: at most 20
+-- characters (Logic/TextCaps "placeholder").
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,7 +15,7 @@ type UsedAs<T> = Fusion.UsedAs<T>
 
 export type Props = {
 	Text: Fusion.Value<string>,
-	Placeholder: UsedAs<string>?,
+	Placeholder: UsedAs<string>?, -- at most 20 characters
 	MaxLength: number?, -- in characters (UTF-8 aware)
 	Error: UsedAs<string?>?, -- shown under the box in red when non-empty
 	Size: UsedAs<UDim2>?,
@@ -36,6 +39,9 @@ local function clampLength(text: string, max: number?): string
 	return if cut then string.sub(text, 1, cut - 1) else text
 end
 
+-- The default frame: the box and the error line under it.
+local ERROR_LINE = 22
+
 local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local roles = Theme.surface(props.Surface)
 	local focused = scope:Value(false)
@@ -43,10 +49,16 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 		local err = use(props.Error)
 		return type(err) == "string" and err ~= ""
 	end)
+	local frameSize = props.Size or UDim2.new(1, 0, 0, Theme.Size.InputHeight + ERROR_LINE)
+	-- a frame given in pixels, too low for the box and the error line: the box fills it
+	local fill = scope:Computed(function(use): boolean
+		local size: UDim2 = use(frameSize)
+		return size.Y.Scale == 0 and size.Y.Offset < Theme.Size.InputHeight + ERROR_LINE
+	end)
 
 	return scope:New("Frame")({
 		Name = props.Name or "TextInput",
-		Size = props.Size or UDim2.new(1, 0, 0, Theme.Size.InputHeight + 22),
+		Size = frameSize,
 		Position = props.Position,
 		AnchorPoint = props.AnchorPoint,
 		LayoutOrder = props.LayoutOrder,
@@ -55,7 +67,9 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 		[Children] = {
 			scope:New("TextBox")({
 				Name = "Box",
-				Size = UDim2.new(1, 0, 0, Theme.Size.InputHeight),
+				Size = scope:Computed(function(use): UDim2
+					return if use(fill) then UDim2.fromScale(1, 1) else UDim2.new(1, 0, 0, Theme.Size.InputHeight)
+				end),
 				BackgroundColor3 = roles.Sunken,
 				ClearTextOnFocus = false,
 				Text = props.Text,
@@ -103,7 +117,9 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 			}),
 			scope:New("TextLabel")({
 				Name = "Error",
-				Position = UDim2.fromOffset(2, Theme.Size.InputHeight + 2),
+				Position = scope:Computed(function(use): UDim2
+					return if use(fill) then UDim2.new(0, 2, 1, 2) else UDim2.fromOffset(2, Theme.Size.InputHeight + 2)
+				end),
 				Size = UDim2.new(1, -4, 0, 20),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string

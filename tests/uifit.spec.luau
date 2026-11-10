@@ -9,13 +9,19 @@
 --   F2 the Portal Master's price buttons hold every label on one line, at every price, in both languages
 --   F3 the skill tree's column heads: one text size (no TextScaled), room for every role name (PoolTree.HEAD_WIDTH)
 --   F4 the login reward card: no word of the chest line is wider than the PC card's room beside its "i"
+--   Owner 2026-11-10 ("too much text, things covering each other"), UI package C:
+--   F5 a tab row takes one look for all its tabs, the first of WindowFrame.TAB_LEVELS that fits its strip, and past
+--      the last one the strip scrolls sideways (the quest journal's "Tygodniowe" stood past the strip's end)
+--   F6 a Button, a tab and a side tab keep their label on one line (no wrapping, no scaled text)
 
 local fs = require("@lune/fs")
 
 local Locale = require("../src/shared/Util/Locale")
+local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local PortalData = require("../src/shared/Data/PortalShop")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
+local WindowFrame = require("../src/shared/Logic/WindowFrame")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
@@ -202,5 +208,69 @@ describe("uifit", function()
 			end
 		end
 		expect(table.concat(bad, "\n")).toBe("")
+	end)
+
+	it("F5 a tab row fits its strip at one look for all its tabs, or the strip scrolls", function()
+		-- Components/Tabs: the look from WindowFrame.tabFit, a strip that scrolls sideways
+		local tabs = read("src/client/UI/Components/Tabs.luau")
+		for _, needle in
+			{
+				"WindowFrame.tabFit(",
+				'scope:New("ScrollingFrame")',
+				"ScrollingDirection = Enum.ScrollingDirection.X",
+				"AutomaticCanvasSize = Enum.AutomaticSize.X",
+			}
+		do
+			if not string.find(tabs, needle, 1, true) then
+				expect(`Components/Tabs: {needle}`).toBe("found")
+			end
+		end
+		-- the quest journal's six tabs: in its PC window (QuestController's size less the window's padding and the
+		-- strip's edges for the selected tab's frame) and in the narrowest phone's window
+		local window = number(
+			"src/client/Controllers/QuestController.luau",
+			'id = "quests",%s+titleKey = "[%w%.]+",%s+size = Vector2%.new%((%d+),'
+		)
+		local edge = tokens("Theme.Stroke").Normal
+		local pc = window - 2 * PADDING.Large - 2 * edge
+		local phone = math.huge
+		for _, device in PhoneHud.DEVICES do
+			local w = PhoneHud.area(device)
+			phone = math.min(phone, w - 2 * PADDING.Medium - 2 * edge)
+		end
+		local levels = WindowFrame.TAB_LEVELS
+		for _, lang in LANGS do
+			local labels = {}
+			for _, id in { "main", "daily", "side", "contract", "boss", "weekly" } do
+				table.insert(labels, Locale.T(`quest.tab.{id}`, nil, lang))
+			end
+			for _, room in { pc, phone } do
+				local fit = WindowFrame.tabFit(labels, room)
+				local want = levels[#levels]
+				for _, level in levels do
+					if WindowFrame.tabRow(labels, level.pad, level.size) <= room then
+						want = level
+						break
+					end
+				end
+				expect({ fit.pad, fit.size }).toEqual({ want.pad, want.size })
+				expect(fit.width).toBe(WindowFrame.tabRow(labels, want.pad, want.size))
+				expect(fit.scroll).toBe(fit.width > room)
+			end
+			-- a phone's window holds the whole row
+			expect(WindowFrame.tabFit(labels, phone).scroll).toBe(false)
+		end
+	end)
+
+	it("F6 a Button, a tab and a side tab keep their label on one line", function()
+		for _, name in { "Button", "Tabs", "SideTabs" } do
+			local source = read(`src/client/UI/Components/{name}.luau`)
+			expect(string.find(source, "TextWrapped = false", 1, true) ~= nil).toBe(true)
+			expect(string.find(source, "TextWrapped = true", 1, true)).toBe(nil)
+			expect(string.find(source, "TextScaled", 1, true)).toBe(nil)
+		end
+		expect(string.find(read("src/client/UI/Components/SideTabs.luau"), "Theme.Size.TabHeight", 1, true) ~= nil).toBe(
+			true
+		)
 	end)
 end)

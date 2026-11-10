@@ -6,8 +6,9 @@
 -- avoid (a window's action bar) whenever another side has room. The defaults are today's Components/InfoTip: GAP under
 -- the anchor, left edges aligned (right edges when the box would run off the right side), above it when there is no
 -- room below. Today's cursor tooltips are a pointer anchor (`cursor`) with their own gap: Components/Tooltip 18 right
--- and 22 down (TOOLTIP), ItemTooltip 20 and 20 (ITEM, flipping left of the cursor as today). Nothing reads this module
--- yet: UI package C moves Tooltip, ItemTooltip and InfoTip onto it. All numbers are virtual pixels of one layer.
+-- and 22 down (TOOLTIP), ItemTooltip 20 and 20 (ITEM, flipping left of the cursor as today). Components/Tooltip,
+-- ItemTooltip and InfoTip place themselves with it (UI package C; on a touch screen the item tooltip takes the half of
+-- the screen away from the tapped slot, `away`). All numbers are virtual pixels of one layer.
 
 local Popover = {}
 
@@ -85,6 +86,15 @@ local function onSide(side: Side, anchor: Rect, size: Size, area: Rect, gap: num
 	return { left = x, top = y, right = x + size.w, bottom = y + size.h }, room
 end
 
+local function inset(safe: Rect, margin: number): Rect
+	return {
+		left = safe.left + margin,
+		top = safe.top + margin,
+		right = safe.right - margin,
+		bottom = safe.bottom - margin,
+	}
+end
+
 -- The rectangle of a popover of `size` for `anchor` inside `safe` (the layer less Roblox's top bar), and the side it
 -- took. Tried in turn: the preferred side, the opposite one, then the two beside the anchor; the first that has room
 -- and keeps off `avoid`, else the first that has room. A popover too large for every side takes the one with the most
@@ -93,12 +103,7 @@ function Popover.place(anchor: Rect, size: Size, safe: Rect, options: Options?):
 	local o: Options = options or {}
 	local margin = o.margin or Popover.MARGIN
 	local gap = o.gap or Popover.GAP
-	local area = {
-		left = safe.left + margin,
-		top = safe.top + margin,
-		right = safe.right - margin,
-		bottom = safe.bottom - margin,
-	}
+	local area = inset(safe, margin)
 	local prefer: Side = o.prefer or "below"
 	local across = ACROSS[prefer]
 	local sides: { Side } = { prefer, OPPOSITE[prefer], across[1], across[2] }
@@ -129,6 +134,38 @@ function Popover.place(anchor: Rect, size: Size, safe: Rect, options: Options?):
 	local x = math.clamp(r.left, area.left, math.max(area.left, area.right - size.w))
 	local y = math.clamp(r.top, area.top, math.max(area.top, area.bottom - size.h))
 	return { left = x, top = y, right = x + size.w, bottom = y + size.h }, mostSide
+end
+
+-- UI package C (Components/ItemTooltip on a touch screen): a popover of `size` on the half of `safe` away from
+-- `anchor`, the tapped slot, so the thumb and the slot stay clear: the right half for an anchor left of the middle,
+-- else the left half. It stands next to the middle (clear of the anchor) at the anchor's height, inside the safe area
+-- less the margin, and moves under or over `avoid` (a window's action buttons) when it would cover it and there is
+-- room. Returns the rectangle and the side of the anchor it took ("right" or "left").
+function Popover.away(anchor: Rect, size: Size, safe: Rect, options: Options?): (Rect, Side)
+	local o: Options = options or {}
+	local gap = o.gap or Popover.GAP
+	local area = inset(safe, o.margin or Popover.MARGIN)
+	local middle = (safe.left + safe.right) / 2
+	local side: Side = if (anchor.left + anchor.right) / 2 < middle then "right" else "left"
+	local x = if side == "right"
+		then math.max(middle, anchor.right) + gap
+		else math.min(middle, anchor.left) - gap - size.w
+	x = math.clamp(x, area.left, math.max(area.left, area.right - size.w))
+	local function at(y: number): Rect
+		local top = math.clamp(y, area.top, math.max(area.top, area.bottom - size.h))
+		return { left = x, top = top, right = x + size.w, bottom = top + size.h }
+	end
+	local rect = at(anchor.top)
+	local avoid = o.avoid
+	if avoid and overlaps(rect, avoid) then
+		for _, y in { avoid.bottom + gap, avoid.top - gap - size.h } do
+			local moved = at(y)
+			if not overlaps(moved, avoid) and not overlaps(moved, anchor) then
+				return moved, side
+			end
+		end
+	end
+	return rect, side
 end
 
 return Popover
