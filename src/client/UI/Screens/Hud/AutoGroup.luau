@@ -10,6 +10,10 @@
 -- popover opens right of it over the effects row (an overlay the player opens).
 -- Owner 2026-11-10 ("too much text"; UI plan package A): its tooltip names the three in short words; each of the three
 -- keeps its own name in its own tooltip.
+-- Package A review (owner 2026-11-10, "things covering each other"): the popover is as big as its place (PC: the zone
+-- map's 170 x 72; a phone: PhoneHud.AUTO_POPOVER 188 x 68), a part narrower for each one the account lacks, with the
+-- parts PART_GAP apart in its middle. Sized by its parts with 14-px paddings it drew 200 x 80: on PC over the left edge
+-- of a dungeon's boss bar, on a phone with the times under the buttons below its background.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -28,6 +32,11 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+-- a part: Hud/LureButton, Hud/AutoGrindButton and Hud/AutoPotionButton draw a 48-px button with its time under it (68
+-- tall in all)
+local PART_W = 48
+local PART_GAP = 8
 
 local function AutoGroup(scope: Scope): { Instance }
 	local open = scope:Value(false)
@@ -74,6 +83,14 @@ local function AutoGroup(scope: Scope): { Instance }
 		local auto = use(PhoneLayout.Places).auto
 		return UDim2.fromOffset(auto.x + auto.w + Theme.Padding.Small, auto.y)
 	end)
+	local zoneSize = HudSlots.sizeOf(scope, "autoPopover")
+	local panelSize = scope:Computed(function(use): UDim2
+		local full: UDim2 = if use(PhoneLayout.Compact)
+			then UDim2.fromOffset(PhoneHud.AUTO_POPOVER.w, PhoneHud.AUTO_POPOVER.h)
+			else use(zoneSize)
+		local missing = math.clamp(#parts - use(count), 0, #parts - 1)
+		return UDim2.fromOffset(full.X.Offset - missing * (PART_W + PART_GAP), full.Y.Offset)
+	end)
 
 	return {
 		IconButton(scope, {
@@ -93,12 +110,7 @@ local function AutoGroup(scope: Scope): { Instance }
 		scope:New("Frame")({
 			Name = "AutoPanel",
 			Position = PhoneLayout.Pick(scope, phonePopover, HudSlots.at(scope, "autoPopover")),
-			Size = scope:Computed(function(use): UDim2
-				return if use(PhoneLayout.Compact)
-					then UDim2.fromOffset(PhoneHud.AUTO_POPOVER.w, PhoneHud.AUTO_POPOVER.h)
-					else UDim2.fromOffset(0, 0)
-			end),
-			AutomaticSize = PhoneLayout.Pick(scope, Enum.AutomaticSize.None, Enum.AutomaticSize.XY),
+			Size = panelSize,
 			BackgroundColor3 = Theme.Iron.Surface,
 			BackgroundTransparency = Theme.HudAlpha,
 			ZIndex = 4,
@@ -108,16 +120,12 @@ local function AutoGroup(scope: Scope): { Instance }
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 				scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
-				scope:New("UIPadding")({
-					PaddingTop = UDim.new(0, Theme.Padding.Small),
-					PaddingBottom = UDim.new(0, Theme.Padding.Tiny),
-					PaddingLeft = UDim.new(0, Theme.Padding.Medium),
-					PaddingRight = UDim.new(0, Theme.Padding.Medium),
-				}),
 				scope:New("UIListLayout")({
 					FillDirection = Enum.FillDirection.Horizontal,
 					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = UDim.new(0, Theme.Padding.Medium),
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					Padding = UDim.new(0, PART_GAP),
 				}),
 				parts :: any,
 			},

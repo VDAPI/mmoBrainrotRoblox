@@ -481,6 +481,25 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		T.expect(HudStack.RIGHT_TOP - HudStack.MARGIN - HudStack.ICON - 2 * HudStack.GAP).toBe(220 + 46)
 		has(hud .. "NavBar.luau", `local WIDTH = {HudZones.GUIDE_W}`)
 		has(hud .. "ArenaPanel.luau", 'local zoneSize = HudSlots.sizeOf(scope, "arenaPanel")')
+		-- the Auto popover (package A review): its three parts (a 48-px button, its time under it) PART_GAP apart in the
+		-- PC place and a phone's popover, which it takes as its size
+		has(hud .. "AutoGroup.luau", "local PART_W = 48")
+		has(hud .. "AutoGroup.luau", "local PART_GAP = 8")
+		has(hud .. "AutoGroup.luau", 'local zoneSize = HudSlots.sizeOf(scope, "autoPopover")')
+		has(hud .. "AutoGroup.luau", "UDim2.fromOffset(PhoneHud.AUTO_POPOVER.w, PhoneHud.AUTO_POPOVER.h)")
+		has(hud .. "AutoGroup.luau", "Size = panelSize,")
+		T.expect(string.find(fs.readFile(hud .. "AutoGroup.luau"), "AutomaticSize", 1, true)).toBe(nil)
+		for _, part in { "LureButton", "AutoGrindButton", "AutoPotionButton" } do
+			has(hud .. part .. ".luau", "local SIZE = 48")
+			has(hud .. part .. ".luau", "Size = UDim2.fromOffset(SIZE, SIZE + 20),")
+		end
+		for _, popover in { HudZones.AUTO_POPOVER, PhoneHud.AUTO_POPOVER } do
+			T.expect({ popover.w, popover.h, 3 * 48 + 2 * 8 <= popover.w and 48 + 20 <= popover.h }).toEqual({
+				popover.w,
+				popover.h,
+				true,
+			})
+		end
 		has("src/client/UI/Screens/PartyFrames.luau", `local WIDTH = {HudZones.PARTY_FRAME.w}`)
 		has("src/client/UI/Screens/PartyFrames.luau", `local HEIGHT = {HudZones.PARTY_FRAME.h}`)
 		T.expect(HudStack.PARTY_ROW - HudZones.PARTY_FRAME.h).toBe(6)
