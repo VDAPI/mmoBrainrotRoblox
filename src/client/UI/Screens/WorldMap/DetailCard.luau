@@ -6,6 +6,8 @@
 -- and rendered here in its own scope, rebuilt on every show (a card has a few dozen objects at most).
 -- 2026-10-21 (owner: too many descriptions): `info` puts an "i" (Components/InfoTip) in the header next to ✕ with the
 -- card's longer text; the header is built once, so the popover stays open while a live card refreshes its content.
+-- Owner 2026-11-10 (UI plan E): a section marked `shop` (an NPC's shop list) is a Section folded under its title
+-- (mapShop, saved on the account), so the card's quests and actions are not pushed down by six priced items.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +19,7 @@ local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local Preview = require(script.Parent.Preview)
 local QuestRewards = require(script.Parent.Parent.Parent.Components.QuestRewards)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -49,6 +52,7 @@ export type Section = {
 	items: { ItemRow }?,
 	chips: { Chip }?,
 	choice: Choice?,
+	shop: boolean?, -- owner 2026-11-10: folded under its title (Section mapShop)
 }
 export type Action = { text: string, onClick: () -> (), primary: boolean?, danger: boolean? }
 export type Spec = {
@@ -389,7 +393,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 			(child :: any).LayoutOrder = n
 			table.insert(children, child)
 		end
-		if data.title then
+		if data.title and not data.shop then
 			add(textLine(s, 0, { text = data.title, color = Theme.Paper.Heading, bold = true }))
 		end
 		if data.choice then
@@ -566,6 +570,15 @@ function DetailCard.new(scope: Scope, props: Props): Api
 						else nil :: any,
 				},
 			}))
+		end
+		if data.shop then
+			return Section.new(s, {
+				Id = "mapShop",
+				LayoutOrder = order,
+				Title = data.title or "",
+				Padding = 4,
+				Children = children,
+			})
 		end
 		return s:New("Frame")({
 			LayoutOrder = order,

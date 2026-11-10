@@ -11,6 +11,7 @@
 local fs = require("@lune/fs")
 
 local Classes = require("../src/shared/Data/Classes")
+local Folds = require("../src/shared/Data/Folds")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
@@ -434,5 +435,40 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 			end
 		end
 		T.expect(problems).toEqual({})
+	end)
+
+	T.it("the sections of E's windows have their defaults in Folds/World or Folds/Menu", function()
+		local mine: { [string]: boolean } = {}
+		for _, area in Folds do
+			if area.name == "World" or area.name == "Menu" then
+				for id in area.folds do
+					mine[id] = true
+				end
+			end
+		end
+		local files = {
+			"src/client/UI/Screens/RankingsWindow.luau",
+			"src/client/UI/Screens/QuestBoard.luau",
+			"src/client/UI/Screens/QuestJournal.luau",
+			"src/client/UI/Screens/GameMenu.luau",
+			"src/client/UI/Screens/AchievementsWindow/BestiaryTab.luau",
+			"src/client/UI/Screens/WorldMap/Panels.luau",
+			"src/client/UI/Screens/WorldMap/DetailCard.luau",
+			"src/client/UI/Screens/GuildWindow/Overview.luau",
+			"src/client/UI/Screens/GuildWindow/Settings.luau",
+		}
+		local found = 0
+		for _, path in files do
+			local src = fs.readFile(path)
+			for id in string.gmatch(src, 'Section%.new%(%s*[%w_]+%s*,%s*{%s*Id%s*=%s*"([%w_]+)"') do
+				found += 1
+				T.expect(`{path} {id} {mine[id] == true}`).toBe(`{path} {id} true`)
+			end
+			for id in string.gmatch(src, 'Section%.state%(%s*[%w_]+%s*,%s*"([%w_]+)"') do
+				found += 1
+				T.expect(`{path} {id} {mine[id] == true}`).toBe(`{path} {id} true`)
+			end
+		end
+		T.expect(found >= 8).toBe(true)
 	end)
 end)

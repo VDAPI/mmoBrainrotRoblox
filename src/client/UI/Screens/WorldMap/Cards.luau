@@ -141,7 +141,7 @@ local function shopSection(shopId: string, level: number, class: string): Sectio
 	if more > 0 then
 		table.insert(lines, { text = T("worldmap.card.shopMore", { n = more }), color = Theme.Paper.TextMuted })
 	end
-	return { title = T("worldmap.card.shop"), items = items, lines = lines }
+	return { title = T("worldmap.card.shop"), items = items, lines = lines, shop = true }
 end
 
 -- Quests at an NPC --------------------------------------------------------------------------------------------

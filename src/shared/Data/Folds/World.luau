@@ -9,4 +9,15 @@ return table.freeze({
 	bestiaryRegions = { pc = true, phone = false },
 	-- the hunting contracts' block over the board's tabs (QuestBoard)
 	boardHunt = { pc = true, phone = false },
+	-- the quest journal (QuestJournal): the story so far (up to 70 rows) and the finished side arcs
+	journalHistory = false,
+	journalArcsDone = false,
+	-- the world map (WorldMap): the band legend over the map (a phone's map keeps its room: folded, it is one
+	-- "Legenda" line) and an NPC card's shop list
+	mapLegend = { pc = true, phone = false },
+	mapShop = false,
+	-- the guild window (GuildWindow): the guild's chronicle, the banner pickers and the ranks' rights table
+	guildLog = false,
+	guildBanner = false,
+	guildRights = false,
 } :: { [string]: boolean | { pc: boolean, phone: boolean } })
