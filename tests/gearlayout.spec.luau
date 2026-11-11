@@ -11,6 +11,7 @@
 
 local fs = require("@lune/fs")
 
+local CharacterLook = require("../src/shared/Logic/CharacterLook")
 local Combat = require("../src/shared/Data/Combat")
 local Config = require("../src/shared/Config")
 local EffectReroll = require("../src/shared/Logic/EffectReroll")
@@ -668,7 +669,28 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			-- the cost line and "Zmień wygląd" in the footer row
 			footerRow(case, { cost = l.cost, button = l.button }, { "button" })
 			T.expect({ case.name, l.cost.right - l.cost.left >= 300 }).toEqual({ case.name, true })
+			-- review 2026-11-11: the reason the button is greyed out stands under the price (it was the picker's last
+			-- line, off screen on every phone): one line of Body 20 (26 high) and one of Small 17 (20) next to the coin
+			local room = l.cost.right - l.cost.left - 30
+			local dearest = CharacterLook.changeCost({ level = Config.MaxLevel })
+			for _, lang in { "pl", "en" } do
+				local price = Locale.T("look.cost.gold", { gold = Format.number(dearest) }, lang)
+				T.expect({ case.name, lang, TextCaps.lines(price, 20, room) }).toEqual({ case.name, lang, 1 })
+				T.expect({ case.name, lang, TextCaps.lines(Locale.T("look.cost.free", nil, lang), 20, room) })
+					.toEqual({ case.name, lang, 1 })
+				for _, key in { "look.error.bad", "look.error.same", "look.error.barber", "look.error.gold" } do
+					T.expect({ case.name, lang, key, TextCaps.lines(Locale.T(key, nil, lang), 17, room) })
+						.toEqual({ case.name, lang, key, 1 })
+				end
+			end
 		end
+		T.expect(26 + 20 <= GearLayout.FOOTER).toBe(true)
+		local source = fs.readFile("src/client/UI/Screens/LookWindow.luau")
+		local at = assert(string.find(source, "\t\tFooter = {", 1, true))
+		local footer = string.sub(source, at)
+		T.expect(string.find(footer, 'Name = "Why"', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(footer, "use(check).err", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(string.sub(source, 1, at), 'Name = "Why"', 1, true)).toBeNil()
 	end)
 
 	T.it("the backpack shop: a row's text ends before its button", function()
