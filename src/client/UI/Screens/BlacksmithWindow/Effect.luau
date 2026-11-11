@@ -11,6 +11,9 @@
 -- stands in the window's Footer (the view gives it to BlacksmithWindow), pinned under the content outside the anvil's
 -- scroll; the item list stays a column on the left on a phone too (a strip on top left the anvil about 50 px under the
 -- footer on a 667x375 phone).
+-- Review 2026-11-11 (owner 2026-11-10: "things covering each other"): the footer's line left of the button says why
+-- "Zmień efekt" is greyed out (an item without a changeable effect too), else its price (Picker.status); "old → new"
+-- stands under the item's name, in view on every phone, not under the 150-px results below the fold.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -63,6 +66,10 @@ local function label(scope: Scope, order: number, text: Fusion.UsedAs<string>, c
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
+		-- an empty line takes no room and no gap of the list
+		Visible = scope:Computed(function(use): boolean
+			return use(text) ~= ""
+		end),
 		RichText = true,
 		TextWrapped = true,
 		Text = text,
@@ -177,10 +184,12 @@ local function Effect(scope: Scope, props: Props): { View: Instance, Footer: Fus
 		end
 		return EffectReroll.preview(i, at, use(class))
 	end)
+	-- Why "Change effect" is off (no modal then): the item, the effect, the stone, the gold, the materials.
 	local blocker = scope:Computed(function(use): string?
 		local c = use(cost)
-		if not c then
-			return nil
+		local why = use(refusal)
+		if why or not c then
+			return why
 		end
 		if use(index) == nil then
 			return "smith.effect.pickEffect"
@@ -429,25 +438,35 @@ local function Effect(scope: Scope, props: Props): { View: Instance, Footer: Fus
 					return if i then ItemText.rarityName(i.rarity, "paper") else Theme.Paper.TextMuted
 				end),
 			}),
+			-- what the tab does, until an item is picked (why the button is off stands in the footer, Picker.status)
 			label(
 				scope,
 				3,
 				scope:Computed(function(use): string
-					local i = use(item)
-					if not i then
-						return Text.get(use, "smith.effect.intro.short")
-					end
-					local why = use(refusal)
-					if why then
-						return Text.get(use, why)
-					end
-					return if use(index) == nil then Text.get(use, "smith.effect.pickEffect") else ""
+					return if use(item) == nil then Text.get(use, "smith.effect.intro.short") else ""
 				end),
-				Theme.Paper.Warning
+				Theme.Paper.TextMuted
+			),
+			-- "old → new" under the name, in view on a phone too
+			label(
+				scope,
+				4,
+				scope:Computed(function(use): string
+					local r = use(result)
+					if not r then
+						return ""
+					end
+					local lang = use(Text.Lang)
+					return Text.get(use, "smith.reroll.result", {
+						old = `<s>{effectText(lang, r.old)}</s>`,
+						new = effectText(lang, r.new),
+					})
+				end),
+				Theme.Paper.Heading
 			),
 			scope:New("Frame")({
 				Name = "Effects",
-				LayoutOrder = 4,
+				LayoutOrder = 5,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -458,7 +477,7 @@ local function Effect(scope: Scope, props: Props): { View: Instance, Footer: Fus
 			}),
 			scope:New("Frame")({
 				Name = "Outcomes",
-				LayoutOrder = 5,
+				LayoutOrder = 6,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -489,36 +508,11 @@ local function Effect(scope: Scope, props: Props): { View: Instance, Footer: Fus
 			}),
 			infoLine(
 				scope,
-				6,
+				7,
 				costText,
 				scope:Computed(function(use): string
 					return Text.get(use, "smith.effect.stoneHint", { count = use(stones) })
 				end)
-			),
-			label(
-				scope,
-				9,
-				scope:Computed(function(use): string
-					local why = use(blocker)
-					return if why and why ~= "smith.effect.pickEffect" then Text.get(use, why) else ""
-				end),
-				Theme.Paper.Danger
-			),
-			label(
-				scope,
-				10,
-				scope:Computed(function(use): string
-					local r = use(result)
-					if not r then
-						return ""
-					end
-					local lang = use(Text.Lang)
-					return Text.get(use, "smith.reroll.result", {
-						old = `<s>{effectText(lang, r.old)}</s>`,
-						new = effectText(lang, r.new),
-					})
-				end),
-				Theme.Paper.Heading
 			),
 		},
 	})
@@ -562,7 +556,15 @@ local function Effect(scope: Scope, props: Props): { View: Instance, Footer: Fus
 	return {
 		View = view,
 		Footer = {
-			-- the footer's row (right-aligned): "Zmień efekt"
+			-- the footer's row (right-aligned): why "Zmień efekt" is greyed out, else its price; "Zmień efekt"
+			Picker.status(scope, {
+				Reason = blocker,
+				Hints = { ["smith.effect.pickEffect"] = true },
+				Price = scope:Computed(function(use): string
+					return Picker.price(use, use(cost))
+				end),
+				Inset = FOOTER_BUTTON + Theme.Padding.Small,
+			}),
 			Button(scope, {
 				LayoutOrder = 1,
 				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),

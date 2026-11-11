@@ -13,13 +13,19 @@ local fs = require("@lune/fs")
 
 local Combat = require("../src/shared/Data/Combat")
 local Config = require("../src/shared/Config")
+local EffectReroll = require("../src/shared/Logic/EffectReroll")
+local Format = require("../src/shared/Util/Format")
 local GearLayout = require("../src/shared/Logic/GearLayout")
+local ItemName = require("../src/shared/Logic/ItemName")
 local Locale = require("../src/shared/Util/Locale")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
+local Rarities = require("../src/shared/Data/Rarities")
+local Reroll = require("../src/shared/Logic/Reroll")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
+local Transmog = require("../src/shared/Logic/Transmog")
 local WindowFrame = require("../src/shared/Logic/WindowFrame")
 
 type Rect = GearLayout.Rect
@@ -458,6 +464,121 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			end
 		end
 	)
+
+	T.it("the anvil tabs: why the pinned button is greyed out, else its price, stands left of it", function()
+		-- review 2026-11-11: the reason was the last line of the anvil's scroll and the price stood under the 150-px
+		-- results, both below the fold on PC and on every phone while the button stood pinned in the footer.
+		-- Picker.status puts either first in the footer row, Small 17 in at most two lines of the 52-px row.
+		local gap = theme("Theme.Padding").Small -- the footer row's UIListLayout padding (Components/Window)
+		local picker = fs.readFile("src/client/UI/Screens/BlacksmithWindow/Picker.luau")
+		T.expect(string.find(picker, "function Picker.status(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(picker, "UDim2.new(1, -use(props.Inset), 1, 0)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(picker, "TextSize = Theme.TextSize.Small", 1, true) ~= nil).toBe(true)
+		-- the price as Picker.price writes it: the gold, then each material with how many it takes
+		T.expect(string.find(picker, "◉ {Format.number(cost.gold)}", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(picker, "{ItemText.get(use, material.id)} ×{material.n}", 1, true) ~= nil).toBe(true)
+		local function price(lang: string, cost: { gold: number, materials: { { id: string, n: number } } }): string
+			local parts = { `◉ {Format.number(cost.gold)}` }
+			for _, material in cost.materials do
+				table.insert(parts, `{ItemName.get(lang, material.id)} ×{material.n}`)
+			end
+			return table.concat(parts, "  ")
+		end
+		-- the text keys a block of source returns (a view's `refusal` and `blocker`, a Logic check)
+		local function keys(source: string, pattern: string, into: { [string]: boolean })
+			local block = assert(string.match(source, pattern), pattern)
+			for key in string.gmatch(block, '"([%a]+%.[%w%.]+)"') do
+				into[key] = true
+			end
+		end
+		local function logic(name: string): string
+			return fs.readFile(`src/shared/Logic/{name}.luau`)
+		end
+		-- the dearest attempt of each rarity: the last item level, the growth at its cap
+		local function dearest(pay: (any) -> { gold: number, materials: { { id: string, n: number } } }): { any }
+			local out = {}
+			for rarity = Rarities.COMMON, Rarities.MAX do
+				table.insert(
+					out,
+					pay({ id = "probe", ilvl = Config.MaxLevel, rarity = rarity, bonuses = {}, rr = { n = 99 } })
+				)
+			end
+			return out
+		end
+		local tabs = {
+			{
+				view = "Reroll",
+				buttons = 2,
+				inset = "Inset = 2 * (FOOTER_BUTTON + Theme.Padding.Small),",
+				logic = { { "Reroll", "function Reroll%.eligible(.-)\nend\n" } },
+				costs = dearest(Reroll.payment),
+			},
+			{
+				view = "Effect",
+				buttons = 1,
+				inset = "Inset = FOOTER_BUTTON + Theme.Padding.Small,",
+				logic = { { "EffectReroll", "function EffectReroll%.eligible(.-)\nend\n" } },
+				costs = dearest(EffectReroll.payment),
+			},
+			{
+				-- "Przywróć własny" stands next to "Nałóż wygląd" while a look is worn: the line takes the room of two
+				view = "Transmog",
+				buttons = 2,
+				inset = "(if use(worn) ~= OWN then 2 else 1) * (FOOTER_BUTTON + Theme.Padding.Small)",
+				logic = { { "Transmog", "function Transmog%.canApply(.-)\nend\n" } },
+				costs = dearest(Transmog.cost),
+			},
+		}
+		local checked = 0
+		for _, tab in tabs do
+			local path = `src/client/UI/Screens/BlacksmithWindow/{tab.view}.luau`
+			local source = fs.readFile(path)
+			local at = assert(string.find(source, "\t\tFooter = {", 1, true), path)
+			local anvil, footer = string.sub(source, 1, at), string.sub(source, at)
+			-- the footer's line reads the same `blocker` the button greys out with; the anvil no longer shows it
+			for _, needle in
+				{ "Picker.status(scope, {", "Reason = blocker,", "Picker.price(use, use(cost))", tab.inset }
+			do
+				T.expect({ path, needle, string.find(footer, needle, 1, true) ~= nil }).toEqual({ path, needle, true })
+			end
+			T.expect({ path, string.find(anvil, "use(blocker)", 1, true) == nil }).toEqual({ path, true })
+			-- the main button never hides, so the row is never an empty strip; an item it refuses greys it out
+			local primary = assert(string.match(footer, 'Variant = "primary",(.-)OnClick'), path)
+			T.expect({ path, string.find(primary, "Visible", 1, true) == nil }).toEqual({ path, true })
+			T.expect({ path, string.find(primary, "use(blocker) ~= nil", 1, true) ~= nil }).toEqual({ path, true })
+			local reasons: { [string]: boolean } = {}
+			keys(source, "local refusal = scope:Computed(.-)\n\tend%)", reasons)
+			keys(source, "local blocker = scope:Computed(.-)\n\tend%)", reasons)
+			for _, entry in tab.logic do
+				keys(logic(entry[1]), entry[2], reasons)
+			end
+			-- an item the tab refuses is a reason too (it left the button enabled with no cost)
+			local blocker = assert(string.match(source, "local blocker = scope:Computed(.-)\n\tend%)"))
+			T.expect({ path, string.find(blocker, "use(refusal)", 1, true) ~= nil }).toEqual({ path, true })
+			local button = assert(tonumber(string.match(source, "local FOOTER_BUTTON = (%d+)")), path)
+			for _, case in cases("blacksmith", GearLayout.tabsTop(true), true) do
+				local room = case.area.w - tab.buttons * (button + gap)
+				T.expect({ case.name, tab.view, room >= 200 }).toEqual({ case.name, tab.view, true })
+				for _, lang in { "pl", "en" } do
+					local texts: { string } = {}
+					for key in reasons do
+						local text = Locale.T(key, nil, lang)
+						T.expect({ lang, key, text ~= key }).toEqual({ lang, key, true })
+						table.insert(texts, text)
+					end
+					for _, cost in tab.costs do
+						table.insert(texts, price(lang, cost))
+					end
+					for _, text in texts do
+						T.expect({ case.name, lang, text, TextCaps.lines(text, 17, room) <= 2 })
+							.toEqual({ case.name, lang, text, true })
+						checked += 1
+					end
+				end
+			end
+		end
+		T.expect(checked > 300).toBe(true)
+	end)
 
 	T.it("the auction: 'Wystaw' and 'Szukaj' in the footer, the form and the filters scroll above them", function()
 		for _, case in cases("auction", GearLayout.tabsTop(), true) do
