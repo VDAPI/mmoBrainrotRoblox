@@ -11,11 +11,17 @@
 -- (smith.reroll.stoneHint) sits behind the "i" of the cost line; without a Scroll of Transformation one short line
 -- with the scroll's text behind its "i". Owner 2026-11-10 (too much text): with scrolls the same line says how many
 -- the player has, so the "every bonus" button needs no number.
+-- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): "Przemień" and
+-- "Przemień wszystkie" stand in the window's Footer (the view gives them to BlacksmithWindow), pinned under the content
+-- outside the anvil's scroll; the item list stays a column on the left on a phone too (a strip on top left the anvil
+-- about 50 px under the footer on a 667x375 phone).
+-- Review 2026-11-11 (owner 2026-11-10: "things covering each other"): the footer's line left of the buttons says why
+-- "Przemień" is greyed out (an item that cannot be transmuted too), else its price (Picker.status); the result and the
+-- scrolls line stand under the item's name, in view on every phone, not under the 150-px results below the fold.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
-local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
@@ -48,6 +54,8 @@ type Result = { old: Types.Bonus, new: Types.Bonus, quality: number, item: Types
 
 local TENSION = 1.2
 local LIST_WIDTH = 262
+-- a footer button: two stand under the anvil on the narrowest phone (760 - LIST_WIDTH - 18 = 480 px)
+local FOOTER_BUTTON = 236
 local GOOD = Theme.hex(Theme.Paper.Success)
 local BAD = Theme.hex(Theme.Paper.Danger)
 -- Tooltip roles that are not lines (base stats, trait, skill effects): shown grey, "Cannot be transmuted".
@@ -115,6 +123,10 @@ local function label(scope: Scope, order: number, text: Fusion.UsedAs<string>, c
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
+		-- an empty line takes no room and no gap of the list
+		Visible = scope:Computed(function(use): boolean
+			return use(text) ~= ""
+		end),
 		RichText = true,
 		TextWrapped = true,
 		Text = text,
@@ -168,7 +180,7 @@ local function infoLine(
 	})
 end
 
-local function Reroll_(scope: Scope, props: Props): Instance
+local function Reroll_(scope: Scope, props: Props): { View: Instance, Footer: Fusion.Child }
 	local inventory = State.Value({ "character", "inventory" })
 	local equipment = State.Value({ "character", "equipment" })
 	local gold = State.Value({ "character", "gold" })
@@ -176,12 +188,16 @@ local function Reroll_(scope: Scope, props: Props): Instance
 	local picked = scope:Value(nil :: number?) -- clicked line (bonuses index) while the choice is open
 	local phase = scope:Value("idle") -- idle | forging | done
 	local result = scope:Value(nil :: Result?)
+	-- the line after "Przemień wszystkie" (S156); it stands under the item's name like `result`, so a new item or a
+	-- single transmutation clears it
+	local allResult = scope:Value(nil :: string?)
 	local anvil: Instance? = nil
 
 	local function reset()
 		picked:set(nil)
 		phase:set("idle")
 		result:set(nil)
+		allResult:set(nil)
 	end
 	-- S134j fix: a new target (dropped on the anvil while this tab is open) starts clean: no line, no old result.
 	scope:Observer(props.Target):onChange(reset)
@@ -225,11 +241,15 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		end
 		return Reroll.payment(i)
 	end)
-	-- Why "Transmute" is off (no modal then): the line, the gold, the materials.
+	-- Why "Transmute" is off (no modal then): the item, the line, the stone, the gold, the materials.
 	local blocker = scope:Computed(function(use): string?
 		local i, c = use(item), use(cost)
-		if not i or not c then
+		if not i then
 			return nil
+		end
+		local why = use(refusal)
+		if why or not c then
+			return why
 		end
 		if use(line) == nil then
 			return "smith.reroll.pickLine"
@@ -259,6 +279,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		local expected = current.bonuses[index].stat
 		phase:set("forging")
 		result:set(nil)
+		allResult:set(nil)
 		Picker.sparks(anvil, TENSION)
 		local startedAt = os.clock()
 		task.spawn(function()
@@ -323,7 +344,6 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		end
 		return Reroll.costAll(i)
 	end)
-	local allResult = scope:Value(nil :: string?)
 	local function doRerollAll()
 		local target = Fusion.peek(props.Target)
 		local current = Fusion.peek(item)
@@ -348,7 +368,10 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				return
 			end
 			Sounds.play("levelUp")
-			allResult:set(Text.now("smith.reroll.all.result", { n = #(data.changes or {}) }))
+			-- the line belongs to the item: another one picked meanwhile keeps its tab clean
+			if Fusion.peek(props.Target) == target then
+				allResult:set(Text.now("smith.reroll.all.result", { n = #(data.changes or {}) }))
+			end
 			phase:set("idle")
 		end)
 	end
@@ -544,22 +567,14 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		})
 	end)
 
-	local touch = scope:Computed(function(use): boolean
-		return use(Device.Touch)
-	end)
-
 	local function section(order: number, key: string): Instance
 		return label(scope, order, Text.T(scope, key), Theme.Paper.TextMuted)
 	end
 
 	local details = scope:New("ScrollingFrame")({
 		Name = "Anvil",
-		Position = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.fromOffset(0, 136) else UDim2.fromOffset(LIST_WIDTH + 18, 0)
-		end),
-		Size = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.new(1, 0, 1, -136) else UDim2.new(1, -(LIST_WIDTH + 18), 1, 0)
-		end),
+		Position = UDim2.fromOffset(LIST_WIDTH + 18, 0),
+		Size = UDim2.new(1, -(LIST_WIDTH + 18), 1, 0),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
@@ -615,26 +630,68 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					return if i then ItemText.rarityName(i.rarity, "paper") else Theme.Paper.TextMuted
 				end),
 			}),
+			-- Result: old (struck through) → new, with the new line's quality; under the name, in view on a phone too
+			scope:New("Frame")({
+				Name = "Result",
+				LayoutOrder = 3,
+				Size = UDim2.new(1, 0, 0, 28),
+				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return use(result) ~= nil
+				end),
+				[Children] = {
+					scope:New("TextLabel")({
+						Size = UDim2.new(1, -56, 1, 0),
+						BackgroundTransparency = 1,
+						RichText = true,
+						TextWrapped = true,
+						Text = resultText,
+						FontFace = Theme.Fonts.BodyMedium,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = Theme.Paper.Heading,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+					qualityBar(
+						scope,
+						scope:Computed(function(use): number
+							local r = use(result)
+							return if r then r.quality else 0
+						end),
+						UDim2.fromScale(1, 0.5)
+					),
+				},
+			}),
+			-- S156: every bonus at once with a Scroll of Transformation; its button stands in the window's footer.
+			-- owner 2026-11-10 (too much text): the button only says what it does (a button is one line of at most 18
+			-- characters); its result and how many scrolls the player has (the hint when none) are these lines, under
+			-- the item's name (review 2026-11-11: at the end of the scroll they were below the fold)
 			label(
 				scope,
-				3,
+				4,
 				scope:Computed(function(use): string
-					local i = use(item)
-					if not i then
+					return use(allResult) or ""
+				end),
+				Theme.Paper.TextMuted
+			),
+			infoLine(
+				scope,
+				5,
+				scope:Computed(function(use): string
+					if use(allResult) ~= nil or not use(ready) then
 						return ""
 					end
-					local why = use(refusal)
-					if why then
-						return Text.get(use, why)
-					end
-					return if use(line) == nil then Text.get(use, "smith.reroll.pickLine") else ""
+					local count = use(scrolls)
+					return if count < 1
+						then Text.get(use, "smith.reroll.all.hint.short")
+						else Text.get(use, "smith.reroll.all.have", { count = count })
 				end),
-				Theme.Paper.Warning
+				Text.T(scope, "smith.reroll.all.hint"),
+				Theme.Paper.TextMuted
 			),
 			-- Lines
 			scope:New("Frame")({
 				Name = "Lines",
-				LayoutOrder = 4,
+				LayoutOrder = 6,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -660,11 +717,11 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					lineRows :: any,
 				},
 			}),
-			label(scope, 5, fixedText, Theme.Paper.TextMuted),
+			label(scope, 7, fixedText, Theme.Paper.TextMuted),
 			-- Possible results
 			scope:New("Frame")({
 				Name = "Outcomes",
-				LayoutOrder = 6,
+				LayoutOrder = 8,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -696,107 +753,18 @@ local function Reroll_(scope: Scope, props: Props): Instance
 			-- S160k: what every transmutation takes and where the stone comes from (2026-10-21: behind the "i")
 			infoLine(
 				scope,
-				7,
+				9,
 				costText,
 				scope:Computed(function(use): string
 					return Text.get(use, "smith.reroll.stoneHint", { count = use(stones) })
 				end)
 			),
-			label(scope, 8, countText, Theme.Paper.TextMuted),
-			Button(scope, {
-				LayoutOrder = 10,
-				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
-				Variant = "primary",
-				Text = scope:Computed(function(use): string
-					return Text.get(use, if use(phase) == "done" then "smith.reroll.again" else "smith.reroll.button")
-				end),
-				Disabled = scope:Computed(function(use): boolean
-					return use(item) == nil or use(blocker) ~= nil or use(phase) == "forging"
-				end),
-				OnClick = confirm,
-			}),
-			label(
-				scope,
-				11,
-				scope:Computed(function(use): string
-					local why = use(blocker)
-					return if why and why ~= "smith.reroll.pickLine" then Text.get(use, why) else ""
-				end),
-				Theme.Paper.Danger
-			),
-			-- S156: every bonus at once with a Scroll of Transformation (the hint when the player has none).
-			-- owner 2026-11-10 (too much text): the button only says what it does (a button is one line of at most 18
-			-- characters); how many scrolls the player has is the line under it
-			Button(scope, {
-				LayoutOrder = 13,
-				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
-				Variant = "secondary",
-				Text = Text.T(scope, "smith.reroll.all.button"),
-				Disabled = scope:Computed(function(use): boolean
-					local c = use(allCost)
-					return c == nil or use(scrolls) < 1 or (use(gold) or 0) < c.gold or use(phase) == "forging"
-				end),
-				OnClick = confirmAll,
-			}),
-			label(
-				scope,
-				14,
-				scope:Computed(function(use): string
-					return use(allResult) or ""
-				end),
-				Theme.Paper.TextMuted
-			),
-			infoLine(
-				scope,
-				15,
-				scope:Computed(function(use): string
-					if use(allResult) ~= nil or use(item) == nil then
-						return ""
-					end
-					local count = use(scrolls)
-					return if count < 1
-						then Text.get(use, "smith.reroll.all.hint.short")
-						else Text.get(use, "smith.reroll.all.have", { count = count })
-				end),
-				Text.T(scope, "smith.reroll.all.hint"),
-				Theme.Paper.TextMuted
-			),
-			-- Result: old (struck through) → new, with the new line's quality
-			scope:New("Frame")({
-				Name = "Result",
-				LayoutOrder = 12,
-				Size = UDim2.new(1, 0, 0, 28),
-				BackgroundTransparency = 1,
-				Visible = scope:Computed(function(use): boolean
-					return use(result) ~= nil
-				end),
-				[Children] = {
-					scope:New("TextLabel")({
-						Size = UDim2.new(1, -56, 1, 0),
-						BackgroundTransparency = 1,
-						RichText = true,
-						TextWrapped = true,
-						Text = resultText,
-						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Paper.Heading,
-						TextXAlignment = Enum.TextXAlignment.Left,
-					}),
-					qualityBar(
-						scope,
-						scope:Computed(function(use): number
-							local r = use(result)
-							return if r then r.quality else 0
-						end),
-						UDim2.fromScale(1, 0.5)
-					),
-				},
-			}),
+			label(scope, 10, countText, Theme.Paper.TextMuted),
 		},
 	})
 	anvil = details
 
-	return scope:New("Frame")({
+	local view = scope:New("Frame")({
 		Name = "Reroll",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
@@ -810,12 +778,10 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
-			-- Items (a strip on top on a phone, a column on the left on PC)
+			-- Items: a column on the left, on a phone too (the main buttons stand in the window's footer)
 			scope:New("ScrollingFrame")({
 				Position = UDim2.fromOffset(0, 28),
-				Size = scope:Computed(function(use): UDim2
-					return if use(touch) then UDim2.new(1, 0, 0, 100) else UDim2.new(0, LIST_WIDTH, 1, -28)
-				end),
+				Size = UDim2.new(0, LIST_WIDTH, 1, -28),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -834,6 +800,44 @@ local function Reroll_(scope: Scope, props: Props): Instance
 			details,
 		},
 	})
+	return {
+		View = view,
+		Footer = {
+			-- the footer's row (right-aligned): why "Przemień" is greyed out, else its price; every bonus at once; the
+			-- picked line
+			Picker.status(scope, {
+				Reason = blocker,
+				Hints = { ["smith.reroll.pickLine"] = true },
+				Price = scope:Computed(function(use): string
+					return Picker.price(use, use(cost))
+				end),
+				Inset = 2 * (FOOTER_BUTTON + Theme.Padding.Small),
+			}),
+			Button(scope, {
+				LayoutOrder = 1,
+				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),
+				Variant = "secondary",
+				Text = Text.T(scope, "smith.reroll.all.button"),
+				Disabled = scope:Computed(function(use): boolean
+					local c = use(allCost)
+					return c == nil or use(scrolls) < 1 or (use(gold) or 0) < c.gold or use(phase) == "forging"
+				end),
+				OnClick = confirmAll,
+			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),
+				Variant = "primary",
+				Text = scope:Computed(function(use): string
+					return Text.get(use, if use(phase) == "done" then "smith.reroll.again" else "smith.reroll.button")
+				end),
+				Disabled = scope:Computed(function(use): boolean
+					return use(item) == nil or use(blocker) ~= nil or use(phase) == "forging"
+				end),
+				OnClick = confirm,
+			}),
+		},
+	}
 end
 
 return Reroll_

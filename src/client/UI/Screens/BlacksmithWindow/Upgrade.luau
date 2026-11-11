@@ -8,6 +8,8 @@
 -- the anvil panel with the item, a scrolling middle (name, comparison, chance and cost, the scroll) and the result,
 -- and the button under the panel; a phone puts the item next to the middle. Review 2026-11-10: the size comes without
 -- the window's opening motion (UI/ViewSize), and the Scroll of Protection's toggle is 44 high on touch (UI-ZASADY).
+-- Adoption stage (UI package D after C, 2026-11-10): "Ulepsz" stands in the window's Footer under the anvil (the view
+-- gives it to BlacksmithWindow), pinned under the content outside its scroll; the anvil takes the body's height.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -42,8 +44,8 @@ export type Props = {
 }
 
 local TENSION = 1.5
--- the view's size on PC (860 x 660 under the window's tabs) until it is measured
-local AREA_PC = { w = 816, h = 512 }
+-- the view's size on PC (860 x 660: under the window's tabs, above its footer) until it is measured
+local AREA_PC = { w = 816, h = 448 }
 
 local count = Picker.count
 local resolve = Picker.resolve
@@ -82,7 +84,7 @@ local function statLines(use: Fusion.Use, item: Types.ItemInstance, up: number):
 	return lines
 end
 
-local function Upgrade_(scope: Scope, props: Props): Instance
+local function Upgrade_(scope: Scope, props: Props): { View: Instance, Footer: Fusion.Child }
 	local inventory = State.Value({ "character", "inventory" })
 	local equipment = State.Value({ "character", "equipment" })
 	local gold = State.Value({ "character", "gold" })
@@ -470,26 +472,27 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 					return Theme.Paper.Link
 				end),
 			}),
-			-- "Ulepsz" under the anvil, in the footer
-			Button(scope, {
-				Position = at(buttonRect),
-				Size = sized(buttonRect),
-				Variant = "primary",
-				Text = scope:Computed(function(use): string
-					local p = use(phase)
-					return Text.get(use, if p == "idle" then "smith.upgrade.button" else "smith.upgrade.again")
-				end),
-				Disabled = scope:Computed(function(use): boolean
-					local i = use(item)
-					return i == nil or not Upgrade.canUpgrade(i) or use(phase) == "forging"
-				end),
-				OnClick = doUpgrade,
-			}),
 		},
 	})
 	view.watch(root)
 	anvil = root:FindFirstChild("Anvil") :: Frame?
-	return root
+	return {
+		View = root,
+		-- "Ulepsz" in the window's footer, as wide as the anvil above it (right-aligned like the anvil)
+		Footer = Button(scope, {
+			Size = sized(buttonRect),
+			Variant = "primary",
+			Text = scope:Computed(function(use): string
+				local p = use(phase)
+				return Text.get(use, if p == "idle" then "smith.upgrade.button" else "smith.upgrade.again")
+			end),
+			Disabled = scope:Computed(function(use): boolean
+				local i = use(item)
+				return i == nil or not Upgrade.canUpgrade(i) or use(phase) == "forging"
+			end),
+			OnClick = doUpgrade,
+		}),
+	}
 end
 
 return Upgrade_

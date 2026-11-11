@@ -139,6 +139,26 @@ describe("TextCaps", function()
 		expect(TextCaps.SURFACES.skillTip.lines).toBe(5)
 	end)
 
+	it("lets a listed glossary term pass the tab cap whole, and nothing else (UI-ZASADY §2)", function()
+		-- UI package D, 2026-11-10: the alchemist's "Błogosławieństwa" tab, the game's word for these buffs
+		local term = "Błogosławieństwa"
+		expect(TextCaps.chars(term) > TextCaps.SURFACES.tab.chars).toBe(true)
+		expect(TextCaps.check("tab", term)).toBe(true)
+		expect(TextCaps.check("tab", "<b>" .. term .. "</b>")).toBe(true) -- what the player sees
+		-- only the whole term: anything longer or different stays capped, and no other surface takes it
+		expect(TextCaps.check("tab", term .. "!")).toBe(false)
+		expect(TextCaps.check("tab", "Wszystkie zwoje")).toBe(false)
+		expect(TextCaps.check("label", term .. " i inne rzeczy")).toBe(false)
+		local listed = 0
+		for surface, terms in TextCaps.TERMS do
+			expect(TextCaps.SURFACES[surface].terms).toBe(terms)
+			for _ in terms do
+				listed += 1
+			end
+		end
+		expect(listed).toBe(1) -- a new term is an owner's word for a thing; add it here and in UI-ZASADY §2
+	end)
+
 	it("checks lines and sentences, not only characters", function()
 		local ok, why = TextCaps.check("line", "Pierwsza\nDruga")
 		expect(ok).toBe(false)

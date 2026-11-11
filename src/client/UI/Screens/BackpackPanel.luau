@@ -11,6 +11,10 @@
 -- Review 2026-11-10: on touch the slots are 56 px wherever the panel stands (the companion window next to a service
 -- kept 64 and showed one full row on a phone), and the sort and action buttons are 44 high (UI-ZASADY: touch targets
 -- of 44, ButtonHeightSmall only on PC); GearLayout.backpack gives the header and the action bar their touch heights.
+-- Adoption stage (UI package D after C, 2026-11-10): the panel registers its action bar with ItemTooltip.avoid, so a
+-- touch tooltip of the selected item no longer covers "Załóż" / "Użyj" in either home. The bar stays the panel's own
+-- (not Components/Window's Footer): the character window shows the same panel in a column, and on an 844x390 phone
+-- under the 58-px top bar a window footer would take the second slot row.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -23,6 +27,7 @@ local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
+local ItemTooltip = require(script.Parent.Parent.Components.ItemTooltip)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Products = require(ReplicatedStorage.Shared.Data.Products)
@@ -206,6 +211,105 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 		return if item then Items.get(item.id) else nil
 	end)
 
+	-- Actions for the selected slot
+	-- Scrolls sideways when the panel is narrower than the visible buttons (touch, character window); on touch the
+	-- bar is one button high and its thin scroll bar lies over the buttons' lower edge (GearLayout.backpack).
+	-- UI package C's ItemTooltip.avoid (adoption stage, 2026-11-10): the touch tooltip keeps off the bar
+	local actionBar = scope:New("ScrollingFrame")({
+		Name = "Actions",
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.fromScale(0, 1),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 0, NOMINAL.h - use(rects).actions.top)
+		end),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.X,
+		ScrollingDirection = Enum.ScrollingDirection.X,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = Theme.Paper.Label,
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			actionButton(
+				1,
+				"inventory.action.equip",
+				scope:Computed(function(use): boolean
+					local def = use(selectedDef)
+					return def ~= nil and def.slot ~= nil
+				end),
+				actions.Equip,
+				"primary"
+			),
+			actionButton(
+				2,
+				"inventory.action.use",
+				scope:Computed(function(use): boolean
+					local def = use(selectedDef)
+					return def ~= nil and def.slot == nil and def.use ~= nil and def.use.kind ~= "none"
+				end),
+				actions.Use,
+				"primary"
+			),
+			actionButton(
+				3,
+				"inventory.action.split",
+				scope:Computed(function(use): boolean
+					local item = use(selectedItem)
+					return item ~= nil and item.n > 1
+				end),
+				actions.Split
+			),
+			-- Padlock (S20): protects from selling, dismantling, destroying and trading.
+			Button(scope, {
+				LayoutOrder = 5,
+				Text = scope:Computed(function(use): string
+					local item = use(selectedItem)
+					return Text.get(use, if item and item.locked then "item.unlock" else "item.lock")
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(math.min(110, buttonWidth), use(buttonHeight))
+				end),
+				TextSize = Theme.TextSize.Small,
+				Visible = scope:Computed(function(use): boolean
+					local def = use(selectedDef)
+					return def ~= nil and def.category == "equipment"
+				end),
+				OnClick = function()
+					local index = Fusion.peek(selectedIndex)
+					if index then
+						actions.Lock(index)
+					end
+				end,
+			}),
+			Button(scope, {
+				LayoutOrder = 6,
+				Text = Text.T(scope, "lootlog.button"),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(math.min(90, buttonWidth), use(buttonHeight))
+				end),
+				TextSize = Theme.TextSize.Small,
+				OnClick = function()
+					actions.LootLog()
+				end,
+			}),
+			actionButton(
+				4,
+				"inventory.action.destroy",
+				scope:Computed(function(use): boolean
+					return use(selectedItem) ~= nil
+				end),
+				actions.Destroy,
+				"danger"
+			),
+		},
+	})
+	ItemTooltip.avoid(scope, actionBar :: GuiObject)
+
 	return {
 		-- Header: gold, slots, sort
 		scope:New("Frame")({
@@ -347,102 +451,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				grid :: any,
 			},
 		}),
-		-- Actions for the selected slot
-		-- Scrolls sideways when the panel is narrower than the visible buttons (touch, character window); on touch the
-		-- bar is one button high and its thin scroll bar lies over the buttons' lower edge (GearLayout.backpack).
-		scope:New("ScrollingFrame")({
-			Name = "Actions",
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.fromScale(0, 1),
-			Size = scope:Computed(function(use): UDim2
-				return UDim2.new(1, 0, 0, NOMINAL.h - use(rects).actions.top)
-			end),
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			CanvasSize = UDim2.new(),
-			AutomaticCanvasSize = Enum.AutomaticSize.X,
-			ScrollingDirection = Enum.ScrollingDirection.X,
-			ScrollBarThickness = 4,
-			ScrollBarImageColor3 = Theme.Paper.Label,
-			[Children] = {
-				scope:New("UIListLayout")({
-					FillDirection = Enum.FillDirection.Horizontal,
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = UDim.new(0, Theme.Padding.Small),
-				}),
-				actionButton(
-					1,
-					"inventory.action.equip",
-					scope:Computed(function(use): boolean
-						local def = use(selectedDef)
-						return def ~= nil and def.slot ~= nil
-					end),
-					actions.Equip,
-					"primary"
-				),
-				actionButton(
-					2,
-					"inventory.action.use",
-					scope:Computed(function(use): boolean
-						local def = use(selectedDef)
-						return def ~= nil and def.slot == nil and def.use ~= nil and def.use.kind ~= "none"
-					end),
-					actions.Use,
-					"primary"
-				),
-				actionButton(
-					3,
-					"inventory.action.split",
-					scope:Computed(function(use): boolean
-						local item = use(selectedItem)
-						return item ~= nil and item.n > 1
-					end),
-					actions.Split
-				),
-				-- Padlock (S20): protects from selling, dismantling, destroying and trading.
-				Button(scope, {
-					LayoutOrder = 5,
-					Text = scope:Computed(function(use): string
-						local item = use(selectedItem)
-						return Text.get(use, if item and item.locked then "item.unlock" else "item.lock")
-					end),
-					Size = scope:Computed(function(use): UDim2
-						return UDim2.fromOffset(math.min(110, buttonWidth), use(buttonHeight))
-					end),
-					TextSize = Theme.TextSize.Small,
-					Visible = scope:Computed(function(use): boolean
-						local def = use(selectedDef)
-						return def ~= nil and def.category == "equipment"
-					end),
-					OnClick = function()
-						local index = Fusion.peek(selectedIndex)
-						if index then
-							actions.Lock(index)
-						end
-					end,
-				}),
-				Button(scope, {
-					LayoutOrder = 6,
-					Text = Text.T(scope, "lootlog.button"),
-					Size = scope:Computed(function(use): UDim2
-						return UDim2.fromOffset(math.min(90, buttonWidth), use(buttonHeight))
-					end),
-					TextSize = Theme.TextSize.Small,
-					OnClick = function()
-						actions.LootLog()
-					end,
-				}),
-				actionButton(
-					4,
-					"inventory.action.destroy",
-					scope:Computed(function(use): boolean
-						return use(selectedItem) ~= nil
-					end),
-					actions.Destroy,
-					"danger"
-				),
-			},
-		}),
+		actionBar,
 	}
 end
 

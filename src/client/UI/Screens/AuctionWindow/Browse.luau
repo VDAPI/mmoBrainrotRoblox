@@ -5,7 +5,10 @@
 -- Owner 2026-11-10 (UI plan L10): "Szukaj" stays in sight. The filters scroll over the button pinned to the bottom,
 -- the results over the pager (Logic/GearLayout.auctionBrowse, from the view's measured size); on a phone the button
 -- was the last of eight filters, under the window's edge. Review 2026-11-10: the size comes without the window's
--- opening motion (UI/ViewSize), so the pinned parts no longer slide while the window opens.
+-- opening motion (UI/ViewSize), so the pinned parts no longer slide while the window opens. Adoption stage (UI package
+-- D after C, 2026-11-10): "Szukaj" and the pager stand in the window's Footer (one row: the button under the filters,
+-- the pager under the results), and the filters and the results take the body's whole height. Review 2026-11-11: the
+-- pager's line wraps (two lines of Small 17 in the row) and no longer runs under ◀ / ▶ on a 667x375 phone.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -32,8 +35,8 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
--- the view's size on PC (1080 x 700 under the window's tabs) until it is measured
-local AREA_PC = { w = 1036, h = 552 }
+-- the view's size on PC (1080 x 700: under the window's tabs, above its footer) until it is measured
+local AREA_PC = { w = 1036, h = 494 }
 
 -- Cycles through options on click: { value, labelKey }.
 local function cycleButton(
@@ -68,7 +71,7 @@ local function cycleButton(
 	})
 end
 
-local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
+local function Browse(scope: Scope, showModal: (spec: any) -> ()): { View: Instance, Footer: Fusion.Child }
 	local category = scope:Value(nil :: string?)
 	local class = scope:Value(nil :: string?)
 	local rarity = scope:Value(nil :: number?)
@@ -204,7 +207,8 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 		})
 	end
 
-	-- the filters, "Szukaj", the results and the pager (GearLayout.auctionBrowse) from the view's own size
+	-- the filters and the results (GearLayout.auctionBrowse) from the view's own size; "Szukaj" and the pager in the
+	-- footer's row, under them
 	local view = ViewSize.new(scope)
 	local layout = scope:Computed(function(use): GearLayout.AuctionBrowse
 		return GearLayout.auctionBrowse(use(view.size) or AREA_PC)
@@ -302,7 +306,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 			}),
 		},
 	})
-	-- pinned under the filters
+	-- in the footer, under the filters
 	local search = Button(scope, {
 		Position = searchAt,
 		Size = searchSize,
@@ -423,7 +427,6 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 		[Children] = {
 			view.ruler,
 			filters,
-			search,
 			scope:New("ScrollingFrame")({
 				Position = resultsAt,
 				Size = resultsSize,
@@ -438,59 +441,72 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 					rows :: any,
 				},
 			}),
-			scope:New("Frame")({
-				Name = "Pager",
-				Position = pagerAt,
-				Size = pagerSize,
-				BackgroundTransparency = 1,
-				[Children] = {
-					Button(scope, {
-						Size = UDim2.fromOffset(110, 44),
-						Text = "◀",
-						OnClick = function()
-							run(math.max(1, Fusion.peek(page) - 1))
-						end,
-					}),
-					scope:New("TextLabel")({
-						AnchorPoint = Vector2.new(0.5, 0),
-						Position = UDim2.fromScale(0.5, 0),
-						Size = UDim2.new(1, -240, 1, 0),
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							local data = use(result)
-							if use(loading) then
-								return Text.get(use, "auction.loading")
-							end
-							if type(data) ~= "table" then
-								return Text.get(use, "auction.hint")
-							end
-							return Text.get(
-								use,
-								"auction.page",
-								{ page = data.page, pages = data.pages, total = data.total }
-							)
-						end),
-						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.TextMuted,
-					}),
-					Button(scope, {
-						AnchorPoint = Vector2.new(1, 0),
-						Position = UDim2.fromScale(1, 0),
-						Size = UDim2.fromOffset(110, 44),
-						Text = "▶",
-						OnClick = function()
-							local data = Fusion.peek(result)
-							local pages = if type(data) == "table" then data.pages else 1
-							run(math.min(pages, Fusion.peek(page) + 1))
-						end,
-					}),
-				},
-			}),
 		},
 	})
 	view.watch(root)
-	return root
+	return {
+		View = root,
+		-- one row across the footer: "Szukaj" under the filters, the pager under the results
+		Footer = scope:New("Frame")({
+			Name = "BrowseFooter",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			[Children] = {
+				search,
+				scope:New("Frame")({
+					Name = "Pager",
+					Position = pagerAt,
+					Size = pagerSize,
+					BackgroundTransparency = 1,
+					[Children] = {
+						-- the page buttons are as tall as the footer row (GearLayout.auctionBrowse's pager)
+						Button(scope, {
+							Size = UDim2.new(0, GearLayout.BROWSE.pageButton, 1, 0),
+							Text = "◀",
+							OnClick = function()
+								run(math.max(1, Fusion.peek(page) - 1))
+							end,
+						}),
+						scope:New("TextLabel")({
+							AnchorPoint = Vector2.new(0.5, 0),
+							Position = UDim2.fromScale(0.5, 0),
+							Size = UDim2.new(1, -2 * (GearLayout.BROWSE.pageButton + 10), 1, 0),
+							BackgroundTransparency = 1,
+							TextWrapped = true,
+							Text = scope:Computed(function(use): string
+								local data = use(result)
+								if use(loading) then
+									return Text.get(use, "auction.loading")
+								end
+								if type(data) ~= "table" then
+									return Text.get(use, "auction.hint")
+								end
+								return Text.get(
+									use,
+									"auction.page",
+									{ page = data.page, pages = data.pages, total = data.total }
+								)
+							end),
+							FontFace = Theme.Fonts.BodyMedium,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.TextMuted,
+						}),
+						Button(scope, {
+							AnchorPoint = Vector2.new(1, 0),
+							Position = UDim2.fromScale(1, 0),
+							Size = UDim2.new(0, GearLayout.BROWSE.pageButton, 1, 0),
+							Text = "▶",
+							OnClick = function()
+								local data = Fusion.peek(result)
+								local pages = if type(data) == "table" then data.pages else 1
+								run(math.min(pages, Fusion.peek(page) + 1))
+							end,
+						}),
+					},
+				}),
+			},
+		}),
+	}
 end
 
 return Browse

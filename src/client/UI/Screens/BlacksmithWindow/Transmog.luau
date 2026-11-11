@@ -7,13 +7,20 @@
 -- (TransmogApply); stats never change.
 -- 2026-10-21 (owner: too many detailed descriptions): the note under the buttons is one short line, the full note
 -- (smith.transmog.note) behind its "i".
+-- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): "Nałóż wygląd" and
+-- "Przywróć własny" stand in the window's Footer (the view gives them to BlacksmithWindow), pinned under the content
+-- outside the anvil's scroll; the item list stays a column on the left on a phone too (a strip on top left the anvil
+-- about 50 px under the footer on a 667x375 phone).
+-- Review 2026-11-11 (owner 2026-11-10: "things covering each other"): the footer's line left of the buttons says why
+-- "Nałóż wygląd" is greyed out (an item that takes no looks too), else its price (Picker.status), where the anvil
+-- showed both under the 210-px preview, below the fold. "Nałóż wygląd" always stands in the footer, greyed out with no
+-- item, so the footer is never an empty strip.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
-local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
@@ -45,6 +52,8 @@ export type Props = {
 }
 
 local LIST_WIDTH = 262
+-- a footer button: two stand under the anvil on the narrowest phone (760 - LIST_WIDTH - 18 = 480 px)
+local FOOTER_BUTTON = 236
 local TILE_W, TILE_H = 96, 116
 local PREVIEW_HEIGHT = 210
 local TENSION = 0.6
@@ -64,6 +73,10 @@ local function label(
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
+		-- an empty line takes no room and no gap of the list
+		Visible = scope:Computed(function(use): boolean
+			return use(text) ~= ""
+		end),
 		RichText = true,
 		TextWrapped = true,
 		Text = text,
@@ -158,7 +171,7 @@ local function infoLine(
 	})
 end
 
-local function Transmog(scope: Scope, props: Props): Instance
+local function Transmog(scope: Scope, props: Props): { View: Instance, Footer: Fusion.Child }
 	local inventory = State.Value({ "character", "inventory" })
 	local equipment = State.Value({ "character", "equipment" })
 	local gold = State.Value({ "character", "gold" })
@@ -210,11 +223,16 @@ local function Transmog(scope: Scope, props: Props): Instance
 		end
 		return TransmogLogic.cost(i)
 	end)
-	-- Why "Apply look" is off: no look picked, the own / worn look, a look not owned, the gold, the materials.
+	-- Why "Apply look" is off: the item's type, no look picked, the own / worn look, a look not owned, the gold, the
+	-- materials.
 	local blocker = scope:Computed(function(use): string?
 		local i, c = use(item), use(cost)
-		if not i or not c then
+		if not i then
 			return nil
+		end
+		local why = use(refusal)
+		if why or not c then
+			return why
 		end
 		local key = use(shown)
 		if key == OWN or key == use(worn) then
@@ -537,18 +555,10 @@ local function Transmog(scope: Scope, props: Props): Instance
 		end)
 	)
 
-	local touch = scope:Computed(function(use): boolean
-		return use(Device.Touch)
-	end)
-
 	local details = scope:New("ScrollingFrame")({
 		Name = "Anvil",
-		Position = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.fromOffset(0, 136) else UDim2.fromOffset(LIST_WIDTH + 18, 0)
-		end),
-		Size = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.new(1, 0, 1, -136) else UDim2.new(1, -(LIST_WIDTH + 18), 1, 0)
-		end),
+		Position = UDim2.fromOffset(LIST_WIDTH + 18, 0),
+		Size = UDim2.new(1, -(LIST_WIDTH + 18), 1, 0),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
@@ -604,15 +614,6 @@ local function Transmog(scope: Scope, props: Props): Instance
 					return if i then ItemText.rarityName(i.rarity, "paper") else Theme.Paper.TextMuted
 				end),
 			}),
-			label(
-				scope,
-				3,
-				scope:Computed(function(use): string
-					local why = use(refusal)
-					return if why then Text.get(use, why) else ""
-				end),
-				Theme.Paper.Warning
-			),
 			label(scope, 4, headText, Theme.Paper.TextMuted),
 			-- The showcase (iron): the looks of the item's type
 			scope:New("Frame")({
@@ -643,46 +644,6 @@ local function Transmog(scope: Scope, props: Props): Instance
 			label(scope, 6, shownText),
 			viewport,
 			label(scope, 8, costText),
-			Button(scope, {
-				LayoutOrder = 9,
-				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
-				Variant = "primary",
-				Text = Text.T(scope, "smith.transmog.apply"),
-				Visible = scope:Computed(function(use): boolean
-					return use(item) ~= nil and use(refusal) == nil
-				end),
-				Disabled = scope:Computed(function(use): boolean
-					return use(item) == nil or use(blocker) ~= nil or use(busy)
-				end),
-				OnClick = confirm,
-			}),
-			Button(scope, {
-				LayoutOrder = 10,
-				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeightSmall + 4),
-				Variant = "secondary",
-				Text = Text.T(scope, "smith.transmog.restore"),
-				Visible = scope:Computed(function(use): boolean
-					return use(worn) ~= OWN
-				end),
-				Disabled = busy,
-				OnClick = function()
-					send(OWN)
-				end,
-			}),
-			label(
-				scope,
-				11,
-				scope:Computed(function(use): string
-					local why = use(blocker)
-					return if why then Text.get(use, why) else ""
-				end),
-				-- "Pick a look" is a hint, not an error
-				scope:Computed(function(use): Color3
-					return if use(blocker) == "smith.transmog.pickLook"
-						then Theme.Paper.TextMuted
-						else Theme.Paper.Danger
-				end)
-			),
 			infoLine(
 				scope,
 				12,
@@ -698,7 +659,7 @@ local function Transmog(scope: Scope, props: Props): Instance
 	})
 	anvil = details
 
-	return scope:New("Frame")({
+	local view = scope:New("Frame")({
 		Name = "Transmog",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
@@ -712,12 +673,10 @@ local function Transmog(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
-			-- Items (a strip on top on a phone, a column on the left on PC)
+			-- Items: a column on the left, on a phone too (the main buttons stand in the window's footer)
 			scope:New("ScrollingFrame")({
 				Position = UDim2.fromOffset(0, 28),
-				Size = scope:Computed(function(use): UDim2
-					return if use(touch) then UDim2.new(1, 0, 0, 100) else UDim2.new(0, LIST_WIDTH, 1, -28)
-				end),
+				Size = UDim2.new(0, LIST_WIDTH, 1, -28),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -736,6 +695,46 @@ local function Transmog(scope: Scope, props: Props): Instance
 			details,
 		},
 	})
+	return {
+		View = view,
+		Footer = {
+			-- the footer's row (right-aligned): why "Nałóż wygląd" is greyed out, else its price; "Przywróć własny"
+			-- while a look is worn; "Nałóż wygląd" always ("Pick a look" is a hint, not an error)
+			Picker.status(scope, {
+				Reason = blocker,
+				Hints = { ["smith.transmog.pickLook"] = true },
+				Price = scope:Computed(function(use): string
+					return Picker.price(use, use(cost))
+				end),
+				Inset = scope:Computed(function(use): number
+					return (if use(worn) ~= OWN then 2 else 1) * (FOOTER_BUTTON + Theme.Padding.Small)
+				end),
+			}),
+			Button(scope, {
+				LayoutOrder = 1,
+				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),
+				Variant = "secondary",
+				Text = Text.T(scope, "smith.transmog.restore"),
+				Visible = scope:Computed(function(use): boolean
+					return use(worn) ~= OWN
+				end),
+				Disabled = busy,
+				OnClick = function()
+					send(OWN)
+				end,
+			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),
+				Variant = "primary",
+				Text = Text.T(scope, "smith.transmog.apply"),
+				Disabled = scope:Computed(function(use): boolean
+					return use(item) == nil or use(blocker) ~= nil or use(busy)
+				end),
+				OnClick = confirm,
+			}),
+		},
+	}
 end
 
 return Transmog

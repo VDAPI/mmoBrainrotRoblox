@@ -5,25 +5,36 @@
 -- virtual px, bar / PhoneHud.SCALE, as tests/uiframe.spec does): no negative size, every rect inside its area and no two
 -- overlapping, the buttons pinned to the bottom (the footer) and touch targets of 44 on a phone, at least 2 slot rows
 -- on a phone and 5 on PC, at least 260 px of skill details on a phone. The windows read the same functions (source
--- checks at the end).
+-- checks at the end). Adoption stage (2026-11-10): the services (blacksmith, auction, alchemist, appearance, trade) put
+-- their main buttons in Components/Window's Footer, so their views are measured in the body above it
+-- (WindowFrame.body) and their buttons in the footer row; GearLayout's sizes are the window frame's and Theme's.
 
 local fs = require("@lune/fs")
 
+local CharacterLook = require("../src/shared/Logic/CharacterLook")
 local Combat = require("../src/shared/Data/Combat")
 local Config = require("../src/shared/Config")
+local Crafting = require("../src/shared/Data/Crafting")
+local EffectReroll = require("../src/shared/Logic/EffectReroll")
+local Format = require("../src/shared/Util/Format")
 local GearLayout = require("../src/shared/Logic/GearLayout")
+local ItemName = require("../src/shared/Logic/ItemName")
 local Locale = require("../src/shared/Util/Locale")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
+local Rarities = require("../src/shared/Data/Rarities")
+local Recipes = require("../src/shared/Data/Recipes")
+local Reroll = require("../src/shared/Logic/Reroll")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
+local Transmog = require("../src/shared/Logic/Transmog")
 local WindowFrame = require("../src/shared/Logic/WindowFrame")
 
 type Rect = GearLayout.Rect
 type Size = GearLayout.Size
 
--- The registered sizes (ScreenController, NpcController, MarketController, PremiumController).
+-- The registered sizes (ScreenController, NpcController, MarketController, PremiumController, SocialController).
 local WINDOWS: { [string]: Size } = {
 	character = { w = 1240, h = 720 },
 	inventory = { w = 560, h = 640 },
@@ -33,6 +44,7 @@ local WINDOWS: { [string]: Size } = {
 	alchemy = { w = 1000, h = 680 },
 	look = { w = 820, h = 600 },
 	backpacks = { w = 640, h = 640 },
+	trade = { w = 640, h = 520 },
 }
 
 -- Each case: the window's content area as the view gets it (`tabs`: under the window's own tab strip).
@@ -41,15 +53,16 @@ type Case = { name: string, area: Size, touch: boolean }
 -- Roblox's top bar on a phone in real px (none, the slim bar, the full one), as the plan and UI-ZASADY give it
 local BARS = { 0, 36, 58 }
 
-local function cases(window: string, under: number?): { Case }
+-- `under`: the window's own tab strip over the view; `footer`: the window has Components/Window's Footer
+local function cases(window: string, under: number?, footer: boolean?): { Case }
 	local out: { Case } = {}
 	local size = WINDOWS[window]
-	local pc = GearLayout.area({ w = 1920, h = 1080 }, size, false)
+	local pc = GearLayout.area({ w = 1920, h = 1080 }, size, false, nil, nil, footer)
 	table.insert(out, { name = `{window} PC`, area = { w = pc.w, h = pc.h - (under or 0) }, touch = false })
 	for _, device in PhoneHud.DEVICES do
 		local w, h = PhoneHud.area(device)
 		for _, bar in BARS do
-			local area = GearLayout.area({ w = w, h = h }, size, true, bar / PhoneHud.SCALE, true)
+			local area = GearLayout.area({ w = w, h = h }, size, true, bar / PhoneHud.SCALE, true, footer)
 			table.insert(out, {
 				name = `{window} {device.name} bar {bar}`,
 				area = { w = area.w, h = area.h - (under or 0) },
@@ -93,14 +106,174 @@ local function check(case: Case, rects: { [string]: Rect })
 	end
 end
 
--- a button row sits in the footer: on the area's bottom edge, at most FOOTER high (`rows` rows of buttons more)
+-- a view's own button row sits in its bottom strip: on the area's bottom edge, at most FOOTER high (`rows` rows of
+-- buttons more): the companion backpack's action bar, the skills window's buttons and the phone sheet's bar
 local function inFooter(case: Case, name: string, r: Rect, rows: number?)
 	local high = GearLayout.FOOTER + ((rows or 1) - 1) * (GearLayout.BUTTON_SMALL + GearLayout.GAP)
 	T.expect({ case.name, name, math.abs(r.bottom - case.area.h) < 0.001, r.bottom - r.top <= high })
 		.toEqual({ case.name, name, true, true })
 end
 
+-- the window's Footer row of a view: every part inside the row (the view's width, FOOTER high), none overlapping,
+-- the buttons as tall as the row (a touch target on a phone too)
+local function footerRow(case: Case, parts: { [string]: Rect }, buttons: { string })
+	local row: Case = { name = `{case.name} footer`, area = GearLayout.footerRow(case.area.w), touch = case.touch }
+	check(row, parts)
+	for _, name in buttons do
+		local r = parts[name]
+		T.expect({ case.name, name, r.bottom - r.top }).toEqual({ case.name, name, GearLayout.BUTTON })
+	end
+end
+
+local function theme(block: string): { [string]: number }
+	local source = fs.readFile("src/client/UI/Theme.luau")
+	local start = assert(string.find(source, `{block} = \{`, 1, true), block)
+	local stop = string.find(source, "\n}", start, true)
+	local out: { [string]: number } = {}
+	for name, value in string.gmatch(string.sub(source, start, stop), "(%w+) = (%d+)") do
+		out[name] = assert(tonumber(value), name)
+	end
+	return out
+end
+
 T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
+	T.it("measures with the window frame's and Theme's sizes, not numbers of its own", function()
+		local size = theme("Theme.Size")
+		T.expect(GearLayout.FOOTER).toBe(WindowFrame.FOOTER)
+		T.expect(GearLayout.FOOTER_GAP).toBe(WindowFrame.FOOTER_GAP)
+		T.expect(GearLayout.BUTTON).toBe(size.ButtonHeight)
+		T.expect(GearLayout.BUTTON).toBe(WindowFrame.FOOTER)
+		T.expect(GearLayout.BUTTON_SMALL).toBe(size.ButtonHeightSmall)
+		T.expect(GearLayout.TOUCH).toBe(size.MinTouch)
+		T.expect(GearLayout.TOUCH).toBe(WindowFrame.CLOSE)
+		T.expect(GearLayout.ROW_TALL).toBe(size.RowHeightTall)
+		T.expect(GearLayout.BACKPACK.tabs).toBe(size.TabHeight)
+		T.expect(GearLayout.BACKPACK.tabs).toBe(WindowFrame.TAB_HEIGHT)
+		-- a view under its window's own tabs starts under the strip Components/Tabs draws, with or without its bar
+		for _, scroll in { false, true } do
+			T.expect(GearLayout.tabsTop(scroll)).toBe(WindowFrame.tabStrip(scroll).height + GearLayout.GAP)
+		end
+		-- a window with a Footer gives its view the body above it
+		local frame = WindowFrame.rect({ w = 1920, h = 1080 }, WINDOWS.alchemy, nil, false)
+		local body = WindowFrame.body(frame, true)
+		local area = GearLayout.area({ w = 1920, h = 1080 }, WINDOWS.alchemy, false, nil, nil, true)
+		T.expect(area.h).toBe(body.bottom - body.top)
+		T.expect(area.h).toBe(frame.content.bottom - frame.content.top - WindowFrame.FOOTER - WindowFrame.FOOTER_GAP)
+		-- the windows place their views with those functions, not with the numbers they replaced
+		local smith = fs.readFile("src/client/UI/Screens/BlacksmithWindow/init.luau")
+		T.expect(string.find(smith, "GearLayout.tabsTop(true)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(smith, "Scroll = true", 1, true) ~= nil).toBe(true) -- the strip with its bar
+		local auction = fs.readFile("src/client/UI/Screens/AuctionWindow/init.luau")
+		T.expect(string.find(auction, "GearLayout.tabsTop()", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(auction, "Scroll = true", 1, true)).toBeNil()
+		for _, path in
+			{
+				"src/client/UI/Screens/BlacksmithWindow/init.luau",
+				"src/client/UI/Screens/AuctionWindow/init.luau",
+				"src/client/UI/Screens/AlchemyWindow.luau",
+				"src/client/UI/Screens/BlacksmithWindow/Craft.luau",
+			}
+		do
+			local source = fs.readFile(path)
+			T.expect({ path, string.find(source, "fromOffset(0, 52)", 1, true) == nil }).toEqual({ path, true })
+			T.expect({ path, string.find(source, "fromOffset(0, 100)", 1, true) == nil }).toEqual({ path, true })
+		end
+	end)
+
+	T.it("the services' main buttons stand in the window's Footer", function()
+		for _, path in
+			{
+				"src/client/UI/Screens/BlacksmithWindow/init.luau",
+				"src/client/UI/Screens/AuctionWindow/init.luau",
+				"src/client/UI/Screens/AlchemyWindow.luau",
+				"src/client/UI/Screens/LookWindow.luau",
+				"src/client/UI/Screens/TradeWindow.luau",
+			}
+		do
+			local source = fs.readFile(path)
+			T.expect({ path, string.find(source, "Footer = ", 1, true) ~= nil }).toEqual({ path, true })
+			T.expect({ path, string.find(source, "Window.Parts", 1, true) ~= nil }).toEqual({ path, true })
+		end
+		-- every tab of a tabbed service gives its footer row, so the footer's static room is never an empty strip
+		local views = {
+			"BlacksmithWindow/Craft",
+			"BlacksmithWindow/Upgrade",
+			"BlacksmithWindow/Reroll",
+			"BlacksmithWindow/Effect",
+			"BlacksmithWindow/Transmog",
+			"BlacksmithWindow/Dismantle",
+			"AuctionWindow/Browse",
+			"AuctionWindow/Sell",
+			"AuctionWindow/Mine",
+		}
+		for _, view in views do
+			local path = `src/client/UI/Screens/{view}.luau`
+			local source = fs.readFile(path)
+			T.expect({ path, string.find(source, "{ View: Instance, Footer: Fusion.Child }", 1, true) ~= nil })
+				.toEqual({ path, true })
+			T.expect({ path, string.find(source, "\t\tFooter = ", 1, true) ~= nil }).toEqual({ path, true })
+			-- the item list stays a column next to the anvil on a phone (no strip on top over a shrunk anvil)
+			T.expect({ path, string.find(source, "use(touch) then UDim2.fromOffset(0, 136)", 1, true) == nil })
+				.toEqual({ path, true })
+		end
+	end)
+
+	T.it(
+		"trade: the two sides and the warning under them fit the PC body above the footer, a phone scrolls them",
+		function()
+			local source = fs.readFile("src/client/UI/Screens/TradeWindow.luau")
+			local column = assert(tonumber(string.match(source, "local COLUMN = (%d+)")), "COLUMN")
+			local stroke = assert(tonumber(string.match(source, "local STROKE = (%d+)")), "STROKE")
+			local slot = assert(tonumber(string.match(source, "local SLOT = (%d+)")), "SLOT")
+			T.expect(string.find(source, "Scroll = true", 1, true) ~= nil).toBe(true)
+			-- review 2026-11-11: a side's frame line is drawn outside it and the window's Scroll clips at its edge, so
+			-- the sides stand the line's width in from the scroll's top and left, in a holder that ends past the
+			-- bottom line; the warning stands under that
+			for _, needle in
+				{
+					"Thickness = STROKE,",
+					'Text.T(scope, "trade.you"), UDim2.fromOffset(STROKE, STROKE), true)',
+					"UDim2.fromOffset(STROKE + width + 24, STROKE)",
+					"Size = UDim2.fromOffset(2 * width + 24 + 2 * STROKE, COLUMN + 2 * STROKE)",
+					"Position = UDim2.fromOffset(0, COLUMN + 2 * STROKE)",
+					"local width = 4 * (SLOT + 6) + 16",
+				}
+			do
+				T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
+			T.expect(stroke >= 3).toBe(true)
+			-- the sides and the warning (one 26-px line of Small 17) fit the PC body
+			local pc = GearLayout.area({ w = 1920, h = 1080 }, WINDOWS.trade, false, nil, nil, true)
+			T.expect(column + 2 * stroke + 26 <= pc.h).toBe(true)
+			T.expect(2 * (4 * (slot + 6) + 16) + 24 + 2 * stroke <= pc.w).toBe(true)
+			-- on a phone the body above the footer is lower than one side, so the sides scroll (and never reach the footer)
+			local device = PhoneHud.DEVICES[1]
+			local w, h = PhoneHud.area(device)
+			local phone = GearLayout.area({ w = w, h = h }, WINDOWS.trade, true, 58 / PhoneHud.SCALE, true, true)
+			T.expect(phone.h < column).toBe(true)
+			-- so on touch the warning stands in the footer left of the buttons (under the sides it was below the
+			-- fold while they stood pinned), at most two lines of Small 17 in the row
+			local at = assert(string.find(source, "\t\tFooter = {", 1, true))
+			local footer = string.sub(source, at)
+			for _, needle in { 'Name = "Warning"', "Visible = touch,", "Text = warning," } do
+				T.expect({ needle, string.find(footer, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
+			local accept, confirm = string.match(source, "local ACCEPT, CONFIRM = (%d+), (%d+)")
+			local buttons = assert(tonumber(accept)) + assert(tonumber(confirm)) + 2 * theme("Theme.Padding").Small
+			for _, case in cases("trade", nil, true) do
+				if case.touch then
+					for _, lang in { "pl", "en" } do
+						for _, key in { "trade.preview", "trade.warnEmpty", "trade.warnValue" } do
+							local text = Locale.T(key, nil, lang)
+							T.expect({ case.name, lang, key, TextCaps.lines(text, 17, case.area.w - buttons) <= 2 })
+								.toEqual({ case.name, lang, key, true })
+						end
+					end
+				end
+			end
+		end
+	)
+
 	T.it("a phone's content keeps at least 280 px under a 58-px top bar (the area every phone case uses)", function()
 		for _, device in PhoneHud.DEVICES do
 			local w, h = PhoneHud.area(device)
@@ -301,11 +474,14 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 	T.it(
 		"the blacksmith's upgrade: 'Ulepsz' in the footer, the middle scrolls between the item and the result",
 		function()
-			for _, case in cases("blacksmith", GearLayout.TABS) do
+			for _, case in cases("blacksmith", GearLayout.tabsTop(true), true) do
 				local u = GearLayout.smithUpgrade(case.area)
-				check(case, { list = u.list, slot = u.slot, middle = u.middle, result = u.result, button = u.button })
-				check(case, { list = u.list, anvil = u.anvil, button = u.button })
-				inFooter(case, "button", u.button)
+				check(case, { list = u.list, slot = u.slot, middle = u.middle, result = u.result })
+				check(case, { list = u.list, anvil = u.anvil })
+				-- "Ulepsz" in the footer row, under the anvil
+				footerRow(case, { button = u.button }, { "button" })
+				T.expect({ case.name, u.button.left, u.button.right })
+					.toEqual({ case.name, u.anvil.left, u.anvil.right })
 				-- the item, the middle and the result inside the anvil's panel
 				local inner: Case = {
 					name = case.name,
@@ -330,43 +506,421 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 		end
 	)
 
+	T.it("the blacksmith's crafting: two recipe rows on a phone (compact when low), every text one line", function()
+		-- review 2026-11-11: under Roblox's 58-px bar the 70-px rows left 1.8 recipes in sight on a phone, and the
+		-- longest prices (gold and three materials) took two lines in a row on a 667-px phone
+		local C = GearLayout.CRAFT
+		-- a row's longest texts: a recipe's name (Body 20), its gold (Body 20) and its materials (Small 17) with
+		-- counts in the hundreds
+		local names: { string } = {}
+		local materials: { string } = {}
+		local dearest = 0
+		for _, recipe in Crafting.list do
+			dearest = math.max(dearest, recipe.gold)
+			for _, lang in { "pl", "en" } do
+				table.insert(names, ItemName.get(lang, recipe.item, nil, recipe.el))
+				local parts: { string } = {}
+				for _, material in recipe.materials do
+					table.insert(parts, `{ItemName.get(lang, material.id)} 999/{material.n}`)
+				end
+				table.insert(materials, table.concat(parts, "  "))
+			end
+		end
+		T.expect(TextCaps.width(`◉ {Format.number(dearest)}`, 20) <= C.gold).toBe(true)
+		for _, case in cases("blacksmith", GearLayout.tabsTop(true), true) do
+			local c = GearLayout.smithCraft(case.area)
+			check(case, { list = c.list })
+			T.expect({ case.name, c.list.top }).toEqual({ case.name, GearLayout.tabsTop() })
+			T.expect({ case.name, c.rows >= (if case.touch then 2 else 5) }).toEqual({ case.name, true })
+			local h = c.list.bottom - c.list.top
+			T.expect({ case.name, c.rows * c.row + (c.rows - 1) * C.gap <= h }).toEqual({ case.name, true })
+			-- the full rows wherever two of them fit
+			T.expect({ case.name, c.compact }).toEqual({ case.name, h < 2 * C.row + C.gap })
+			T.expect({ case.name, c.row, c.icon }).toEqual({
+				case.name,
+				if c.compact then C.compactRow else C.row,
+				if c.compact then C.compactIcon else C.icon,
+			})
+			for _, name in names do
+				T.expect({ case.name, name, TextCaps.width(name, 20) <= c.name }).toEqual({ case.name, name, true })
+			end
+			for _, line in materials do
+				T.expect({ case.name, line, TextCaps.lines(line, 17, c.text) }).toEqual({ case.name, line, 1 })
+			end
+		end
+		-- a row from its top (3 compact, else 6): the name 26 high, 2 px, the materials (one line of 17 is 20 high);
+		-- the item and the touch-sized "Wykuj" of a compact row with the same 7-px edge as the full row's
+		T.expect(C.compactRow - 2 * 3 - 28 >= 20).toBe(true)
+		T.expect(C.row - 2 * 6 - 28 >= 20).toBe(true)
+		T.expect(C.compactRow - C.compactIcon).toBe(C.row - C.icon)
+		T.expect(C.compactRow >= GearLayout.TOUCH + 2 * 6).toBe(true)
+		local source = fs.readFile("src/client/UI/Screens/BlacksmithWindow/Craft.luau")
+		for _, needle in
+			{
+				"GearLayout.smithCraft(use(view.size) or AREA_PC)",
+				"local pad = (L.row - L.icon) / 2",
+				"local right = C.forge + 2 * C.edge",
+				"local top = if L.compact then 3 else 6",
+				"Size = UDim2.new(1, 0, 0, L.row),",
+				"Size = L.icon,",
+				"Position = UDim2.fromOffset(L.x, top),",
+				"Size = UDim2.new(1, -(L.x + right + C.gold + C.edge), 0, 26),",
+				"Position = UDim2.new(1, -right, 0, top),",
+				"Size = UDim2.fromOffset(C.gold, 26),",
+				"Position = UDim2.fromOffset(L.x, top + 28),",
+				"Size = UDim2.new(1, -(L.x + right), 0, L.row - 2 * top - 28),",
+				"Position = UDim2.new(1, -C.edge, 0.5, 0),",
+				"Size = UDim2.fromOffset(C.forge, if L.compact then GearLayout.TOUCH else C.button),",
+				"Position = UDim2.fromOffset(0, GearLayout.tabsTop()),",
+				"Padding = UDim.new(0, GearLayout.CRAFT.gap),",
+				"PaddingRight = UDim.new(0, GearLayout.CRAFT.inset)",
+			}
+		do
+			T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+		end
+		-- the gold left the materials' line for the name's
+		T.expect(string.find(source, "local parts = { `◉", 1, true)).toBe(nil)
+	end)
+
+	T.it("the anvil tabs: why the pinned button is greyed out, else its price, stands left of it", function()
+		-- review 2026-11-11: the reason was the last line of the anvil's scroll and the price stood under the 150-px
+		-- results, both below the fold on PC and on every phone while the button stood pinned in the footer.
+		-- Picker.status puts either first in the footer row, Small 17 in at most two lines of the 52-px row.
+		local gap = theme("Theme.Padding").Small -- the footer row's UIListLayout padding (Components/Window)
+		local picker = fs.readFile("src/client/UI/Screens/BlacksmithWindow/Picker.luau")
+		T.expect(string.find(picker, "function Picker.status(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(picker, "UDim2.new(1, -use(props.Inset), 1, 0)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(picker, "TextSize = Theme.TextSize.Small", 1, true) ~= nil).toBe(true)
+		-- the price as Picker.price writes it: the gold, then each material with how many it takes
+		T.expect(string.find(picker, "◉ {Format.number(cost.gold)}", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(picker, "{ItemText.get(use, material.id)} ×{material.n}", 1, true) ~= nil).toBe(true)
+		local function price(lang: string, cost: { gold: number, materials: { { id: string, n: number } } }): string
+			local parts = { `◉ {Format.number(cost.gold)}` }
+			for _, material in cost.materials do
+				table.insert(parts, `{ItemName.get(lang, material.id)} ×{material.n}`)
+			end
+			return table.concat(parts, "  ")
+		end
+		-- the text keys a block of source returns (a view's `refusal` and `blocker`, a Logic check)
+		local function keys(source: string, pattern: string, into: { [string]: boolean })
+			local block = assert(string.match(source, pattern), pattern)
+			for key in string.gmatch(block, '"([%a]+%.[%w%.]+)"') do
+				into[key] = true
+			end
+		end
+		local function logic(name: string): string
+			return fs.readFile(`src/shared/Logic/{name}.luau`)
+		end
+		-- the dearest attempt of each rarity: the last item level, the growth at its cap
+		local function dearest(pay: (any) -> { gold: number, materials: { { id: string, n: number } } }): { any }
+			local out = {}
+			for rarity = Rarities.COMMON, Rarities.MAX do
+				table.insert(
+					out,
+					pay({ id = "probe", ilvl = Config.MaxLevel, rarity = rarity, bonuses = {}, rr = { n = 99 } })
+				)
+			end
+			return out
+		end
+		local tabs = {
+			{
+				view = "Reroll",
+				buttons = 2,
+				inset = "Inset = 2 * (FOOTER_BUTTON + Theme.Padding.Small),",
+				logic = { { "Reroll", "function Reroll%.eligible(.-)\nend\n" } },
+				costs = dearest(Reroll.payment),
+			},
+			{
+				view = "Effect",
+				buttons = 1,
+				inset = "Inset = FOOTER_BUTTON + Theme.Padding.Small,",
+				logic = { { "EffectReroll", "function EffectReroll%.eligible(.-)\nend\n" } },
+				costs = dearest(EffectReroll.payment),
+			},
+			{
+				-- "Przywróć własny" stands next to "Nałóż wygląd" while a look is worn: the line takes the room of two
+				view = "Transmog",
+				buttons = 2,
+				inset = "(if use(worn) ~= OWN then 2 else 1) * (FOOTER_BUTTON + Theme.Padding.Small)",
+				logic = { { "Transmog", "function Transmog%.canApply(.-)\nend\n" } },
+				costs = dearest(Transmog.cost),
+			},
+		}
+		local checked = 0
+		for _, tab in tabs do
+			local path = `src/client/UI/Screens/BlacksmithWindow/{tab.view}.luau`
+			local source = fs.readFile(path)
+			local at = assert(string.find(source, "\t\tFooter = {", 1, true), path)
+			local anvil, footer = string.sub(source, 1, at), string.sub(source, at)
+			-- the footer's line reads the same `blocker` the button greys out with; the anvil no longer shows it
+			for _, needle in
+				{ "Picker.status(scope, {", "Reason = blocker,", "Picker.price(use, use(cost))", tab.inset }
+			do
+				T.expect({ path, needle, string.find(footer, needle, 1, true) ~= nil }).toEqual({ path, needle, true })
+			end
+			T.expect({ path, string.find(anvil, "use(blocker)", 1, true) == nil }).toEqual({ path, true })
+			-- the main button never hides, so the row is never an empty strip; an item it refuses greys it out
+			local primary = assert(string.match(footer, 'Variant = "primary",(.-)OnClick'), path)
+			T.expect({ path, string.find(primary, "Visible", 1, true) == nil }).toEqual({ path, true })
+			T.expect({ path, string.find(primary, "use(blocker) ~= nil", 1, true) ~= nil }).toEqual({ path, true })
+			local reasons: { [string]: boolean } = {}
+			keys(source, "local refusal = scope:Computed(.-)\n\tend%)", reasons)
+			keys(source, "local blocker = scope:Computed(.-)\n\tend%)", reasons)
+			for _, entry in tab.logic do
+				keys(logic(entry[1]), entry[2], reasons)
+			end
+			-- an item the tab refuses is a reason too (it left the button enabled with no cost)
+			local blocker = assert(string.match(source, "local blocker = scope:Computed(.-)\n\tend%)"))
+			T.expect({ path, string.find(blocker, "use(refusal)", 1, true) ~= nil }).toEqual({ path, true })
+			local button = assert(tonumber(string.match(source, "local FOOTER_BUTTON = (%d+)")), path)
+			for _, case in cases("blacksmith", GearLayout.tabsTop(true), true) do
+				local room = case.area.w - tab.buttons * (button + gap)
+				T.expect({ case.name, tab.view, room >= 200 }).toEqual({ case.name, tab.view, true })
+				for _, lang in { "pl", "en" } do
+					local texts: { string } = {}
+					for key in reasons do
+						local text = Locale.T(key, nil, lang)
+						T.expect({ lang, key, text ~= key }).toEqual({ lang, key, true })
+						table.insert(texts, text)
+					end
+					for _, cost in tab.costs do
+						table.insert(texts, price(lang, cost))
+					end
+					for _, text in texts do
+						T.expect({ case.name, lang, text, TextCaps.lines(text, 17, room) <= 2 })
+							.toEqual({ case.name, lang, text, true })
+						checked += 1
+					end
+				end
+			end
+		end
+		T.expect(checked > 300).toBe(true)
+	end)
+
 	T.it("the auction: 'Wystaw' and 'Szukaj' in the footer, the form and the filters scroll above them", function()
-		for _, case in cases("auction", GearLayout.TABS) do
+		for _, case in cases("auction", GearLayout.tabsTop(), true) do
 			local sell = GearLayout.auctionSell(case.area)
-			check(case, { items = sell.items, form = sell.form, button = sell.button })
-			inFooter(case, "sell", sell.button)
+			check(case, { items = sell.items, form = sell.form })
+			footerRow(case, { button = sell.button }, { "button" })
+			T.expect({ case.name, sell.button.left, sell.button.right })
+				.toEqual({ case.name, sell.form.left, sell.form.right })
 			local browse = GearLayout.auctionBrowse(case.area)
-			check(
-				case,
-				{ filters = browse.filters, search = browse.search, results = browse.results, pager = browse.pager }
-			)
-			inFooter(case, "search", browse.search)
-			inFooter(case, "pager", browse.pager)
+			check(case, { filters = browse.filters, results = browse.results })
+			-- "Szukaj" under the filters, the pager (two page buttons and the page line between them) under the results
+			footerRow(case, { search = browse.search, pager = browse.pager }, { "search", "pager" })
+			T.expect({ case.name, browse.search.right <= browse.filters.right + 0.001 }).toEqual({ case.name, true })
+			T.expect({ case.name, browse.pager.left >= browse.results.left - 0.001 }).toEqual({ case.name, true })
+			local line = browse.pager.right - browse.pager.left - 2 * (GearLayout.BROWSE.pageButton + 10)
+			T.expect({ case.name, line >= 200 }).toEqual({ case.name, true })
+			-- review 2026-11-11: the page line wraps between ◀ and ▶ (it ran under them on a 667x375 phone), two lines
+			-- of Small 17 at most in the row
+			for _, lang in { "pl", "en" } do
+				local texts = {
+					Locale.T("auction.hint", nil, lang),
+					Locale.T("auction.loading", nil, lang),
+					Locale.T("auction.page", { page = 999, pages = 999, total = Format.number(99999) }, lang),
+				}
+				for _, text in texts do
+					T.expect({ case.name, lang, text, TextCaps.lines(text, 17, line) <= 2 })
+						.toEqual({ case.name, lang, text, true })
+				end
+			end
 			T.expect({ case.name, browse.filters.bottom - browse.filters.top >= 2 * GearLayout.TOUCH })
 				.toEqual({ case.name, true })
 		end
+		-- the page line between the page buttons wraps
+		local source = fs.readFile("src/client/UI/Screens/AuctionWindow/Browse.luau")
+		local pager = assert(string.match(source, "%(GearLayout%.BROWSE%.pageButton %+ 10%), 1, 0%),(.-)Text = "))
+		T.expect(string.find(pager, "TextWrapped = true,", 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it(
 		"the alchemist: the queue scrolls with 2 rows on a phone and 5 on PC, 'Odbierz wszystko' in the footer",
 		function()
-			for _, case in cases("alchemy") do
+			for _, case in cases("alchemy", nil, true) do
 				local a = GearLayout.alchemy(case.area)
-				check(case, { recipes = a.recipes, title = a.title, queue = a.queue, collect = a.collect })
-				inFooter(case, "collect", a.collect)
+				check(case, { recipes = a.recipes, title = a.title, queue = a.queue })
+				footerRow(case, { collect = a.collect }, { "collect" })
+				T.expect({ case.name, a.collect.left, a.collect.right })
+					.toEqual({ case.name, a.queue.left, a.queue.right })
+				-- the orders are ListRow `Tall` rows: whole rows in the queue, 2 on a phone and 5 on PC
 				T.expect({ case.name, a.rows >= (if case.touch then 2 else 5) }).toEqual({ case.name, true })
+				local queueH = a.queue.bottom - a.queue.top
+				T.expect({ case.name, a.rows * GearLayout.ROW_TALL + (a.rows - 1) * GearLayout.ALCHEMY.gap <= queueH })
+					.toEqual({ case.name, true })
 			end
 		end
 	)
 
+	T.it(
+		"the alchemist's queue: the orders' names read apart, a wide one leaves the recipes their two lines",
+		function()
+			-- review 2026-11-11: at Body 20 in the 270-px queue every blessing read "Błogosławieństw…"
+			local A = GearLayout.ALCHEMY
+			local padding = theme("Theme.Padding")
+			-- what a one-line label (TextTruncate.AtEnd) shows of `text`: the longest start that fits with "…"
+			local function shown(text: string, size: number, width: number): string
+				if TextCaps.width(text, size) <= width then
+					return text
+				end
+				local out, used = "", TextCaps.width("…", size)
+				for _, code in utf8.codes(text) do
+					local ch = utf8.char(code)
+					used += TextCaps.width(ch, size)
+					if used > width then
+						break
+					end
+					out ..= ch
+				end
+				return out .. "…"
+			end
+			-- a recipe row's line under its name: the ingredients (counts up to 99), the gold and the time
+			local function ingredients(lang: string, recipe: Recipes.Recipe): string
+				local parts: { string } = {}
+				for _, ingredient in recipe.ingredients do
+					table.insert(parts, `{ItemName.get(lang, ingredient.id)} 99/{ingredient.n}`)
+				end
+				table.insert(parts, `◉ {Format.number(recipe.gold)}`)
+				table.insert(parts, "⌛ 59 min")
+				return table.concat(parts, "  ")
+			end
+			for _, case in cases("alchemy", nil, true) do
+				local a = GearLayout.alchemy(case.area)
+				local queue = a.queue.right - a.queue.left
+				local wide = queue == A.wide
+				T.expect({ case.name, wide or queue == A.queue }).toEqual({ case.name, true })
+				if not case.touch then
+					T.expect({ case.name, wide }).toEqual({ case.name, true })
+				end
+				-- an order's name: the queue's 8 px for its scroll bar, the row's inset (the 44-px icon and 4, ListRow's
+				-- padding and bar) and ListRow's right padding
+				local text = queue - 8 - (44 + 4 + padding.Small + 4) - padding.Small
+				for _, lang in { "pl", "en" } do
+					local seen: { [string]: string } = {}
+					for _, recipe in Recipes.list do
+						-- every name reads apart in a wide queue, the blessings in each
+						if wide or recipe.group == "blessing" then
+							local name = ItemName.get(lang, recipe.result.id)
+							local v = shown(name, 17, text)
+							T.expect({ case.name, lang, name, (seen[v] or name) == name })
+								.toEqual({ case.name, lang, name, true })
+							seen[v] = name
+						end
+					end
+				end
+				-- the recipes' line (Small 17, two lines in its 40-px label; 220 px of the row are the item and "Zamów", 10
+				-- the list's scroll bar) keeps its two lines beside a wide queue
+				if wide then
+					local recipes = a.recipes.right - a.recipes.left - 10 - 220
+					for _, lang in { "pl", "en" } do
+						for _, recipe in Recipes.list do
+							local line = ingredients(lang, recipe)
+							T.expect({ case.name, line, TextCaps.lines(line, 17, recipes) <= 2 })
+								.toEqual({ case.name, line, true })
+						end
+					end
+				end
+			end
+			local source = fs.readFile("src/client/UI/Screens/AlchemyWindow.luau")
+			local _, dense = string.gsub(source, "Tall = true,%s+Dense = true,", "")
+			T.expect(dense).toBe(2)
+			for _, needle in
+				{
+					"local ICON = 44",
+					"Inset = ICON + 4,",
+					"Size = UDim2.new(1, -220, 0, 40),",
+					'scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),',
+					'scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),',
+				}
+			do
+				T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
+			local row = fs.readFile("src/client/UI/Components/ListRow.luau")
+			for _, needle in
+				{
+					"local BAR = 4",
+					"local inset = (props.Inset or 0) + Theme.Padding.Small + BAR",
+					"local rightInset = (props.RightInset or 0) + Theme.Padding.Small",
+					"TextSize = if props.Dense then Theme.TextSize.Small else Theme.TextSize.Body,",
+				}
+			do
+				T.expect({ needle, string.find(row, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
+		end
+	)
+
+	T.it("the alchemist's group tabs and the backpack's filters fit their strip, pl and en, PC and phones", function()
+		-- Components/Tabs takes less padding, then the smaller text (WindowFrame.tabFit) and past that scrolls sideways;
+		-- these rows fit before that, "Błogosławieństwa" (a glossary term past the tab cap, TextCaps.TERMS) included
+		local function fits(case: Case, keys: { string }, width: number)
+			for _, lang in { "pl", "en" } do
+				local labels = {}
+				for _, key in keys do
+					table.insert(labels, Locale.T(key, nil, lang))
+				end
+				local fit = WindowFrame.tabFit(labels, width - 2 * WindowFrame.TAB_EDGE)
+				T.expect({ case.name, lang, fit.scroll }).toEqual({ case.name, lang, false })
+			end
+		end
+		local groups =
+			{ "alchemy.group.blessing", "alchemy.group.travel", "alchemy.group.material", "alchemy.group.elixir" }
+		for _, case in cases("alchemy", nil, true) do
+			local recipes = GearLayout.alchemy(case.area).recipes
+			fits(case, groups, recipes.right - recipes.left)
+		end
+		local filters = {
+			"inventory.filter.all",
+			"inventory.filter.equipment",
+			"inventory.filter.materials",
+			"inventory.filter.consumables",
+		}
+		for _, case in cases("inventory") do
+			fits(case, filters, case.area.w)
+		end
+		for _, case in cases("character") do
+			local column = GearLayout.character(case.area, case.touch).backpack
+			fits(case, filters, column.right - column.left)
+		end
+		-- the alchemist's strip is Components/Tabs right above its list
+		local alchemy = fs.readFile("src/client/UI/Screens/AlchemyWindow.luau")
+		T.expect(
+			string.find(alchemy, '{ id = "blessing", label = Text.T(scope, "alchemy.group.blessing") }', 1, true) ~= nil
+		)
+			.toBe(true)
+	end)
+
 	T.it("the appearance window: the preview next to the picker, inside the content (no 792 px in 776)", function()
-		for _, case in cases("look") do
+		for _, case in cases("look", nil, true) do
 			local l = GearLayout.look(case.area)
 			T.expect({ case.name, l.row }).toEqual({ case.name, true })
 			check(case, { preview = l.preview, picker = l.picker })
 			T.expect({ case.name, l.preview.right - l.preview.left >= GearLayout.LOOK.minW })
 				.toEqual({ case.name, true })
+			-- the cost line and "Zmień wygląd" in the footer row
+			footerRow(case, { cost = l.cost, button = l.button }, { "button" })
+			T.expect({ case.name, l.cost.right - l.cost.left >= 300 }).toEqual({ case.name, true })
+			-- review 2026-11-11: the reason the button is greyed out stands under the price (it was the picker's last
+			-- line, off screen on every phone): one line of Body 20 (26 high) and one of Small 17 (20) next to the coin
+			local room = l.cost.right - l.cost.left - 30
+			local dearest = CharacterLook.changeCost({ level = Config.MaxLevel })
+			for _, lang in { "pl", "en" } do
+				local price = Locale.T("look.cost.gold", { gold = Format.number(dearest) }, lang)
+				T.expect({ case.name, lang, TextCaps.lines(price, 20, room) }).toEqual({ case.name, lang, 1 })
+				T.expect({ case.name, lang, TextCaps.lines(Locale.T("look.cost.free", nil, lang), 20, room) })
+					.toEqual({ case.name, lang, 1 })
+				for _, key in { "look.error.bad", "look.error.same", "look.error.barber", "look.error.gold" } do
+					T.expect({ case.name, lang, key, TextCaps.lines(Locale.T(key, nil, lang), 17, room) })
+						.toEqual({ case.name, lang, key, 1 })
+				end
+			end
 		end
+		T.expect(26 + 20 <= GearLayout.FOOTER).toBe(true)
+		local source = fs.readFile("src/client/UI/Screens/LookWindow.luau")
+		local at = assert(string.find(source, "\t\tFooter = {", 1, true))
+		local footer = string.sub(source, at)
+		T.expect(string.find(footer, 'Name = "Why"', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(footer, "use(check).err", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(string.sub(source, 1, at), 'Name = "Why"', 1, true)).toBeNil()
 	end)
 
 	T.it("the backpack shop: a row's text ends before its button", function()
@@ -385,6 +939,7 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			"src/client/UI/Screens/SkillsWindow/init.luau",
 			"src/client/UI/Screens/SkillsWindow/Sheet.luau",
 			"src/client/UI/Screens/BlacksmithWindow/Upgrade.luau",
+			"src/client/UI/Screens/BlacksmithWindow/Craft.luau",
 			"src/client/UI/Screens/AuctionWindow/Sell.luau",
 			"src/client/UI/Screens/AuctionWindow/Browse.luau",
 			"src/client/UI/Screens/AlchemyWindow.luau",

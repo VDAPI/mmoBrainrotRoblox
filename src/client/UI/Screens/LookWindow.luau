@@ -8,6 +8,10 @@
 -- window's 776, so the picker ran under the window's edge. Now Logic/GearLayout.look places them from the content's
 -- measured size: the preview scaled down to the room next to the picker, the picker scrolling on its own, side by side
 -- on PC and on the phones. Review 2026-11-10: the size comes without the window's opening motion (UI/ViewSize).
+-- Adoption stage (UI package D after C, 2026-11-10): the cost and "Zmień wygląd" stand in the window's Footer, pinned
+-- under the content (the button was at the end of the scrolling picker, under the window's edge on a phone).
+-- Review 2026-11-11 (owner 2026-11-10: "things covering each other"): the reason a change is not possible stands in
+-- the footer too, under the price (it was the picker's last line, off screen on every phone); the price stays on top.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -29,6 +33,7 @@ local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Window = require(script.Parent.Parent.Components.Window)
 local ViewSize = require(script.Parent.Parent.ViewSize)
 
 local Children = Fusion.Children
@@ -38,8 +43,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 -- The server allows Npcs.INTERACT_RANGE + 4 studs (NpcService.Near); the client asks for a little less.
 local NEAR_RANGE = Npcs.INTERACT_RANGE + 2
 local NEAR_EVERY = 0.5
--- the content's size on PC (820 x 600) until it is measured
-local AREA_PC = { w = 776, h = 504 }
+-- the body's size on PC (820 x 600, above the footer) until it is measured
+local AREA_PC = { w = 776, h = 444 }
 
 -- Next to an NPC offering the "look" service (the barber), like MountController.NearStable.
 local function nearBarber(): boolean
@@ -64,7 +69,7 @@ local function nearBarber(): boolean
 	return false
 end
 
-local function LookWindow(scope: Scope): Instance
+local function LookWindow(scope: Scope): Window.Parts
 	local look = State.Value({ "character", "look" })
 	local lookFree = State.Value({ "character", "lookFree" })
 	local level = State.Value({ "character", "level" })
@@ -176,36 +181,6 @@ local function LookWindow(scope: Scope): Instance
 				Padding = UDim.new(0, Theme.Padding.Medium),
 			}),
 			LookPicker(scope, { Look = choice, Tab = tab, LayoutOrder = 1 }), -- S135: still the legacy dark look
-			scope:New("Frame")({
-				Name = "Cost",
-				LayoutOrder = 2,
-				Size = UDim2.new(1, 0, 0, 30),
-				BackgroundTransparency = 1,
-				[Children] = {
-					CurrencyIcon(scope, {
-						Currency = "gold",
-						Size = UDim2.fromOffset(24, 24),
-						Position = UDim2.fromOffset(0, 3),
-					}),
-					scope:New("TextLabel")({
-						Position = UDim2.fromOffset(30, 0),
-						Size = UDim2.new(1, -30, 1, 0),
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							local cost, free = CharacterLook.changeCost(use(character))
-							if free then
-								return Text.get(use, "look.cost.free")
-							end
-							return Text.get(use, "look.cost.gold", { gold = Format.number(cost) })
-						end),
-						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Paper.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextWrapped = true,
-					}),
-				},
-			}),
 			-- 2026-10-21 (owner: too many detailed descriptions): one short line, what the avatar hides behind the "i"
 			scope:New("Frame")({
 				Name = "AvatarOn",
@@ -239,32 +214,6 @@ local function LookWindow(scope: Scope): Instance
 					InfoTip.new(scope, { Text = Text.T(scope, "look.avatarOn"), LayoutOrder = 2 }),
 				},
 			}),
-			Button(scope, {
-				LayoutOrder = 4,
-				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-				Variant = "primary",
-				Text = Text.T(scope, "look.apply"),
-				Disabled = scope:Computed(function(use): boolean
-					return not use(check).ok or use(busy)
-				end),
-				OnClick = apply,
-			}),
-			scope:New("TextLabel")({
-				Name = "Why",
-				LayoutOrder = 5,
-				Size = UDim2.fromScale(1, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					local err = use(check).err
-					return if err then Text.get(use, err) else ""
-				end),
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextWrapped = true,
-			}),
 		},
 	})
 
@@ -288,7 +237,7 @@ local function LookWindow(scope: Scope): Instance
 					return if t == "face" or t == "paint" then "face" else nil
 				end),
 			}),
-			-- the picker, its cost and the button scroll next to the preview
+			-- the picker scrolls next to the preview (the cost, the reason and the button stand in the footer)
 			scope:New("ScrollingFrame")({
 				Name = "PickerScroll",
 				Position = at(pickerRect),
@@ -311,7 +260,102 @@ local function LookWindow(scope: Scope): Instance
 		},
 	})
 	view.watch(root)
-	return root
+	-- the footer's row (right-aligned): the cost line with the reason under it, then "Zmień wygląd" (GearLayout.look's
+	-- cost and button)
+	local function footerSize(pick: (GearLayout.Look) -> GearLayout.Rect): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+		end)
+	end
+	return {
+		Content = root,
+		Footer = {
+			scope:New("Frame")({
+				Name = "Cost",
+				LayoutOrder = 1,
+				Size = footerSize(function(l)
+					return l.cost
+				end),
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("UIListLayout")({
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+					}),
+					-- the price: one line of Body 20 next to the coin (tests/gearlayout.spec)
+					scope:New("Frame")({
+						Name = "Price",
+						LayoutOrder = 1,
+						Size = UDim2.new(1, 0, 0, 26),
+						BackgroundTransparency = 1,
+						[Children] = {
+							CurrencyIcon(scope, {
+								Currency = "gold",
+								Size = UDim2.fromOffset(24, 24),
+								AnchorPoint = Vector2.new(0, 0.5),
+								Position = UDim2.fromScale(0, 0.5),
+							}),
+							scope:New("TextLabel")({
+								Position = UDim2.fromOffset(30, 0),
+								Size = UDim2.new(1, -30, 1, 0),
+								BackgroundTransparency = 1,
+								Text = scope:Computed(function(use): string
+									local cost, free = CharacterLook.changeCost(use(character))
+									if free then
+										return Text.get(use, "look.cost.free")
+									end
+									return Text.get(use, "look.cost.gold", { gold = Format.number(cost) })
+								end),
+								FontFace = Theme.Fonts.BodyMedium,
+								TextSize = Theme.TextSize.Body,
+								TextColor3 = Theme.Paper.Text,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								TextTruncate = Enum.TextTruncate.AtEnd,
+							}),
+						},
+					}),
+					-- why "Zmień wygląd" is greyed out, one line of Small 17 under the price: the current look is a
+					-- hint (muted), the rest blocks the change (red)
+					scope:New("TextLabel")({
+						Name = "Why",
+						LayoutOrder = 2,
+						Size = UDim2.new(1, 0, 0, 20),
+						BackgroundTransparency = 1,
+						Visible = scope:Computed(function(use): boolean
+							return use(check).err ~= nil
+						end),
+						Text = scope:Computed(function(use): string
+							local err = use(check).err
+							return if err then Text.get(use, err) else ""
+						end),
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = scope:Computed(function(use): Color3
+							return if use(check).err == "look.error.same"
+								then Theme.Paper.TextMuted
+								else Theme.Paper.Danger
+						end),
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+						[Children] = scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 30) }),
+					}),
+				},
+			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = footerSize(function(l)
+					return l.button
+				end),
+				Variant = "primary",
+				Text = Text.T(scope, "look.apply"),
+				Disabled = scope:Computed(function(use): boolean
+					return not use(check).ok or use(busy)
+				end),
+				OnClick = apply,
+			}),
+		},
+	}
 end
 
 return LookWindow

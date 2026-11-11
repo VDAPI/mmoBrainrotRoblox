@@ -6,9 +6,13 @@
 -- the question (at most 60 characters) and one price line, at most 90 in all; what the purchase gives (`desc`, up to
 -- 220 characters for Auto Hunt) goes under "Więcej ▸" (the Modal's Details). A card's hover is only the price and the
 -- balance after the purchase: the card shows the name and its (i) holds the description, so nothing is said twice.
+-- Adoption stage (UI package D after C, 2026-11-10): the dialog's buttons stand in the Modal's pinned footer, and the
+-- price lives on its confirm button ("Kup za ◆ 500"), so the body no longer repeats it: the question and the balance
+-- after. The top-up dialog (its button says "Doładuj") keeps the price in the body.
 --   PremiumConfirm.setShowModal(fn)  WindowManager.ShowModal (PremiumController.Init)
---   PremiumConfirm.describe(spec, mode?)  "confirm" (default): the question and the price line; "tooltip": the price
---     and the balance after (premium.error.shards instead of a negative balance)
+--   PremiumConfirm.describe(spec, mode?)  "confirm" (default): the question and the balance after; "topUp": the
+--     question, the price and the balance; "tooltip": the price and the balance after (premium.error.shards instead
+--     of a negative balance)
 --   PremiumConfirm.ask(spec)  the dialog; confirming sends `spec.remote(spec.arg, spec.arg2)` and keeps an error in the
 --     dialog (S123: arg2 = the price shown, PremiumBuyCosmetic refuses another one with premium.error.priceChanged)
 
@@ -48,7 +52,7 @@ end
 
 -- The body of the dialog ("confirm") or a card's hover ("tooltip"). Neither repeats the description: the dialog puts it
 -- under "Więcej ▸" (PremiumConfirm.details), the card behind its (i).
-function PremiumConfirm.describe(spec: Spec, mode: ("confirm" | "tooltip")?): string
+function PremiumConfirm.describe(spec: Spec, mode: ("confirm" | "topUp" | "tooltip")?): string
 	local after = Premium.balanceAfter(spec.shards, spec.price)
 	local args = { price = Format.number(spec.price), after = Format.number(after) }
 	if mode == "tooltip" then
@@ -57,7 +61,10 @@ function PremiumConfirm.describe(spec: Spec, mode: ("confirm" | "tooltip")?): st
 	end
 	local balance = if after < 0 then Text.now("premium.error.shards") else Text.now("premium.confirm.after", args)
 	local question = Text.now("premium.confirm.question", { name = spec.name })
-	return `{question}\n{Text.now("premium.confirm.price", args)} · {balance}`
+	if mode == "topUp" then
+		return `{question}\n{Text.now("premium.confirm.price", args)} · {balance}`
+	end
+	return `{question}\n{balance}` -- the confirm button carries the price
 end
 
 -- What the purchase gives, for the dialog's "Więcej ▸" (nil without a description).

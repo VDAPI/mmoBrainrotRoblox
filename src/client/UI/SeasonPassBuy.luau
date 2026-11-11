@@ -44,9 +44,10 @@ function SeasonPassBuy.ask(topUp: () -> ())
 	if shards < price then
 		PremiumConfirm.modal({
 			Title = Text.now("premium.confirm.title"),
-			-- the question and the price with premium.error.shards instead of a negative balance after the purchase;
-			-- what the premium track gives under "Więcej ▸" (owner 2026-11-10: one home per thing)
-			Message = PremiumConfirm.describe(spec, "confirm"),
+			-- the question and the price with premium.error.shards instead of a negative balance after the purchase
+			-- (the button says "Doładuj", so the body keeps the price); what the premium track gives under "Więcej ▸"
+			-- (owner 2026-11-10: one home per thing)
+			Message = PremiumConfirm.describe(spec, "topUp"),
 			Details = PremiumConfirm.details(spec),
 			ConfirmText = Text.now("premium.topUp"),
 			CancelText = Text.now("common.cancel"),
