@@ -12,7 +12,8 @@
 -- Final UI review 2026-11-10: the death screen's content keeps the messages off as a dialog does, and what waits keeps
 -- its time while it shows (the killer's toast of a PvP death showed under it and dropped unseen); the legendary card,
 -- the only way to the reveal, stands 20 s and waits ten minutes for its place.
--- Seams 2026-11-11: the legendary card's item gets no pickup toast beside it (LootController).
+-- Seams 2026-11-11: the legendary card's item gets no pickup toast beside it (LootController) and no better-item card
+-- after it (LootComfortController hears the pickup from LootController, with the item the card names).
 
 local fs = require("@lune/fs")
 
@@ -456,6 +457,34 @@ T.describe("NoticeQueue: the policy (fake clock)", function()
 			string.find(loot, "if reveal then\n\t\topenReveal(reveal)\n\telseif firstPick then", picked, true) ~= nil
 		)
 			.toBe(true)
+	end)
+
+	T.it("seams 2026-11-11: the better-item card passes over the item the legendary card names", function()
+		-- a legendary or first-drop upgrade also got 'Lepszy przedmiot! / Ostrze Pustki / Załóż', which waited behind the
+		-- card and showed when its 'Szczegóły' closed it, under the reveal, still offering 'Załóż' once the reveal had put
+		-- the item on: the better-item card hears the pickup from LootController, after the card, with its item
+		local loot = fs.readFile("src/client/Controllers/LootController.luau")
+		local picked = string.find(loot, "local function onPicked(", 1, true) :: number
+		local card = string.find(loot, 'openReveal(firstPick, "reveal.titleFirst")', picked, true)
+		local listeners = string.find(loot, "task.spawn(fn, items, carded)", picked, true)
+		T.expect(card ~= nil and listeners ~= nil and (card :: number) < (listeners :: number)).toBe(true)
+		local comfort = fs.readFile("src/client/Controllers/LootComfortController.luau")
+		T.expect(string.find(comfort, 'registry.Get("LootController").OnPicked(onPicked)', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(comfort, 'type(item) == "table" and item ~= carded', 1, true) ~= nil).toBe(true)
+		-- one handler of the remote on the client: two handlers of one remote run in no set order
+		local heard: { string } = {}
+		local function walk(dir: string)
+			for _, name in fs.readDir(dir) do
+				local path = `{dir}/{name}`
+				if fs.isDir(path) then
+					walk(path)
+				elseif string.sub(name, -5) == ".luau" and string.find(fs.readFile(path), '"LootPicked"', 1, true) then
+					table.insert(heard, path)
+				end
+			end
+		end
+		walk("src/client")
+		T.expect(heard).toEqual({ "src/client/Controllers/LootController.luau" })
 	end)
 
 	T.it("lets the achievement wait for an open window, and a prompt show until its deadline", function()

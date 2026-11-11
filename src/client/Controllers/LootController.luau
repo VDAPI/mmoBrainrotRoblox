@@ -7,7 +7,9 @@
 -- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner questions 1
 -- and UI 10): picking such an item up shows one of UI/Notify's cards (the title and the item; the PC corner, a phone's
 -- M zone) and the reveal opens from its 'Szczegóły', never by itself. The card names that item, so it gets no
--- "+1 <name>" toast (one home, UI-ZASADY §1; seams 2026-11-11); the rest of the bag keeps its toasts.
+-- "+1 <name>" toast (one home, UI-ZASADY §1; seams 2026-11-11); the rest of the bag keeps its toasts. The pickup then
+-- goes on to the better-item card (LootComfortController, through LootController.OnPicked) with the carded item, which
+-- that card passes over: the reveal has its own "Załóż".
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -52,6 +54,7 @@ local folder: Folder
 local bags: { [string]: BagView } = {}
 local busy: { [string]: boolean } = {}
 local firstUids: { [string]: boolean } = {} -- S155b: items of a first-drop bag (the reveal on pickup)
+local pickedListeners: { (items: { ItemInstance }, carded: ItemInstance?) -> () } = {}
 
 local PILLAR_HEIGHT = 60
 
@@ -370,6 +373,10 @@ local function onPicked(items: { ItemInstance })
 	elseif firstPick then
 		openReveal(firstPick, "reveal.titleFirst")
 	end
+	-- then the listeners (the better-item card) with the item the card names, which they pass over
+	for _, fn in pickedListeners do
+		task.spawn(fn, items, carded)
+	end
 end
 
 -- Nearest bag within pickup range (E key).
@@ -389,6 +396,13 @@ local function nearestBag(): string?
 		end
 	end
 	return best
+end
+
+-- Seams 2026-11-11: `fn(items, carded)` runs for every pickup after this controller has shown its toasts and its card;
+-- `carded` is the item the legendary or first-drop card names (nil without one). Listen here, not to LootPicked: two
+-- handlers of one remote run in no set order, and the better-item card has to know which item the card names.
+function LootController.OnPicked(fn: (items: { ItemInstance }, carded: ItemInstance?) -> ())
+	table.insert(pickedListeners, fn)
 end
 
 function LootController.Init(registry)

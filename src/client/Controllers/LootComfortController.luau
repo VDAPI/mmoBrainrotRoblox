@@ -1,7 +1,10 @@
 --!strict
 -- Loot comfort on the client (S20, DESIGN §5.9):
 --   * "Better item!": when picked-up equipment beats what the character wears (Logic/ItemScore) a small card
---     with both names and an "Equip" button shows for 8 s (option "betterItem");
+--     with both names and an "Equip" button shows for 8 s (option "betterItem"). Not for the item the legendary or
+--     first-drop card names (seams 2026-11-11): its reveal has "Equip", and this card, waiting behind that one, would
+--     name it again and offer "Equip" for an item already worn. The pickup comes from LootController.OnPicked, after
+--     that card, with the item it names;
 --   * the loot log window (last 50 items from character.lootLog), opened from the backpack.
 -- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner question 1):
 -- the card is one of UI/Notify's cards: the PC corner's card slot (a tablet: under the toasts, a phone: one line of
@@ -17,7 +20,6 @@ local ItemSlot = require(script.Parent.Parent.UI.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local LootLog = require(script.Parent.Parent.UI.Screens.LootLog)
-local Net = require(ReplicatedStorage.Shared.Net)
 local Notify = require(script.Parent.Parent.UI.Notify)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -31,7 +33,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local LootComfortController = {
 	Name = "LootComfortController",
-	Deps = { "WindowManager", "UIController", "ItemController" },
+	Deps = { "WindowManager", "UIController", "ItemController", "LootController" },
 }
 
 local CARD_SECONDS = 8
@@ -160,7 +162,8 @@ local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 	})
 end
 
-local function onPicked(items: any)
+-- `carded`: the item the legendary or first-drop card names (LootController.OnPicked), passed over.
+local function onPicked(items: { Types.ItemInstance }, carded: Types.ItemInstance?)
 	if type(items) ~= "table" or State.Get({ "account", "settings", "betterItem" }) == false then
 		return
 	end
@@ -176,7 +179,7 @@ local function onPicked(items: any)
 	local bestCurrent: Types.ItemInstance? = nil
 	local bestGain = 0
 	for _, item in items do
-		local def = if type(item) == "table" then Items.get(item.id) else nil
+		local def = if type(item) == "table" and item ~= carded then Items.get(item.id) else nil
 		if def and def.slot then
 			local current = replaced(def, ctx)
 			if ItemScore.isUpgrade(item, current, ctx, level) then
@@ -204,10 +207,10 @@ function LootComfortController.Init(registry)
 			return LootLog(scope)
 		end,
 	})
+	registry.Get("LootController").OnPicked(onPicked)
 end
 
 function LootComfortController.Start()
-	Net.On("LootPicked", onPicked)
 	Players.LocalPlayer.CharacterRemoving:Connect(closeCard)
 end
 
