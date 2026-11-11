@@ -26,7 +26,7 @@
     {"decimals":1,"format":"pct","group":"offense","id":"skillDmg","name":{"en":"Skill damage","pl":"Obrażenia umiejętności"},"order":10},
     {"decimals":1,"format":"pct","group":"offense","id":"basicDmg","name":{"en":"Basic attack damage","pl":"Obrażenia ataku podstawowego"},"order":11},
     {"decimals":1,"format":"pct","group":"offense","id":"healPower","name":{"en":"Healing power","pl":"Moc leczenia"},"order":12},
-    {"decimals":0,"format":"flat","group":"defense","id":"armor","name":{"en":"Armor","pl":"Obrona"},"order":13},
+    {"decimals":0,"format":"flat","group":"defense","id":"armor","name":{"en":"Armor","pl":"Pancerz"},"order":13},
     {"decimals":0,"format":"flat","group":"defense","id":"mres","name":{"en":"Magic resistance","pl":"Odporność magiczna"},"order":14},
     {"cap":30,"decimals":1,"format":"pct","group":"defense","id":"dodge","name":{"en":"Dodge","pl":"Unik"},"order":15},
     {"cap":50,"decimals":1,"format":"pct","group":"defense","id":"critResist","name":{"en":"Critical resistance","pl":"Odporność na krytyki"},"order":16},

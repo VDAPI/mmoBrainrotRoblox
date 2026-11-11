@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych e5b690b4 (`wiki/src/data/meta.json`).
+> Odcisk danych f84f8db5 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -75,79 +75,79 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosta Zbroja Płytowa | 1 | Obrona 6, hp 9 | 5 | — |
-| Solidna Zbroja Płytowa | 5 | Obrona 16, hp 21 | 24 | 96 |
-| Żelazna Zbroja Płytowa | 10 | Obrona 28, hp 36 | 48 | — |
-| Wzmocniona Zbroja Płytowa | 15 | Obrona 40, hp 51 | 72 | 288 |
-| Stalowa Zbroja Płytowa | 20 | Obrona 52, hp 66 | 96 | — |
-| Hartowana Zbroja Płytowa | 25 | Obrona 64, hp 81 | 120 | 480 |
-| Srebrna Zbroja Płytowa | 30 | Obrona 76, hp 96 | 144 | — |
-| Szlachetna Zbroja Płytowa | 35 | Obrona 88, hp 111 | 168 | 672 |
-| Runiczna Zbroja Płytowa | 40 | Obrona 100, hp 126 | 192 | — |
-| Mithrilowa Zbroja Płytowa | 45 | Obrona 112, hp 141 | 216 | 864 |
-| Elfia Zbroja Płytowa | 50 | Obrona 124, hp 156 | 240 | — |
-| Obsydianowa Zbroja Płytowa | 55 | Obrona 136, hp 171 | 264 | 1056 |
-| Adamantytowa Zbroja Płytowa | 60 | Obrona 148, hp 186 | 288 | — |
-| Królewska Zbroja Płytowa | 65 | Obrona 160, hp 201 | 312 | 1248 |
-| Płomienna Zbroja Płytowa | 70 | Obrona 172, hp 216 | 336 | — |
-| Gwiezdna Zbroja Płytowa | 75 | Obrona 184, hp 231 | 360 | 1440 |
-| Tytanowa Zbroja Płytowa | 80 | Obrona 196, hp 246 | 384 | — |
-| Pradawna Zbroja Płytowa | 85 | Obrona 208, hp 261 | 408 | 1632 |
-| Niebiańska Zbroja Płytowa | 90 | Obrona 220, hp 276 | 432 | — |
-| Eteryczna Zbroja Płytowa | 95 | Obrona 232, hp 291 | 456 | 1824 |
-| Smocza Zbroja Płytowa | 100 | Obrona 244, hp 306 | 480 | — |
+| Prosta Zbroja Płytowa | 1 | Pancerz 6, hp 9 | 5 | — |
+| Solidna Zbroja Płytowa | 5 | Pancerz 16, hp 21 | 24 | 96 |
+| Żelazna Zbroja Płytowa | 10 | Pancerz 28, hp 36 | 48 | — |
+| Wzmocniona Zbroja Płytowa | 15 | Pancerz 40, hp 51 | 72 | 288 |
+| Stalowa Zbroja Płytowa | 20 | Pancerz 52, hp 66 | 96 | — |
+| Hartowana Zbroja Płytowa | 25 | Pancerz 64, hp 81 | 120 | 480 |
+| Srebrna Zbroja Płytowa | 30 | Pancerz 76, hp 96 | 144 | — |
+| Szlachetna Zbroja Płytowa | 35 | Pancerz 88, hp 111 | 168 | 672 |
+| Runiczna Zbroja Płytowa | 40 | Pancerz 100, hp 126 | 192 | — |
+| Mithrilowa Zbroja Płytowa | 45 | Pancerz 112, hp 141 | 216 | 864 |
+| Elfia Zbroja Płytowa | 50 | Pancerz 124, hp 156 | 240 | — |
+| Obsydianowa Zbroja Płytowa | 55 | Pancerz 136, hp 171 | 264 | 1056 |
+| Adamantytowa Zbroja Płytowa | 60 | Pancerz 148, hp 186 | 288 | — |
+| Królewska Zbroja Płytowa | 65 | Pancerz 160, hp 201 | 312 | 1248 |
+| Płomienna Zbroja Płytowa | 70 | Pancerz 172, hp 216 | 336 | — |
+| Gwiezdna Zbroja Płytowa | 75 | Pancerz 184, hp 231 | 360 | 1440 |
+| Tytanowa Zbroja Płytowa | 80 | Pancerz 196, hp 246 | 384 | — |
+| Pradawna Zbroja Płytowa | 85 | Pancerz 208, hp 261 | 408 | 1632 |
+| Niebiańska Zbroja Płytowa | 90 | Pancerz 220, hp 276 | 432 | — |
+| Eteryczna Zbroja Płytowa | 95 | Pancerz 232, hp 291 | 456 | 1824 |
+| Smocza Zbroja Płytowa | 100 | Pancerz 244, hp 306 | 480 | — |
 
 #### Szata (`armor_light`) · Mag, Kapłan
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosta Szata | 1 | Obrona 3, hp 5, mana 8, Odporność magiczna 3 | 5 | — |
-| Solidna Szata | 5 | Obrona 7, hp 11, mana 18, Odporność magiczna 9 | 24 | 96 |
-| Żelazna Szata | 10 | Obrona 12, hp 18, mana 30, Odporność magiczna 16 | 48 | — |
-| Wzmocniona Szata | 15 | Obrona 17, hp 26, mana 43, Odporność magiczna 23 | 72 | 288 |
-| Stalowa Szata | 20 | Obrona 22, hp 33, mana 55, Odporność magiczna 30 | 96 | — |
-| Hartowana Szata | 25 | Obrona 27, hp 41, mana 68, Odporność magiczna 37 | 120 | 480 |
-| Srebrna Szata | 30 | Obrona 32, hp 48, mana 80, Odporność magiczna 44 | 144 | — |
-| Szlachetna Szata | 35 | Obrona 37, hp 56, mana 93, Odporność magiczna 51 | 168 | 672 |
-| Runiczna Szata | 40 | Obrona 42, hp 63, mana 105, Odporność magiczna 58 | 192 | — |
-| Mithrilowa Szata | 45 | Obrona 47, hp 71, mana 118, Odporność magiczna 65 | 216 | 864 |
-| Elfia Szata | 50 | Obrona 52, hp 78, mana 130, Odporność magiczna 72 | 240 | — |
-| Obsydianowa Szata | 55 | Obrona 57, hp 86, mana 143, Odporność magiczna 79 | 264 | 1056 |
-| Adamantytowa Szata | 60 | Obrona 62, hp 93, mana 155, Odporność magiczna 86 | 288 | — |
-| Królewska Szata | 65 | Obrona 67, hp 101, mana 168, Odporność magiczna 93 | 312 | 1248 |
-| Płomienna Szata | 70 | Obrona 72, hp 108, mana 180, Odporność magiczna 100 | 336 | — |
-| Gwiezdna Szata | 75 | Obrona 77, hp 116, mana 193, Odporność magiczna 107 | 360 | 1440 |
-| Tytanowa Szata | 80 | Obrona 82, hp 123, mana 205, Odporność magiczna 114 | 384 | — |
-| Pradawna Szata | 85 | Obrona 87, hp 131, mana 218, Odporność magiczna 121 | 408 | 1632 |
-| Niebiańska Szata | 90 | Obrona 92, hp 138, mana 230, Odporność magiczna 128 | 432 | — |
-| Eteryczna Szata | 95 | Obrona 97, hp 146, mana 243, Odporność magiczna 135 | 456 | 1824 |
-| Smocza Szata | 100 | Obrona 102, hp 153, mana 255, Odporność magiczna 142 | 480 | — |
+| Prosta Szata | 1 | Pancerz 3, hp 5, mana 8, Odporność magiczna 3 | 5 | — |
+| Solidna Szata | 5 | Pancerz 7, hp 11, mana 18, Odporność magiczna 9 | 24 | 96 |
+| Żelazna Szata | 10 | Pancerz 12, hp 18, mana 30, Odporność magiczna 16 | 48 | — |
+| Wzmocniona Szata | 15 | Pancerz 17, hp 26, mana 43, Odporność magiczna 23 | 72 | 288 |
+| Stalowa Szata | 20 | Pancerz 22, hp 33, mana 55, Odporność magiczna 30 | 96 | — |
+| Hartowana Szata | 25 | Pancerz 27, hp 41, mana 68, Odporność magiczna 37 | 120 | 480 |
+| Srebrna Szata | 30 | Pancerz 32, hp 48, mana 80, Odporność magiczna 44 | 144 | — |
+| Szlachetna Szata | 35 | Pancerz 37, hp 56, mana 93, Odporność magiczna 51 | 168 | 672 |
+| Runiczna Szata | 40 | Pancerz 42, hp 63, mana 105, Odporność magiczna 58 | 192 | — |
+| Mithrilowa Szata | 45 | Pancerz 47, hp 71, mana 118, Odporność magiczna 65 | 216 | 864 |
+| Elfia Szata | 50 | Pancerz 52, hp 78, mana 130, Odporność magiczna 72 | 240 | — |
+| Obsydianowa Szata | 55 | Pancerz 57, hp 86, mana 143, Odporność magiczna 79 | 264 | 1056 |
+| Adamantytowa Szata | 60 | Pancerz 62, hp 93, mana 155, Odporność magiczna 86 | 288 | — |
+| Królewska Szata | 65 | Pancerz 67, hp 101, mana 168, Odporność magiczna 93 | 312 | 1248 |
+| Płomienna Szata | 70 | Pancerz 72, hp 108, mana 180, Odporność magiczna 100 | 336 | — |
+| Gwiezdna Szata | 75 | Pancerz 77, hp 116, mana 193, Odporność magiczna 107 | 360 | 1440 |
+| Tytanowa Szata | 80 | Pancerz 82, hp 123, mana 205, Odporność magiczna 114 | 384 | — |
+| Pradawna Szata | 85 | Pancerz 87, hp 131, mana 218, Odporność magiczna 121 | 408 | 1632 |
+| Niebiańska Szata | 90 | Pancerz 92, hp 138, mana 230, Odporność magiczna 128 | 432 | — |
+| Eteryczna Szata | 95 | Pancerz 97, hp 146, mana 243, Odporność magiczna 135 | 456 | 1824 |
+| Smocza Szata | 100 | Pancerz 102, hp 153, mana 255, Odporność magiczna 142 | 480 | — |
 
 #### Kurta (`armor_medium`) · Łowca
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosta Kurta | 1 | Obrona 5, Unik 0,5, hp 8 | 5 | — |
-| Solidna Kurta | 5 | Obrona 12, Unik 0,6, hp 18 | 24 | 96 |
-| Żelazna Kurta | 10 | Obrona 20, Unik 0,7, hp 30 | 48 | — |
-| Wzmocniona Kurta | 15 | Obrona 29, Unik 0,8, hp 43 | 72 | 288 |
-| Stalowa Kurta | 20 | Obrona 37, Unik 0,9, hp 55 | 96 | — |
-| Hartowana Kurta | 25 | Obrona 46, Unik 1, hp 68 | 120 | 480 |
-| Srebrna Kurta | 30 | Obrona 54, Unik 1,1, hp 80 | 144 | — |
-| Szlachetna Kurta | 35 | Obrona 63, Unik 1,2, hp 93 | 168 | 672 |
-| Runiczna Kurta | 40 | Obrona 71, Unik 1,3, hp 105 | 192 | — |
-| Mithrilowa Kurta | 45 | Obrona 80, Unik 1,4, hp 118 | 216 | 864 |
-| Elfia Kurta | 50 | Obrona 88, Unik 1,5, hp 130 | 240 | — |
-| Obsydianowa Kurta | 55 | Obrona 97, Unik 1,6, hp 143 | 264 | 1056 |
-| Adamantytowa Kurta | 60 | Obrona 105, Unik 1,7, hp 155 | 288 | — |
-| Królewska Kurta | 65 | Obrona 114, Unik 1,8, hp 168 | 312 | 1248 |
-| Płomienna Kurta | 70 | Obrona 122, Unik 1,9, hp 180 | 336 | — |
-| Gwiezdna Kurta | 75 | Obrona 131, Unik 2, hp 193 | 360 | 1440 |
-| Tytanowa Kurta | 80 | Obrona 139, Unik 2,1, hp 205 | 384 | — |
-| Pradawna Kurta | 85 | Obrona 148, Unik 2,2, hp 218 | 408 | 1632 |
-| Niebiańska Kurta | 90 | Obrona 156, Unik 2,3, hp 230 | 432 | — |
-| Eteryczna Kurta | 95 | Obrona 165, Unik 2,4, hp 243 | 456 | 1824 |
-| Smocza Kurta | 100 | Obrona 173, Unik 2,5, hp 255 | 480 | — |
+| Prosta Kurta | 1 | Pancerz 5, Unik 0,5, hp 8 | 5 | — |
+| Solidna Kurta | 5 | Pancerz 12, Unik 0,6, hp 18 | 24 | 96 |
+| Żelazna Kurta | 10 | Pancerz 20, Unik 0,7, hp 30 | 48 | — |
+| Wzmocniona Kurta | 15 | Pancerz 29, Unik 0,8, hp 43 | 72 | 288 |
+| Stalowa Kurta | 20 | Pancerz 37, Unik 0,9, hp 55 | 96 | — |
+| Hartowana Kurta | 25 | Pancerz 46, Unik 1, hp 68 | 120 | 480 |
+| Srebrna Kurta | 30 | Pancerz 54, Unik 1,1, hp 80 | 144 | — |
+| Szlachetna Kurta | 35 | Pancerz 63, Unik 1,2, hp 93 | 168 | 672 |
+| Runiczna Kurta | 40 | Pancerz 71, Unik 1,3, hp 105 | 192 | — |
+| Mithrilowa Kurta | 45 | Pancerz 80, Unik 1,4, hp 118 | 216 | 864 |
+| Elfia Kurta | 50 | Pancerz 88, Unik 1,5, hp 130 | 240 | — |
+| Obsydianowa Kurta | 55 | Pancerz 97, Unik 1,6, hp 143 | 264 | 1056 |
+| Adamantytowa Kurta | 60 | Pancerz 105, Unik 1,7, hp 155 | 288 | — |
+| Królewska Kurta | 65 | Pancerz 114, Unik 1,8, hp 168 | 312 | 1248 |
+| Płomienna Kurta | 70 | Pancerz 122, Unik 1,9, hp 180 | 336 | — |
+| Gwiezdna Kurta | 75 | Pancerz 131, Unik 2, hp 193 | 360 | 1440 |
+| Tytanowa Kurta | 80 | Pancerz 139, Unik 2,1, hp 205 | 384 | — |
+| Pradawna Kurta | 85 | Pancerz 148, Unik 2,2, hp 218 | 408 | 1632 |
+| Niebiańska Kurta | 90 | Pancerz 156, Unik 2,3, hp 230 | 432 | — |
+| Eteryczna Kurta | 95 | Pancerz 165, Unik 2,4, hp 243 | 456 | 1824 |
+| Smocza Kurta | 100 | Pancerz 173, Unik 2,5, hp 255 | 480 | — |
 
 ### Buty
 
@@ -155,79 +155,79 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Proste Buty Płytowe | 1 | Obrona 3, hp 5 | 5 | — |
-| Solidne Buty Płytowe | 5 | Obrona 8, hp 11 | 24 | 96 |
-| Żelazne Buty Płytowe | 10 | Obrona 14, hp 18 | 48 | — |
-| Wzmocnione Buty Płytowe | 15 | Obrona 20, hp 26 | 72 | 288 |
-| Stalowe Buty Płytowe | 20 | Obrona 26, hp 33 | 96 | — |
-| Hartowane Buty Płytowe | 25 | Obrona 32, hp 41 | 120 | 480 |
-| Srebrne Buty Płytowe | 30 | Obrona 38, hp 48 | 144 | — |
-| Szlachetne Buty Płytowe | 35 | Obrona 44, hp 56 | 168 | 672 |
-| Runiczne Buty Płytowe | 40 | Obrona 50, hp 63 | 192 | — |
-| Mithrilowe Buty Płytowe | 45 | Obrona 56, hp 71 | 216 | 864 |
-| Elfie Buty Płytowe | 50 | Obrona 62, hp 78 | 240 | — |
-| Obsydianowe Buty Płytowe | 55 | Obrona 68, hp 86 | 264 | 1056 |
-| Adamantytowe Buty Płytowe | 60 | Obrona 74, hp 93 | 288 | — |
-| Królewskie Buty Płytowe | 65 | Obrona 80, hp 101 | 312 | 1248 |
-| Płomienne Buty Płytowe | 70 | Obrona 86, hp 108 | 336 | — |
-| Gwiezdne Buty Płytowe | 75 | Obrona 92, hp 116 | 360 | 1440 |
-| Tytanowe Buty Płytowe | 80 | Obrona 98, hp 123 | 384 | — |
-| Pradawne Buty Płytowe | 85 | Obrona 104, hp 131 | 408 | 1632 |
-| Niebiańskie Buty Płytowe | 90 | Obrona 110, hp 138 | 432 | — |
-| Eteryczne Buty Płytowe | 95 | Obrona 116, hp 146 | 456 | 1824 |
-| Smocze Buty Płytowe | 100 | Obrona 122, hp 153 | 480 | — |
+| Proste Buty Płytowe | 1 | Pancerz 3, hp 5 | 5 | — |
+| Solidne Buty Płytowe | 5 | Pancerz 8, hp 11 | 24 | 96 |
+| Żelazne Buty Płytowe | 10 | Pancerz 14, hp 18 | 48 | — |
+| Wzmocnione Buty Płytowe | 15 | Pancerz 20, hp 26 | 72 | 288 |
+| Stalowe Buty Płytowe | 20 | Pancerz 26, hp 33 | 96 | — |
+| Hartowane Buty Płytowe | 25 | Pancerz 32, hp 41 | 120 | 480 |
+| Srebrne Buty Płytowe | 30 | Pancerz 38, hp 48 | 144 | — |
+| Szlachetne Buty Płytowe | 35 | Pancerz 44, hp 56 | 168 | 672 |
+| Runiczne Buty Płytowe | 40 | Pancerz 50, hp 63 | 192 | — |
+| Mithrilowe Buty Płytowe | 45 | Pancerz 56, hp 71 | 216 | 864 |
+| Elfie Buty Płytowe | 50 | Pancerz 62, hp 78 | 240 | — |
+| Obsydianowe Buty Płytowe | 55 | Pancerz 68, hp 86 | 264 | 1056 |
+| Adamantytowe Buty Płytowe | 60 | Pancerz 74, hp 93 | 288 | — |
+| Królewskie Buty Płytowe | 65 | Pancerz 80, hp 101 | 312 | 1248 |
+| Płomienne Buty Płytowe | 70 | Pancerz 86, hp 108 | 336 | — |
+| Gwiezdne Buty Płytowe | 75 | Pancerz 92, hp 116 | 360 | 1440 |
+| Tytanowe Buty Płytowe | 80 | Pancerz 98, hp 123 | 384 | — |
+| Pradawne Buty Płytowe | 85 | Pancerz 104, hp 131 | 408 | 1632 |
+| Niebiańskie Buty Płytowe | 90 | Pancerz 110, hp 138 | 432 | — |
+| Eteryczne Buty Płytowe | 95 | Pancerz 116, hp 146 | 456 | 1824 |
+| Smocze Buty Płytowe | 100 | Pancerz 122, hp 153 | 480 | — |
 
 #### Sandały (`boots_light`) · Mag, Kapłan
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Proste Sandały | 1 | Obrona 2, hp 2, mana 4, Odporność magiczna 2 | 5 | — |
-| Solidne Sandały | 5 | Obrona 4, hp 5, mana 9, Odporność magiczna 5 | 24 | 96 |
-| Żelazne Sandały | 10 | Obrona 6, hp 9, mana 15, Odporność magiczna 8 | 48 | — |
-| Wzmocnione Sandały | 15 | Obrona 9, hp 13, mana 21, Odporność magiczna 12 | 72 | 288 |
-| Stalowe Sandały | 20 | Obrona 11, hp 17, mana 28, Odporność magiczna 15 | 96 | — |
-| Hartowane Sandały | 25 | Obrona 14, hp 20, mana 34, Odporność magiczna 19 | 120 | 480 |
-| Srebrne Sandały | 30 | Obrona 16, hp 24, mana 40, Odporność magiczna 22 | 144 | — |
-| Szlachetne Sandały | 35 | Obrona 19, hp 28, mana 46, Odporność magiczna 26 | 168 | 672 |
-| Runiczne Sandały | 40 | Obrona 21, hp 32, mana 53, Odporność magiczna 29 | 192 | — |
-| Mithrilowe Sandały | 45 | Obrona 24, hp 35, mana 59, Odporność magiczna 33 | 216 | 864 |
-| Elfie Sandały | 50 | Obrona 26, hp 39, mana 65, Odporność magiczna 36 | 240 | — |
-| Obsydianowe Sandały | 55 | Obrona 29, hp 43, mana 71, Odporność magiczna 40 | 264 | 1056 |
-| Adamantytowe Sandały | 60 | Obrona 31, hp 47, mana 78, Odporność magiczna 43 | 288 | — |
-| Królewskie Sandały | 65 | Obrona 34, hp 50, mana 84, Odporność magiczna 47 | 312 | 1248 |
-| Płomienne Sandały | 70 | Obrona 36, hp 54, mana 90, Odporność magiczna 50 | 336 | — |
-| Gwiezdne Sandały | 75 | Obrona 39, hp 58, mana 96, Odporność magiczna 54 | 360 | 1440 |
-| Tytanowe Sandały | 80 | Obrona 41, hp 62, mana 103, Odporność magiczna 57 | 384 | — |
-| Pradawne Sandały | 85 | Obrona 44, hp 65, mana 109, Odporność magiczna 60 | 408 | 1632 |
-| Niebiańskie Sandały | 90 | Obrona 46, hp 69, mana 115, Odporność magiczna 64 | 432 | — |
-| Eteryczne Sandały | 95 | Obrona 49, hp 73, mana 121, Odporność magiczna 68 | 456 | 1824 |
-| Smocze Sandały | 100 | Obrona 51, hp 77, mana 128, Odporność magiczna 71 | 480 | — |
+| Proste Sandały | 1 | Pancerz 2, hp 2, mana 4, Odporność magiczna 2 | 5 | — |
+| Solidne Sandały | 5 | Pancerz 4, hp 5, mana 9, Odporność magiczna 5 | 24 | 96 |
+| Żelazne Sandały | 10 | Pancerz 6, hp 9, mana 15, Odporność magiczna 8 | 48 | — |
+| Wzmocnione Sandały | 15 | Pancerz 9, hp 13, mana 21, Odporność magiczna 12 | 72 | 288 |
+| Stalowe Sandały | 20 | Pancerz 11, hp 17, mana 28, Odporność magiczna 15 | 96 | — |
+| Hartowane Sandały | 25 | Pancerz 14, hp 20, mana 34, Odporność magiczna 19 | 120 | 480 |
+| Srebrne Sandały | 30 | Pancerz 16, hp 24, mana 40, Odporność magiczna 22 | 144 | — |
+| Szlachetne Sandały | 35 | Pancerz 19, hp 28, mana 46, Odporność magiczna 26 | 168 | 672 |
+| Runiczne Sandały | 40 | Pancerz 21, hp 32, mana 53, Odporność magiczna 29 | 192 | — |
+| Mithrilowe Sandały | 45 | Pancerz 24, hp 35, mana 59, Odporność magiczna 33 | 216 | 864 |
+| Elfie Sandały | 50 | Pancerz 26, hp 39, mana 65, Odporność magiczna 36 | 240 | — |
+| Obsydianowe Sandały | 55 | Pancerz 29, hp 43, mana 71, Odporność magiczna 40 | 264 | 1056 |
+| Adamantytowe Sandały | 60 | Pancerz 31, hp 47, mana 78, Odporność magiczna 43 | 288 | — |
+| Królewskie Sandały | 65 | Pancerz 34, hp 50, mana 84, Odporność magiczna 47 | 312 | 1248 |
+| Płomienne Sandały | 70 | Pancerz 36, hp 54, mana 90, Odporność magiczna 50 | 336 | — |
+| Gwiezdne Sandały | 75 | Pancerz 39, hp 58, mana 96, Odporność magiczna 54 | 360 | 1440 |
+| Tytanowe Sandały | 80 | Pancerz 41, hp 62, mana 103, Odporność magiczna 57 | 384 | — |
+| Pradawne Sandały | 85 | Pancerz 44, hp 65, mana 109, Odporność magiczna 60 | 408 | 1632 |
+| Niebiańskie Sandały | 90 | Pancerz 46, hp 69, mana 115, Odporność magiczna 64 | 432 | — |
+| Eteryczne Sandały | 95 | Pancerz 49, hp 73, mana 121, Odporność magiczna 68 | 456 | 1824 |
+| Smocze Sandały | 100 | Pancerz 51, hp 77, mana 128, Odporność magiczna 71 | 480 | — |
 
 #### Trzewiki (`boots_medium`) · Łowca
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Proste Trzewiki | 1 | Obrona 2, Unik 0,3, hp 4 | 5 | — |
-| Solidne Trzewiki | 5 | Obrona 6, Unik 0,3, hp 9 | 24 | 96 |
-| Żelazne Trzewiki | 10 | Obrona 10, Unik 0,4, hp 15 | 48 | — |
-| Wzmocnione Trzewiki | 15 | Obrona 14, Unik 0,4, hp 21 | 72 | 288 |
-| Stalowe Trzewiki | 20 | Obrona 19, Unik 0,5, hp 28 | 96 | — |
-| Hartowane Trzewiki | 25 | Obrona 23, Unik 0,5, hp 34 | 120 | 480 |
-| Srebrne Trzewiki | 30 | Obrona 27, Unik 0,6, hp 40 | 144 | — |
-| Szlachetne Trzewiki | 35 | Obrona 31, Unik 0,6, hp 46 | 168 | 672 |
-| Runiczne Trzewiki | 40 | Obrona 36, Unik 0,7, hp 53 | 192 | — |
-| Mithrilowe Trzewiki | 45 | Obrona 40, Unik 0,7, hp 59 | 216 | 864 |
-| Elfie Trzewiki | 50 | Obrona 44, Unik 0,8, hp 65 | 240 | — |
-| Obsydianowe Trzewiki | 55 | Obrona 48, Unik 0,8, hp 71 | 264 | 1056 |
-| Adamantytowe Trzewiki | 60 | Obrona 53, Unik 0,9, hp 78 | 288 | — |
-| Królewskie Trzewiki | 65 | Obrona 57, Unik 0,9, hp 84 | 312 | 1248 |
-| Płomienne Trzewiki | 70 | Obrona 61, Unik 1, hp 90 | 336 | — |
-| Gwiezdne Trzewiki | 75 | Obrona 65, Unik 1, hp 96 | 360 | 1440 |
-| Tytanowe Trzewiki | 80 | Obrona 70, Unik 1,1, hp 103 | 384 | — |
-| Pradawne Trzewiki | 85 | Obrona 74, Unik 1,1, hp 109 | 408 | 1632 |
-| Niebiańskie Trzewiki | 90 | Obrona 78, Unik 1,2, hp 115 | 432 | — |
-| Eteryczne Trzewiki | 95 | Obrona 82, Unik 1,2, hp 121 | 456 | 1824 |
-| Smocze Trzewiki | 100 | Obrona 87, Unik 1,3, hp 128 | 480 | — |
+| Proste Trzewiki | 1 | Pancerz 2, Unik 0,3, hp 4 | 5 | — |
+| Solidne Trzewiki | 5 | Pancerz 6, Unik 0,3, hp 9 | 24 | 96 |
+| Żelazne Trzewiki | 10 | Pancerz 10, Unik 0,4, hp 15 | 48 | — |
+| Wzmocnione Trzewiki | 15 | Pancerz 14, Unik 0,4, hp 21 | 72 | 288 |
+| Stalowe Trzewiki | 20 | Pancerz 19, Unik 0,5, hp 28 | 96 | — |
+| Hartowane Trzewiki | 25 | Pancerz 23, Unik 0,5, hp 34 | 120 | 480 |
+| Srebrne Trzewiki | 30 | Pancerz 27, Unik 0,6, hp 40 | 144 | — |
+| Szlachetne Trzewiki | 35 | Pancerz 31, Unik 0,6, hp 46 | 168 | 672 |
+| Runiczne Trzewiki | 40 | Pancerz 36, Unik 0,7, hp 53 | 192 | — |
+| Mithrilowe Trzewiki | 45 | Pancerz 40, Unik 0,7, hp 59 | 216 | 864 |
+| Elfie Trzewiki | 50 | Pancerz 44, Unik 0,8, hp 65 | 240 | — |
+| Obsydianowe Trzewiki | 55 | Pancerz 48, Unik 0,8, hp 71 | 264 | 1056 |
+| Adamantytowe Trzewiki | 60 | Pancerz 53, Unik 0,9, hp 78 | 288 | — |
+| Królewskie Trzewiki | 65 | Pancerz 57, Unik 0,9, hp 84 | 312 | 1248 |
+| Płomienne Trzewiki | 70 | Pancerz 61, Unik 1, hp 90 | 336 | — |
+| Gwiezdne Trzewiki | 75 | Pancerz 65, Unik 1, hp 96 | 360 | 1440 |
+| Tytanowe Trzewiki | 80 | Pancerz 70, Unik 1,1, hp 103 | 384 | — |
+| Pradawne Trzewiki | 85 | Pancerz 74, Unik 1,1, hp 109 | 408 | 1632 |
+| Niebiańskie Trzewiki | 90 | Pancerz 78, Unik 1,2, hp 115 | 432 | — |
+| Eteryczne Trzewiki | 95 | Pancerz 82, Unik 1,2, hp 121 | 456 | 1824 |
+| Smocze Trzewiki | 100 | Pancerz 87, Unik 1,3, hp 128 | 480 | — |
 
 ### Rękawice
 
@@ -235,79 +235,79 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Proste Rękawice Płytowe | 1 | Obrona 3, hp 4 | 5 | — |
-| Solidne Rękawice Płytowe | 5 | Obrona 7, hp 9 | 24 | 96 |
-| Żelazne Rękawice Płytowe | 10 | Obrona 13, hp 16 | 48 | — |
-| Wzmocnione Rękawice Płytowe | 15 | Obrona 18, hp 23 | 72 | 288 |
-| Stalowe Rękawice Płytowe | 20 | Obrona 23, hp 30 | 96 | — |
-| Hartowane Rękawice Płytowe | 25 | Obrona 29, hp 36 | 120 | 480 |
-| Srebrne Rękawice Płytowe | 30 | Obrona 34, hp 43 | 144 | — |
-| Szlachetne Rękawice Płytowe | 35 | Obrona 40, hp 50 | 168 | 672 |
-| Runiczne Rękawice Płytowe | 40 | Obrona 45, hp 57 | 192 | — |
-| Mithrilowe Rękawice Płytowe | 45 | Obrona 50, hp 63 | 216 | 864 |
-| Elfie Rękawice Płytowe | 50 | Obrona 56, hp 70 | 240 | — |
-| Obsydianowe Rękawice Płytowe | 55 | Obrona 61, hp 77 | 264 | 1056 |
-| Adamantytowe Rękawice Płytowe | 60 | Obrona 67, hp 84 | 288 | — |
-| Królewskie Rękawice Płytowe | 65 | Obrona 72, hp 90 | 312 | 1248 |
-| Płomienne Rękawice Płytowe | 70 | Obrona 77, hp 97 | 336 | — |
-| Gwiezdne Rękawice Płytowe | 75 | Obrona 83, hp 104 | 360 | 1440 |
-| Tytanowe Rękawice Płytowe | 80 | Obrona 88, hp 111 | 384 | — |
-| Pradawne Rękawice Płytowe | 85 | Obrona 94, hp 117 | 408 | 1632 |
-| Niebiańskie Rękawice Płytowe | 90 | Obrona 99, hp 124 | 432 | — |
-| Eteryczne Rękawice Płytowe | 95 | Obrona 104, hp 131 | 456 | 1824 |
-| Smocze Rękawice Płytowe | 100 | Obrona 110, hp 138 | 480 | — |
+| Proste Rękawice Płytowe | 1 | Pancerz 3, hp 4 | 5 | — |
+| Solidne Rękawice Płytowe | 5 | Pancerz 7, hp 9 | 24 | 96 |
+| Żelazne Rękawice Płytowe | 10 | Pancerz 13, hp 16 | 48 | — |
+| Wzmocnione Rękawice Płytowe | 15 | Pancerz 18, hp 23 | 72 | 288 |
+| Stalowe Rękawice Płytowe | 20 | Pancerz 23, hp 30 | 96 | — |
+| Hartowane Rękawice Płytowe | 25 | Pancerz 29, hp 36 | 120 | 480 |
+| Srebrne Rękawice Płytowe | 30 | Pancerz 34, hp 43 | 144 | — |
+| Szlachetne Rękawice Płytowe | 35 | Pancerz 40, hp 50 | 168 | 672 |
+| Runiczne Rękawice Płytowe | 40 | Pancerz 45, hp 57 | 192 | — |
+| Mithrilowe Rękawice Płytowe | 45 | Pancerz 50, hp 63 | 216 | 864 |
+| Elfie Rękawice Płytowe | 50 | Pancerz 56, hp 70 | 240 | — |
+| Obsydianowe Rękawice Płytowe | 55 | Pancerz 61, hp 77 | 264 | 1056 |
+| Adamantytowe Rękawice Płytowe | 60 | Pancerz 67, hp 84 | 288 | — |
+| Królewskie Rękawice Płytowe | 65 | Pancerz 72, hp 90 | 312 | 1248 |
+| Płomienne Rękawice Płytowe | 70 | Pancerz 77, hp 97 | 336 | — |
+| Gwiezdne Rękawice Płytowe | 75 | Pancerz 83, hp 104 | 360 | 1440 |
+| Tytanowe Rękawice Płytowe | 80 | Pancerz 88, hp 111 | 384 | — |
+| Pradawne Rękawice Płytowe | 85 | Pancerz 94, hp 117 | 408 | 1632 |
+| Niebiańskie Rękawice Płytowe | 90 | Pancerz 99, hp 124 | 432 | — |
+| Eteryczne Rękawice Płytowe | 95 | Pancerz 104, hp 131 | 456 | 1824 |
+| Smocze Rękawice Płytowe | 100 | Pancerz 110, hp 138 | 480 | — |
 
 #### Mitenki (`gloves_light`) · Mag, Kapłan
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Proste Mitenki | 1 | Obrona 1, hp 2, mana 3, Odporność magiczna 2 | 5 | — |
-| Solidne Mitenki | 5 | Obrona 3, hp 5, mana 8, Odporność magiczna 4 | 24 | 96 |
-| Żelazne Mitenki | 10 | Obrona 5, hp 8, mana 14, Odporność magiczna 7 | 48 | — |
-| Wzmocnione Mitenki | 15 | Obrona 8, hp 11, mana 19, Odporność magiczna 10 | 72 | 288 |
-| Stalowe Mitenki | 20 | Obrona 10, hp 15, mana 25, Odporność magiczna 14 | 96 | — |
-| Hartowane Mitenki | 25 | Obrona 12, hp 18, mana 30, Odporność magiczna 17 | 120 | 480 |
-| Srebrne Mitenki | 30 | Obrona 14, hp 22, mana 36, Odporność magiczna 20 | 144 | — |
-| Szlachetne Mitenki | 35 | Obrona 17, hp 25, mana 42, Odporność magiczna 23 | 168 | 672 |
-| Runiczne Mitenki | 40 | Obrona 19, hp 28, mana 47, Odporność magiczna 26 | 192 | — |
-| Mithrilowe Mitenki | 45 | Obrona 21, hp 32, mana 53, Odporność magiczna 29 | 216 | 864 |
-| Elfie Mitenki | 50 | Obrona 23, hp 35, mana 59, Odporność magiczna 32 | 240 | — |
-| Obsydianowe Mitenki | 55 | Obrona 26, hp 38, mana 64, Odporność magiczna 36 | 264 | 1056 |
-| Adamantytowe Mitenki | 60 | Obrona 28, hp 42, mana 70, Odporność magiczna 39 | 288 | — |
-| Królewskie Mitenki | 65 | Obrona 30, hp 45, mana 75, Odporność magiczna 42 | 312 | 1248 |
-| Płomienne Mitenki | 70 | Obrona 32, hp 49, mana 81, Odporność magiczna 45 | 336 | — |
-| Gwiezdne Mitenki | 75 | Obrona 35, hp 52, mana 87, Odporność magiczna 48 | 360 | 1440 |
-| Tytanowe Mitenki | 80 | Obrona 37, hp 55, mana 92, Odporność magiczna 51 | 384 | — |
-| Pradawne Mitenki | 85 | Obrona 39, hp 59, mana 98, Odporność magiczna 54 | 408 | 1632 |
-| Niebiańskie Mitenki | 90 | Obrona 41, hp 62, mana 104, Odporność magiczna 58 | 432 | — |
-| Eteryczne Mitenki | 95 | Obrona 44, hp 65, mana 109, Odporność magiczna 61 | 456 | 1824 |
-| Smocze Mitenki | 100 | Obrona 46, hp 69, mana 115, Odporność magiczna 64 | 480 | — |
+| Proste Mitenki | 1 | Pancerz 1, hp 2, mana 3, Odporność magiczna 2 | 5 | — |
+| Solidne Mitenki | 5 | Pancerz 3, hp 5, mana 8, Odporność magiczna 4 | 24 | 96 |
+| Żelazne Mitenki | 10 | Pancerz 5, hp 8, mana 14, Odporność magiczna 7 | 48 | — |
+| Wzmocnione Mitenki | 15 | Pancerz 8, hp 11, mana 19, Odporność magiczna 10 | 72 | 288 |
+| Stalowe Mitenki | 20 | Pancerz 10, hp 15, mana 25, Odporność magiczna 14 | 96 | — |
+| Hartowane Mitenki | 25 | Pancerz 12, hp 18, mana 30, Odporność magiczna 17 | 120 | 480 |
+| Srebrne Mitenki | 30 | Pancerz 14, hp 22, mana 36, Odporność magiczna 20 | 144 | — |
+| Szlachetne Mitenki | 35 | Pancerz 17, hp 25, mana 42, Odporność magiczna 23 | 168 | 672 |
+| Runiczne Mitenki | 40 | Pancerz 19, hp 28, mana 47, Odporność magiczna 26 | 192 | — |
+| Mithrilowe Mitenki | 45 | Pancerz 21, hp 32, mana 53, Odporność magiczna 29 | 216 | 864 |
+| Elfie Mitenki | 50 | Pancerz 23, hp 35, mana 59, Odporność magiczna 32 | 240 | — |
+| Obsydianowe Mitenki | 55 | Pancerz 26, hp 38, mana 64, Odporność magiczna 36 | 264 | 1056 |
+| Adamantytowe Mitenki | 60 | Pancerz 28, hp 42, mana 70, Odporność magiczna 39 | 288 | — |
+| Królewskie Mitenki | 65 | Pancerz 30, hp 45, mana 75, Odporność magiczna 42 | 312 | 1248 |
+| Płomienne Mitenki | 70 | Pancerz 32, hp 49, mana 81, Odporność magiczna 45 | 336 | — |
+| Gwiezdne Mitenki | 75 | Pancerz 35, hp 52, mana 87, Odporność magiczna 48 | 360 | 1440 |
+| Tytanowe Mitenki | 80 | Pancerz 37, hp 55, mana 92, Odporność magiczna 51 | 384 | — |
+| Pradawne Mitenki | 85 | Pancerz 39, hp 59, mana 98, Odporność magiczna 54 | 408 | 1632 |
+| Niebiańskie Mitenki | 90 | Pancerz 41, hp 62, mana 104, Odporność magiczna 58 | 432 | — |
+| Eteryczne Mitenki | 95 | Pancerz 44, hp 65, mana 109, Odporność magiczna 61 | 456 | 1824 |
+| Smocze Mitenki | 100 | Pancerz 46, hp 69, mana 115, Odporność magiczna 64 | 480 | — |
 
 #### Karwasze (`gloves_medium`) · Łowca
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Proste Karwasze | 1 | Obrona 2, Unik 0,2, hp 3 | 5 | — |
-| Solidne Karwasze | 5 | Obrona 5, Unik 0,3, hp 8 | 24 | 96 |
-| Żelazne Karwasze | 10 | Obrona 9, Unik 0,3, hp 14 | 48 | — |
-| Wzmocnione Karwasze | 15 | Obrona 13, Unik 0,4, hp 19 | 72 | 288 |
-| Stalowe Karwasze | 20 | Obrona 17, Unik 0,4, hp 25 | 96 | — |
-| Hartowane Karwasze | 25 | Obrona 20, Unik 0,5, hp 30 | 120 | 480 |
-| Srebrne Karwasze | 30 | Obrona 24, Unik 0,5, hp 36 | 144 | — |
-| Szlachetne Karwasze | 35 | Obrona 28, Unik 0,5, hp 42 | 168 | 672 |
-| Runiczne Karwasze | 40 | Obrona 32, Unik 0,6, hp 47 | 192 | — |
-| Mithrilowe Karwasze | 45 | Obrona 36, Unik 0,6, hp 53 | 216 | 864 |
-| Elfie Karwasze | 50 | Obrona 40, Unik 0,7, hp 59 | 240 | — |
-| Obsydianowe Karwasze | 55 | Obrona 43, Unik 0,7, hp 64 | 264 | 1056 |
-| Adamantytowe Karwasze | 60 | Obrona 47, Unik 0,8, hp 70 | 288 | — |
-| Królewskie Karwasze | 65 | Obrona 51, Unik 0,8, hp 75 | 312 | 1248 |
-| Płomienne Karwasze | 70 | Obrona 55, Unik 0,9, hp 81 | 336 | — |
-| Gwiezdne Karwasze | 75 | Obrona 59, Unik 0,9, hp 87 | 360 | 1440 |
-| Tytanowe Karwasze | 80 | Obrona 63, Unik 0,9, hp 92 | 384 | — |
-| Pradawne Karwasze | 85 | Obrona 66, Unik 1, hp 98 | 408 | 1632 |
-| Niebiańskie Karwasze | 90 | Obrona 70, Unik 1, hp 104 | 432 | — |
-| Eteryczne Karwasze | 95 | Obrona 74, Unik 1,1, hp 109 | 456 | 1824 |
-| Smocze Karwasze | 100 | Obrona 78, Unik 1,1, hp 115 | 480 | — |
+| Proste Karwasze | 1 | Pancerz 2, Unik 0,2, hp 3 | 5 | — |
+| Solidne Karwasze | 5 | Pancerz 5, Unik 0,3, hp 8 | 24 | 96 |
+| Żelazne Karwasze | 10 | Pancerz 9, Unik 0,3, hp 14 | 48 | — |
+| Wzmocnione Karwasze | 15 | Pancerz 13, Unik 0,4, hp 19 | 72 | 288 |
+| Stalowe Karwasze | 20 | Pancerz 17, Unik 0,4, hp 25 | 96 | — |
+| Hartowane Karwasze | 25 | Pancerz 20, Unik 0,5, hp 30 | 120 | 480 |
+| Srebrne Karwasze | 30 | Pancerz 24, Unik 0,5, hp 36 | 144 | — |
+| Szlachetne Karwasze | 35 | Pancerz 28, Unik 0,5, hp 42 | 168 | 672 |
+| Runiczne Karwasze | 40 | Pancerz 32, Unik 0,6, hp 47 | 192 | — |
+| Mithrilowe Karwasze | 45 | Pancerz 36, Unik 0,6, hp 53 | 216 | 864 |
+| Elfie Karwasze | 50 | Pancerz 40, Unik 0,7, hp 59 | 240 | — |
+| Obsydianowe Karwasze | 55 | Pancerz 43, Unik 0,7, hp 64 | 264 | 1056 |
+| Adamantytowe Karwasze | 60 | Pancerz 47, Unik 0,8, hp 70 | 288 | — |
+| Królewskie Karwasze | 65 | Pancerz 51, Unik 0,8, hp 75 | 312 | 1248 |
+| Płomienne Karwasze | 70 | Pancerz 55, Unik 0,9, hp 81 | 336 | — |
+| Gwiezdne Karwasze | 75 | Pancerz 59, Unik 0,9, hp 87 | 360 | 1440 |
+| Tytanowe Karwasze | 80 | Pancerz 63, Unik 0,9, hp 92 | 384 | — |
+| Pradawne Karwasze | 85 | Pancerz 66, Unik 1, hp 98 | 408 | 1632 |
+| Niebiańskie Karwasze | 90 | Pancerz 70, Unik 1, hp 104 | 432 | — |
+| Eteryczne Karwasze | 95 | Pancerz 74, Unik 1,1, hp 109 | 456 | 1824 |
+| Smocze Karwasze | 100 | Pancerz 78, Unik 1,1, hp 115 | 480 | — |
 
 ### Hełm
 
@@ -315,79 +315,79 @@ Legendarne i Mityczne przedmioty dają też osobiste rzuty bossów (S30), a nazw
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosty Hełm | 1 | Obrona 4, hp 5 | 5 | — |
-| Solidny Hełm | 5 | Obrona 10, hp 13 | 24 | 96 |
-| Żelazny Hełm | 10 | Obrona 17, hp 22 | 48 | — |
-| Wzmocniony Hełm | 15 | Obrona 24, hp 31 | 72 | 288 |
-| Stalowy Hełm | 20 | Obrona 31, hp 40 | 96 | — |
-| Hartowany Hełm | 25 | Obrona 38, hp 49 | 120 | 480 |
-| Srebrny Hełm | 30 | Obrona 46, hp 58 | 144 | — |
-| Szlachetny Hełm | 35 | Obrona 53, hp 67 | 168 | 672 |
-| Runiczny Hełm | 40 | Obrona 60, hp 76 | 192 | — |
-| Mithrilowy Hełm | 45 | Obrona 67, hp 85 | 216 | 864 |
-| Elfi Hełm | 50 | Obrona 74, hp 94 | 240 | — |
-| Obsydianowy Hełm | 55 | Obrona 82, hp 103 | 264 | 1056 |
-| Adamantytowy Hełm | 60 | Obrona 89, hp 112 | 288 | — |
-| Królewski Hełm | 65 | Obrona 96, hp 121 | 312 | 1248 |
-| Płomienny Hełm | 70 | Obrona 103, hp 130 | 336 | — |
-| Gwiezdny Hełm | 75 | Obrona 110, hp 139 | 360 | 1440 |
-| Tytanowy Hełm | 80 | Obrona 118, hp 148 | 384 | — |
-| Pradawny Hełm | 85 | Obrona 125, hp 157 | 408 | 1632 |
-| Niebiański Hełm | 90 | Obrona 132, hp 166 | 432 | — |
-| Eteryczny Hełm | 95 | Obrona 139, hp 175 | 456 | 1824 |
-| Smoczy Hełm | 100 | Obrona 146, hp 184 | 480 | — |
+| Prosty Hełm | 1 | Pancerz 4, hp 5 | 5 | — |
+| Solidny Hełm | 5 | Pancerz 10, hp 13 | 24 | 96 |
+| Żelazny Hełm | 10 | Pancerz 17, hp 22 | 48 | — |
+| Wzmocniony Hełm | 15 | Pancerz 24, hp 31 | 72 | 288 |
+| Stalowy Hełm | 20 | Pancerz 31, hp 40 | 96 | — |
+| Hartowany Hełm | 25 | Pancerz 38, hp 49 | 120 | 480 |
+| Srebrny Hełm | 30 | Pancerz 46, hp 58 | 144 | — |
+| Szlachetny Hełm | 35 | Pancerz 53, hp 67 | 168 | 672 |
+| Runiczny Hełm | 40 | Pancerz 60, hp 76 | 192 | — |
+| Mithrilowy Hełm | 45 | Pancerz 67, hp 85 | 216 | 864 |
+| Elfi Hełm | 50 | Pancerz 74, hp 94 | 240 | — |
+| Obsydianowy Hełm | 55 | Pancerz 82, hp 103 | 264 | 1056 |
+| Adamantytowy Hełm | 60 | Pancerz 89, hp 112 | 288 | — |
+| Królewski Hełm | 65 | Pancerz 96, hp 121 | 312 | 1248 |
+| Płomienny Hełm | 70 | Pancerz 103, hp 130 | 336 | — |
+| Gwiezdny Hełm | 75 | Pancerz 110, hp 139 | 360 | 1440 |
+| Tytanowy Hełm | 80 | Pancerz 118, hp 148 | 384 | — |
+| Pradawny Hełm | 85 | Pancerz 125, hp 157 | 408 | 1632 |
+| Niebiański Hełm | 90 | Pancerz 132, hp 166 | 432 | — |
+| Eteryczny Hełm | 95 | Pancerz 139, hp 175 | 456 | 1824 |
+| Smoczy Hełm | 100 | Pancerz 146, hp 184 | 480 | — |
 
 #### Diadem (`helmet_light`) · Mag, Kapłan
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosty Diadem | 1 | Obrona 2, hp 3, mana 5, Odporność magiczna 2 | 5 | — |
-| Solidny Diadem | 5 | Obrona 4, hp 6, mana 11, Odporność magiczna 5 | 24 | 96 |
-| Żelazny Diadem | 10 | Obrona 7, hp 11, mana 18, Odporność magiczna 10 | 48 | — |
-| Wzmocniony Diadem | 15 | Obrona 10, hp 15, mana 26, Odporność magiczna 14 | 72 | 288 |
-| Stalowy Diadem | 20 | Obrona 13, hp 20, mana 33, Odporność magiczna 18 | 96 | — |
-| Hartowany Diadem | 25 | Obrona 16, hp 24, mana 41, Odporność magiczna 22 | 120 | 480 |
-| Srebrny Diadem | 30 | Obrona 19, hp 29, mana 48, Odporność magiczna 26 | 144 | — |
-| Szlachetny Diadem | 35 | Obrona 22, hp 33, mana 56, Odporność magiczna 31 | 168 | 672 |
-| Runiczny Diadem | 40 | Obrona 25, hp 38, mana 63, Odporność magiczna 35 | 192 | — |
-| Mithrilowy Diadem | 45 | Obrona 28, hp 42, mana 71, Odporność magiczna 39 | 216 | 864 |
-| Elfi Diadem | 50 | Obrona 31, hp 47, mana 78, Odporność magiczna 43 | 240 | — |
-| Obsydianowy Diadem | 55 | Obrona 34, hp 51, mana 86, Odporność magiczna 47 | 264 | 1056 |
-| Adamantytowy Diadem | 60 | Obrona 37, hp 56, mana 93, Odporność magiczna 52 | 288 | — |
-| Królewski Diadem | 65 | Obrona 40, hp 60, mana 101, Odporność magiczna 56 | 312 | 1248 |
-| Płomienny Diadem | 70 | Obrona 43, hp 65, mana 108, Odporność magiczna 60 | 336 | — |
-| Gwiezdny Diadem | 75 | Obrona 46, hp 69, mana 116, Odporność magiczna 64 | 360 | 1440 |
-| Tytanowy Diadem | 80 | Obrona 49, hp 74, mana 123, Odporność magiczna 68 | 384 | — |
-| Pradawny Diadem | 85 | Obrona 52, hp 78, mana 131, Odporność magiczna 73 | 408 | 1632 |
-| Niebiański Diadem | 90 | Obrona 55, hp 83, mana 138, Odporność magiczna 77 | 432 | — |
-| Eteryczny Diadem | 95 | Obrona 58, hp 87, mana 146, Odporność magiczna 81 | 456 | 1824 |
-| Smoczy Diadem | 100 | Obrona 61, hp 92, mana 153, Odporność magiczna 85 | 480 | — |
+| Prosty Diadem | 1 | Pancerz 2, hp 3, mana 5, Odporność magiczna 2 | 5 | — |
+| Solidny Diadem | 5 | Pancerz 4, hp 6, mana 11, Odporność magiczna 5 | 24 | 96 |
+| Żelazny Diadem | 10 | Pancerz 7, hp 11, mana 18, Odporność magiczna 10 | 48 | — |
+| Wzmocniony Diadem | 15 | Pancerz 10, hp 15, mana 26, Odporność magiczna 14 | 72 | 288 |
+| Stalowy Diadem | 20 | Pancerz 13, hp 20, mana 33, Odporność magiczna 18 | 96 | — |
+| Hartowany Diadem | 25 | Pancerz 16, hp 24, mana 41, Odporność magiczna 22 | 120 | 480 |
+| Srebrny Diadem | 30 | Pancerz 19, hp 29, mana 48, Odporność magiczna 26 | 144 | — |
+| Szlachetny Diadem | 35 | Pancerz 22, hp 33, mana 56, Odporność magiczna 31 | 168 | 672 |
+| Runiczny Diadem | 40 | Pancerz 25, hp 38, mana 63, Odporność magiczna 35 | 192 | — |
+| Mithrilowy Diadem | 45 | Pancerz 28, hp 42, mana 71, Odporność magiczna 39 | 216 | 864 |
+| Elfi Diadem | 50 | Pancerz 31, hp 47, mana 78, Odporność magiczna 43 | 240 | — |
+| Obsydianowy Diadem | 55 | Pancerz 34, hp 51, mana 86, Odporność magiczna 47 | 264 | 1056 |
+| Adamantytowy Diadem | 60 | Pancerz 37, hp 56, mana 93, Odporność magiczna 52 | 288 | — |
+| Królewski Diadem | 65 | Pancerz 40, hp 60, mana 101, Odporność magiczna 56 | 312 | 1248 |
+| Płomienny Diadem | 70 | Pancerz 43, hp 65, mana 108, Odporność magiczna 60 | 336 | — |
+| Gwiezdny Diadem | 75 | Pancerz 46, hp 69, mana 116, Odporność magiczna 64 | 360 | 1440 |
+| Tytanowy Diadem | 80 | Pancerz 49, hp 74, mana 123, Odporność magiczna 68 | 384 | — |
+| Pradawny Diadem | 85 | Pancerz 52, hp 78, mana 131, Odporność magiczna 73 | 408 | 1632 |
+| Niebiański Diadem | 90 | Pancerz 55, hp 83, mana 138, Odporność magiczna 77 | 432 | — |
+| Eteryczny Diadem | 95 | Pancerz 58, hp 87, mana 146, Odporność magiczna 81 | 456 | 1824 |
+| Smoczy Diadem | 100 | Pancerz 61, hp 92, mana 153, Odporność magiczna 85 | 480 | — |
 
 #### Kaptur (`helmet_medium`) · Łowca
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosty Kaptur | 1 | Obrona 3, Unik 0,3, hp 5 | 5 | — |
-| Solidny Kaptur | 5 | Obrona 7, Unik 0,4, hp 11 | 24 | 96 |
-| Żelazny Kaptur | 10 | Obrona 12, Unik 0,4, hp 18 | 48 | — |
-| Wzmocniony Kaptur | 15 | Obrona 17, Unik 0,5, hp 26 | 72 | 288 |
-| Stalowy Kaptur | 20 | Obrona 22, Unik 0,5, hp 33 | 96 | — |
-| Hartowany Kaptur | 25 | Obrona 27, Unik 0,6, hp 41 | 120 | 480 |
-| Srebrny Kaptur | 30 | Obrona 32, Unik 0,7, hp 48 | 144 | — |
-| Szlachetny Kaptur | 35 | Obrona 38, Unik 0,7, hp 56 | 168 | 672 |
-| Runiczny Kaptur | 40 | Obrona 43, Unik 0,8, hp 63 | 192 | — |
-| Mithrilowy Kaptur | 45 | Obrona 48, Unik 0,8, hp 71 | 216 | 864 |
-| Elfi Kaptur | 50 | Obrona 53, Unik 0,9, hp 78 | 240 | — |
-| Obsydianowy Kaptur | 55 | Obrona 58, Unik 1, hp 86 | 264 | 1056 |
-| Adamantytowy Kaptur | 60 | Obrona 63, Unik 1, hp 93 | 288 | — |
-| Królewski Kaptur | 65 | Obrona 68, Unik 1,1, hp 101 | 312 | 1248 |
-| Płomienny Kaptur | 70 | Obrona 73, Unik 1,1, hp 108 | 336 | — |
-| Gwiezdny Kaptur | 75 | Obrona 78, Unik 1,2, hp 116 | 360 | 1440 |
-| Tytanowy Kaptur | 80 | Obrona 83, Unik 1,3, hp 123 | 384 | — |
-| Pradawny Kaptur | 85 | Obrona 89, Unik 1,3, hp 131 | 408 | 1632 |
-| Niebiański Kaptur | 90 | Obrona 94, Unik 1,4, hp 138 | 432 | — |
-| Eteryczny Kaptur | 95 | Obrona 99, Unik 1,4, hp 146 | 456 | 1824 |
-| Smoczy Kaptur | 100 | Obrona 104, Unik 1,5, hp 153 | 480 | — |
+| Prosty Kaptur | 1 | Pancerz 3, Unik 0,3, hp 5 | 5 | — |
+| Solidny Kaptur | 5 | Pancerz 7, Unik 0,4, hp 11 | 24 | 96 |
+| Żelazny Kaptur | 10 | Pancerz 12, Unik 0,4, hp 18 | 48 | — |
+| Wzmocniony Kaptur | 15 | Pancerz 17, Unik 0,5, hp 26 | 72 | 288 |
+| Stalowy Kaptur | 20 | Pancerz 22, Unik 0,5, hp 33 | 96 | — |
+| Hartowany Kaptur | 25 | Pancerz 27, Unik 0,6, hp 41 | 120 | 480 |
+| Srebrny Kaptur | 30 | Pancerz 32, Unik 0,7, hp 48 | 144 | — |
+| Szlachetny Kaptur | 35 | Pancerz 38, Unik 0,7, hp 56 | 168 | 672 |
+| Runiczny Kaptur | 40 | Pancerz 43, Unik 0,8, hp 63 | 192 | — |
+| Mithrilowy Kaptur | 45 | Pancerz 48, Unik 0,8, hp 71 | 216 | 864 |
+| Elfi Kaptur | 50 | Pancerz 53, Unik 0,9, hp 78 | 240 | — |
+| Obsydianowy Kaptur | 55 | Pancerz 58, Unik 1, hp 86 | 264 | 1056 |
+| Adamantytowy Kaptur | 60 | Pancerz 63, Unik 1, hp 93 | 288 | — |
+| Królewski Kaptur | 65 | Pancerz 68, Unik 1,1, hp 101 | 312 | 1248 |
+| Płomienny Kaptur | 70 | Pancerz 73, Unik 1,1, hp 108 | 336 | — |
+| Gwiezdny Kaptur | 75 | Pancerz 78, Unik 1,2, hp 116 | 360 | 1440 |
+| Tytanowy Kaptur | 80 | Pancerz 83, Unik 1,3, hp 123 | 384 | — |
+| Pradawny Kaptur | 85 | Pancerz 89, Unik 1,3, hp 131 | 408 | 1632 |
+| Niebiański Kaptur | 90 | Pancerz 94, Unik 1,4, hp 138 | 432 | — |
+| Eteryczny Kaptur | 95 | Pancerz 99, Unik 1,4, hp 146 | 456 | 1824 |
+| Smoczy Kaptur | 100 | Pancerz 104, Unik 1,5, hp 153 | 480 | — |
 
 ### Naszyjnik
 
@@ -509,27 +509,27 @@ Cecha: **Zastawa**: 5% bloku, blok leczy 0,1% HP
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosta Tarcza | 1 | Obrona 5, hp 14 | 5 | — |
-| Solidna Tarcza | 5 | Obrona 11, hp 30 | 24 | 96 |
-| Żelazna Tarcza | 10 | Obrona 19, hp 50 | 48 | — |
-| Wzmocniona Tarcza | 15 | Obrona 27, hp 70 | 72 | 288 |
-| Stalowa Tarcza | 20 | Obrona 35, hp 90 | 96 | — |
-| Hartowana Tarcza | 25 | Obrona 43, hp 110 | 120 | 480 |
-| Srebrna Tarcza | 30 | Obrona 51, hp 130 | 144 | — |
-| Szlachetna Tarcza | 35 | Obrona 59, hp 150 | 168 | 672 |
-| Runiczna Tarcza | 40 | Obrona 67, hp 170 | 192 | — |
-| Mithrilowa Tarcza | 45 | Obrona 75, hp 190 | 216 | 864 |
-| Elfia Tarcza | 50 | Obrona 83, hp 210 | 240 | — |
-| Obsydianowa Tarcza | 55 | Obrona 91, hp 230 | 264 | 1056 |
-| Adamantytowa Tarcza | 60 | Obrona 99, hp 250 | 288 | — |
-| Królewska Tarcza | 65 | Obrona 107, hp 270 | 312 | 1248 |
-| Płomienna Tarcza | 70 | Obrona 115, hp 290 | 336 | — |
-| Gwiezdna Tarcza | 75 | Obrona 123, hp 310 | 360 | 1440 |
-| Tytanowa Tarcza | 80 | Obrona 131, hp 330 | 384 | — |
-| Pradawna Tarcza | 85 | Obrona 139, hp 350 | 408 | 1632 |
-| Niebiańska Tarcza | 90 | Obrona 147, hp 370 | 432 | — |
-| Eteryczna Tarcza | 95 | Obrona 155, hp 390 | 456 | 1824 |
-| Smocza Tarcza | 100 | Obrona 163, hp 410 | 480 | — |
+| Prosta Tarcza | 1 | Pancerz 5, hp 14 | 5 | — |
+| Solidna Tarcza | 5 | Pancerz 11, hp 30 | 24 | 96 |
+| Żelazna Tarcza | 10 | Pancerz 19, hp 50 | 48 | — |
+| Wzmocniona Tarcza | 15 | Pancerz 27, hp 70 | 72 | 288 |
+| Stalowa Tarcza | 20 | Pancerz 35, hp 90 | 96 | — |
+| Hartowana Tarcza | 25 | Pancerz 43, hp 110 | 120 | 480 |
+| Srebrna Tarcza | 30 | Pancerz 51, hp 130 | 144 | — |
+| Szlachetna Tarcza | 35 | Pancerz 59, hp 150 | 168 | 672 |
+| Runiczna Tarcza | 40 | Pancerz 67, hp 170 | 192 | — |
+| Mithrilowa Tarcza | 45 | Pancerz 75, hp 190 | 216 | 864 |
+| Elfia Tarcza | 50 | Pancerz 83, hp 210 | 240 | — |
+| Obsydianowa Tarcza | 55 | Pancerz 91, hp 230 | 264 | 1056 |
+| Adamantytowa Tarcza | 60 | Pancerz 99, hp 250 | 288 | — |
+| Królewska Tarcza | 65 | Pancerz 107, hp 270 | 312 | 1248 |
+| Płomienna Tarcza | 70 | Pancerz 115, hp 290 | 336 | — |
+| Gwiezdna Tarcza | 75 | Pancerz 123, hp 310 | 360 | 1440 |
+| Tytanowa Tarcza | 80 | Pancerz 131, hp 330 | 384 | — |
+| Pradawna Tarcza | 85 | Pancerz 139, hp 350 | 408 | 1632 |
+| Niebiańska Tarcza | 90 | Pancerz 147, hp 370 | 432 | — |
+| Eteryczna Tarcza | 95 | Pancerz 155, hp 390 | 456 | 1824 |
+| Smocza Tarcza | 100 | Pancerz 163, hp 410 | 480 | — |
 
 #### Księga (`tome`) · Mag
 
@@ -593,27 +593,27 @@ Cecha: **Wyuczone formuły**: Umiejętności -8% many
 
 | Przedmiot | Poziom | Statystyki (Zwykły +0) | Wartość | Cena u handlarza |
 |---|---|---|---|---|
-| Prosty Talizman | 1 | Obrona 3, hp 9, Odporność magiczna 3 | 4 | — |
-| Solidny Talizman | 5 | Obrona 7, hp 21, Odporność magiczna 7 | 21 | — |
-| Żelazny Talizman | 10 | Obrona 12, hp 36, Odporność magiczna 12 | 42 | — |
-| Wzmocniony Talizman | 15 | Obrona 17, hp 51, Odporność magiczna 17 | 63 | — |
-| Stalowy Talizman | 20 | Obrona 22, hp 66, Odporność magiczna 22 | 84 | — |
-| Hartowany Talizman | 25 | Obrona 27, hp 81, Odporność magiczna 27 | 105 | — |
-| Srebrny Talizman | 30 | Obrona 32, hp 96, Odporność magiczna 32 | 126 | — |
-| Szlachetny Talizman | 35 | Obrona 37, hp 111, Odporność magiczna 37 | 147 | — |
-| Runiczny Talizman | 40 | Obrona 42, hp 126, Odporność magiczna 42 | 168 | — |
-| Mithrilowy Talizman | 45 | Obrona 47, hp 141, Odporność magiczna 47 | 189 | — |
-| Elfi Talizman | 50 | Obrona 52, hp 156, Odporność magiczna 52 | 210 | — |
-| Obsydianowy Talizman | 55 | Obrona 57, hp 171, Odporność magiczna 57 | 231 | — |
-| Adamantytowy Talizman | 60 | Obrona 62, hp 186, Odporność magiczna 62 | 252 | — |
-| Królewski Talizman | 65 | Obrona 67, hp 201, Odporność magiczna 67 | 273 | — |
-| Płomienny Talizman | 70 | Obrona 72, hp 216, Odporność magiczna 72 | 294 | — |
-| Gwiezdny Talizman | 75 | Obrona 77, hp 231, Odporność magiczna 77 | 315 | — |
-| Tytanowy Talizman | 80 | Obrona 82, hp 246, Odporność magiczna 82 | 336 | — |
-| Pradawny Talizman | 85 | Obrona 87, hp 261, Odporność magiczna 87 | 357 | — |
-| Niebiański Talizman | 90 | Obrona 92, hp 276, Odporność magiczna 92 | 378 | — |
-| Eteryczny Talizman | 95 | Obrona 97, hp 291, Odporność magiczna 97 | 399 | — |
-| Smoczy Talizman | 100 | Obrona 102, hp 306, Odporność magiczna 102 | 420 | — |
+| Prosty Talizman | 1 | Pancerz 3, hp 9, Odporność magiczna 3 | 4 | — |
+| Solidny Talizman | 5 | Pancerz 7, hp 21, Odporność magiczna 7 | 21 | — |
+| Żelazny Talizman | 10 | Pancerz 12, hp 36, Odporność magiczna 12 | 42 | — |
+| Wzmocniony Talizman | 15 | Pancerz 17, hp 51, Odporność magiczna 17 | 63 | — |
+| Stalowy Talizman | 20 | Pancerz 22, hp 66, Odporność magiczna 22 | 84 | — |
+| Hartowany Talizman | 25 | Pancerz 27, hp 81, Odporność magiczna 27 | 105 | — |
+| Srebrny Talizman | 30 | Pancerz 32, hp 96, Odporność magiczna 32 | 126 | — |
+| Szlachetny Talizman | 35 | Pancerz 37, hp 111, Odporność magiczna 37 | 147 | — |
+| Runiczny Talizman | 40 | Pancerz 42, hp 126, Odporność magiczna 42 | 168 | — |
+| Mithrilowy Talizman | 45 | Pancerz 47, hp 141, Odporność magiczna 47 | 189 | — |
+| Elfi Talizman | 50 | Pancerz 52, hp 156, Odporność magiczna 52 | 210 | — |
+| Obsydianowy Talizman | 55 | Pancerz 57, hp 171, Odporność magiczna 57 | 231 | — |
+| Adamantytowy Talizman | 60 | Pancerz 62, hp 186, Odporność magiczna 62 | 252 | — |
+| Królewski Talizman | 65 | Pancerz 67, hp 201, Odporność magiczna 67 | 273 | — |
+| Płomienny Talizman | 70 | Pancerz 72, hp 216, Odporność magiczna 72 | 294 | — |
+| Gwiezdny Talizman | 75 | Pancerz 77, hp 231, Odporność magiczna 77 | 315 | — |
+| Tytanowy Talizman | 80 | Pancerz 82, hp 246, Odporność magiczna 82 | 336 | — |
+| Pradawny Talizman | 85 | Pancerz 87, hp 261, Odporność magiczna 87 | 357 | — |
+| Niebiański Talizman | 90 | Pancerz 92, hp 276, Odporność magiczna 92 | 378 | — |
+| Eteryczny Talizman | 95 | Pancerz 97, hp 291, Odporność magiczna 97 | 399 | — |
+| Smoczy Talizman | 100 | Pancerz 102, hp 306, Odporność magiczna 102 | 420 | — |
 
 ### Broń
 
@@ -1154,25 +1154,25 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Przedmiot | Boss | Poziom | Statystyki | Bonusy stałe |
 |---|---|---|---|---|
 | Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 544,3 | +{v} Życia +260, +{v}% Odporności na ogień +25%, Przeciw żywiołakom i demonom +{v}% +12% |
-| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Obrona 129,8, hp 163,8 | +{v} Witalności +20, +{v} Obrony +90, Odporność na żywiołaki i demony {v}% +10% |
+| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Pancerz 129,8, hp 163,8 | +{v} Witalności +20, +{v} Obrony +90, Odporność na żywiołaki i demony {v}% +10% |
 | Kostur Pożogi | Azgor, Pan Płomieni | 70 | obr. 0, obr. mag. 296, szybkość 0,85 | +{v}% Ataku magicznego +9%, +{v} Intelektu +22, +{v}% obrażeń ran, trucizn i podpaleń +15% |
 | Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 72, szybkość 1,05 | +{v}% Ataku fizycznego +6%, +{v} Siły +6, Przeciw ludziom i plemionom +{v}% +12% |
 | Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,2, Atak fizyczny % 5,2 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6 |
-| Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Obrona 27,7, hp 83,2, Odporność magiczna 27,7 | +{v} Witalności +6, +{v}% Życia +5%, Odporność na ludzi i plemiona {v}% +8% |
+| Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Pancerz 27,7, hp 83,2, Odporność magiczna 27,7 | +{v} Witalności +6, +{v}% Życia +5%, Odporność na ludzi i plemiona {v}% +8% |
 | Topór Praojca | — | 100 | obr. 535, szybkość 0,8 | +{v}% Ataku fizycznego +12%, +{v} Siły +38, +{v}% Obrażeń krytycznych +44% |
 | Łuk Zamieci | — | 100 | obr. 465, szybkość 0,78 | +{v}% Ataku fizycznego +8%, +{v} Zręczności +29, +{v}% Szansy na krytyk +4% |
 | Pastorał Pierwszego Śniegu | — | 100 | obr. 158, obr. mag. 475, szybkość 0,8 | +{v}% Ataku magicznego +10%, +{v} Intelektu +30, +{v}% mocy leczenia +11% |
-| Korona Szronowego Kurhanu | — | 100 | Obrona 204,4, hp 257,6 | +{v} Witalności +26, +{v} Obrony +110, +{v}% Odporności na lód +16% |
-| Płaszcz Białej Grani | — | 100 | Obrona 242,2, Unik 3,5, hp 357 | +{v} Zręczności +28, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
-| Szata Lodowego Snu | — | 100 | Obrona 142,8, hp 214,2, mana 357, Odporność magiczna 198,8 | +{v} Intelektu +28, +{v} Many +200, +{v}% Odporności na lód +16% |
-| Tarcza z Kurhanu | — | 100 | Obrona 228,2, hp 574 | +{v} Obrony +185, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
+| Korona Szronowego Kurhanu | — | 100 | Pancerz 204,4, hp 257,6 | +{v} Witalności +26, +{v} Obrony +110, +{v}% Odporności na lód +16% |
+| Płaszcz Białej Grani | — | 100 | Pancerz 242,2, Unik 3,5, hp 357 | +{v} Zręczności +28, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
+| Szata Lodowego Snu | — | 100 | Pancerz 142,8, hp 214,2, mana 357, Odporność magiczna 198,8 | +{v} Intelektu +28, +{v} Many +200, +{v}% Odporności na lód +16% |
+| Tarcza z Kurhanu | — | 100 | Pancerz 228,2, hp 574 | +{v} Obrony +185, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
 | Kostur Wiecznej Zimy | — | 100 | obr. 0, obr. mag. 465, szybkość 0,85 | +{v}% Ataku magicznego +10%, +{v} Intelektu +32, Przebicie magii {v}% +11% |
 | Łuk Zawodzących Cieni | Morvane, Królowa Krypt | 45 | obr. 152, szybkość 1 | +{v}% Ataku fizycznego +6%, +{v} Zręczności +10, +{v}% szansy na zatrucie +5% |
 | Berło Krypt | Morvane, Królowa Krypt | 45 | obr. 53, obr. mag. 146, szybkość 1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +12, +{v}% mocy leczenia +8% |
-| Całun Królowej | Morvane, Królowa Krypt | 45 | Obrona 59,2, hp 89,5, mana 148,7, Odporność magiczna 81,9 | +{v} Intelektu +14, +{v} Many +120, Odporność na nieumarłych {v}% +10% |
+| Całun Królowej | Morvane, Królowa Krypt | 45 | Pancerz 59,2, hp 89,5, mana 148,7, Odporność magiczna 81,9 | +{v} Intelektu +14, +{v} Many +120, Odporność na nieumarłych {v}% +10% |
 | Oko Zimy | Vaelgrath, Smok Mrozu | 100 | Atak magiczny % 15,1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +29, Przebicie magii {v}% +10% |
 | Kieł Vaelgratha | Vaelgrath, Smok Mrozu | 100 | obr. 456, szybkość 0,85 | +{v}% Ataku fizycznego +11%, +{v} Siły +35, +{v}% Obrażeń krytycznych +40% |
-| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Obrona 205,4, hp 516,6 | +{v} Obrony +160, +{v}% Życia +7%, Odporność na smoki {v}% +10% |
+| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Pancerz 205,4, hp 516,6 | +{v} Obrony +160, +{v}% Życia +7%, Odporność na smoki {v}% +10% |
 
 ## Materiały
 

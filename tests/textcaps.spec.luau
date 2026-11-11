@@ -267,6 +267,39 @@ describe("textcaps T2: universal rules", function()
 		expect(string.find(pl["premium.currency.note"], "Smocza Waluta", 1, true) ~= nil).toBe(true)
 		expect(string.find(en["premium.currency.note"], "Dragon Shards", 1, true) ~= nil).toBe(true)
 	end)
+
+	-- Final UI review 2026-11-11: armor is "Pancerz" (en "Armor"): the derived list said "Obrona" and the skills
+	-- "obniża obronę celu" beside "Przebicie pancerza" and the stats' "+12 pancerza". "Obrona" stays the name of a
+	-- defence (a path's role, the skills' tank role, a monster's defence in the bestiary, a lair defended, en's stat
+	-- group).
+	it("C, D and E texts call armor pancerz", function()
+		local DEFENCE = {
+			["paths.role.tank"] = true,
+			["skills.role.O"] = true,
+			["best.defence"] = true,
+			["best.reveal2"] = true,
+			["quest.wyrmSpire.p1b"] = true,
+			["statGroup.defense"] = true,
+		}
+		local problems = {}
+		for key, text in pl :: { [string]: string } do
+			local owner = TextScan.owner(key)
+			if (owner == "C" or owner == "D" or owner == "E") and not DEFENCE[key] then
+				if string.find(string.lower(text), "obron", 1, true) then
+					table.insert(problems, `{key} ({owner})`)
+				end
+			end
+			if (owner == "C" or owner == "D" or owner == "E") and (en :: { [string]: string })[key] then
+				local english = string.lower((en :: { [string]: string })[key])
+				if string.find(english, "defense", 1, true) and not DEFENCE[key] then
+					table.insert(problems, `{key} ({owner}) en: defense`)
+				end
+			end
+		end
+		fail(problems, "armor called obrona or defense")
+		expect(pl["stat.armor"]).toBe("Pancerz")
+		expect(en["stat.armor"]).toBe("Armor")
+	end)
 end)
 
 describe("textcaps T1-T3: caps and the per-package lists", function()
