@@ -14,6 +14,7 @@ local fs = require("@lune/fs")
 local CharacterLook = require("../src/shared/Logic/CharacterLook")
 local Combat = require("../src/shared/Data/Combat")
 local Config = require("../src/shared/Config")
+local Crafting = require("../src/shared/Data/Crafting")
 local EffectReroll = require("../src/shared/Logic/EffectReroll")
 local Format = require("../src/shared/Util/Format")
 local GearLayout = require("../src/shared/Logic/GearLayout")
@@ -504,6 +505,82 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 		end
 	)
 
+	T.it("the blacksmith's crafting: two recipe rows on a phone (compact when low), every text one line", function()
+		-- review 2026-11-11: under Roblox's 58-px bar the 70-px rows left 1.8 recipes in sight on a phone, and the
+		-- longest prices (gold and three materials) took two lines in a row on a 667-px phone
+		local C = GearLayout.CRAFT
+		-- a row's longest texts: a recipe's name (Body 20), its gold (Body 20) and its materials (Small 17) with
+		-- counts in the hundreds
+		local names: { string } = {}
+		local materials: { string } = {}
+		local dearest = 0
+		for _, recipe in Crafting.list do
+			dearest = math.max(dearest, recipe.gold)
+			for _, lang in { "pl", "en" } do
+				table.insert(names, ItemName.get(lang, recipe.item, nil, recipe.el))
+				local parts: { string } = {}
+				for _, material in recipe.materials do
+					table.insert(parts, `{ItemName.get(lang, material.id)} 999/{material.n}`)
+				end
+				table.insert(materials, table.concat(parts, "  "))
+			end
+		end
+		T.expect(TextCaps.width(`◉ {Format.number(dearest)}`, 20) <= C.gold).toBe(true)
+		for _, case in cases("blacksmith", GearLayout.tabsTop(true), true) do
+			local c = GearLayout.smithCraft(case.area)
+			check(case, { list = c.list })
+			T.expect({ case.name, c.list.top }).toEqual({ case.name, GearLayout.tabsTop() })
+			T.expect({ case.name, c.rows >= (if case.touch then 2 else 5) }).toEqual({ case.name, true })
+			local h = c.list.bottom - c.list.top
+			T.expect({ case.name, c.rows * c.row + (c.rows - 1) * C.gap <= h }).toEqual({ case.name, true })
+			-- the full rows wherever two of them fit
+			T.expect({ case.name, c.compact }).toEqual({ case.name, h < 2 * C.row + C.gap })
+			T.expect({ case.name, c.row, c.icon }).toEqual({
+				case.name,
+				if c.compact then C.compactRow else C.row,
+				if c.compact then C.compactIcon else C.icon,
+			})
+			for _, name in names do
+				T.expect({ case.name, name, TextCaps.width(name, 20) <= c.name }).toEqual({ case.name, name, true })
+			end
+			for _, line in materials do
+				T.expect({ case.name, line, TextCaps.lines(line, 17, c.text) }).toEqual({ case.name, line, 1 })
+			end
+		end
+		-- a row from its top (3 compact, else 6): the name 26 high, 2 px, the materials (one line of 17 is 20 high);
+		-- the item and the touch-sized "Wykuj" of a compact row with the same 7-px edge as the full row's
+		T.expect(C.compactRow - 2 * 3 - 28 >= 20).toBe(true)
+		T.expect(C.row - 2 * 6 - 28 >= 20).toBe(true)
+		T.expect(C.compactRow - C.compactIcon).toBe(C.row - C.icon)
+		T.expect(C.compactRow >= GearLayout.TOUCH + 2 * 6).toBe(true)
+		local source = fs.readFile("src/client/UI/Screens/BlacksmithWindow/Craft.luau")
+		for _, needle in
+			{
+				"GearLayout.smithCraft(use(view.size) or AREA_PC)",
+				"local pad = (L.row - L.icon) / 2",
+				"local right = C.forge + 2 * C.edge",
+				"local top = if L.compact then 3 else 6",
+				"Size = UDim2.new(1, 0, 0, L.row),",
+				"Size = L.icon,",
+				"Position = UDim2.fromOffset(L.x, top),",
+				"Size = UDim2.new(1, -(L.x + right + C.gold + C.edge), 0, 26),",
+				"Position = UDim2.new(1, -right, 0, top),",
+				"Size = UDim2.fromOffset(C.gold, 26),",
+				"Position = UDim2.fromOffset(L.x, top + 28),",
+				"Size = UDim2.new(1, -(L.x + right), 0, L.row - 2 * top - 28),",
+				"Position = UDim2.new(1, -C.edge, 0.5, 0),",
+				"Size = UDim2.fromOffset(C.forge, if L.compact then GearLayout.TOUCH else C.button),",
+				"Position = UDim2.fromOffset(0, GearLayout.tabsTop()),",
+				"Padding = UDim.new(0, GearLayout.CRAFT.gap),",
+				"PaddingRight = UDim.new(0, GearLayout.CRAFT.inset)",
+			}
+		do
+			T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+		end
+		-- the gold left the materials' line for the name's
+		T.expect(string.find(source, "local parts = { `◉", 1, true)).toBe(nil)
+	end)
+
 	T.it("the anvil tabs: why the pinned button is greyed out, else its price, stands left of it", function()
 		-- review 2026-11-11: the reason was the last line of the anvil's scroll and the price stood under the 150-px
 		-- results, both below the fold on PC and on every phone while the button stood pinned in the footer.
@@ -764,6 +841,7 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			"src/client/UI/Screens/SkillsWindow/init.luau",
 			"src/client/UI/Screens/SkillsWindow/Sheet.luau",
 			"src/client/UI/Screens/BlacksmithWindow/Upgrade.luau",
+			"src/client/UI/Screens/BlacksmithWindow/Craft.luau",
 			"src/client/UI/Screens/AuctionWindow/Sell.luau",
 			"src/client/UI/Screens/AuctionWindow/Browse.luau",
 			"src/client/UI/Screens/AlchemyWindow.luau",

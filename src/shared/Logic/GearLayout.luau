@@ -22,6 +22,7 @@
 --   GearLayout.sheetOverhang(compact)     how far the phone details sheet reaches over the window's bottom padding
 --   GearLayout.skillSheet(area)           the phone details sheet: the details over one bar of buttons
 --   GearLayout.smithUpgrade(area)         the blacksmith's upgrade view ("Ulepsz" in the footer)
+--   GearLayout.smithCraft(area)           the blacksmith's crafting list under its slot tabs (compact rows when low)
 --   GearLayout.auctionSell(area) / GearLayout.auctionBrowse(area)  ("Wystaw", "Szukaj" and the pager in the footer)
 --   GearLayout.alchemy(area)              the recipes and the brewing queue ("Odbierz wszystko" in the footer)
 --   GearLayout.look(area)                 the appearance window: preview and picker side by side
@@ -247,6 +248,59 @@ function GearLayout.smithUpgrade(area: Size): SmithUpgrade
 		result = result,
 		button = button,
 		row = row,
+	}
+end
+
+-- The blacksmith's crafting view (under the window's tabs, above its footer, where its class and level filters
+-- stand): its own slot tabs (Components/Tabs) over the recipes, one row each: the item, its name with the gold left of
+-- "Wykuj" at the row's right end, under them the materials. Review 2026-11-11 (UI plan L10: at least two rows of a
+-- list on a phone): a list lower than two rows of `row` takes compact rows (a smaller item, the button a touch target
+-- still), so a phone under Roblox's 58-px top bar shows two recipes, where the 70-px rows showed 1.8; the gold moved
+-- up to the name's line, so the longest materials (three, with counts in the hundreds) keep one line on a 667-px phone.
+-- `x` is where the name and the materials start in a row, `text` the materials' width, `name` the name's.
+export type SmithCraft = {
+	list: Rect,
+	compact: boolean,
+	row: number,
+	icon: number,
+	rows: number,
+	x: number,
+	text: number,
+	name: number,
+}
+
+GearLayout.CRAFT = table.freeze({
+	row = 70,
+	icon = 56,
+	button = 48,
+	compactRow = 58,
+	compactIcon = 44,
+	gap = 6, -- between the rows
+	inset = 10, -- the list's right padding, clear of its scroll bar
+	forge = 130, -- "Wykuj", `edge` in from the row's right end
+	edge = 8,
+	gold = 90, -- the gold, left of "Wykuj" on the name's line
+})
+
+function GearLayout.smithCraft(area: Size): SmithCraft
+	local C = GearLayout.CRAFT
+	local list = rect(0, GearLayout.tabsTop(), area.w, area.h)
+	local h = list.bottom - list.top
+	local compact = h < 2 * C.row + C.gap
+	local row = if compact then C.compactRow else C.row
+	local icon = if compact then C.compactIcon else C.icon
+	-- the item as far in from the row's left as from its top, the text 11 px after it
+	local x = (row - icon) / 2 + icon + 11
+	local text = list.right - list.left - C.inset - x - (C.forge + 2 * C.edge)
+	return {
+		list = list,
+		compact = compact,
+		row = row,
+		icon = icon,
+		rows = math.max(0, math.floor((h + C.gap) / (row + C.gap))),
+		x = x,
+		text = text,
+		name = text - C.gold - C.edge,
 	}
 end
 

@@ -4,6 +4,10 @@
 -- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): the class and
 -- level filters stand in the window's Footer (the view gives them to BlacksmithWindow), so the recipes take the rest
 -- of the body under the slot tabs (Logic/GearLayout.tabsTop) on a phone too.
+-- Review 2026-11-11 (UI plan L10: two rows of a list on a phone): a list lower than two 70-px rows (a phone under
+-- Roblox's 58-px top bar showed 1.8) takes compact 58-px rows, a 44-px item and a 44-px "Wykuj"
+-- (Logic/GearLayout.smithCraft from the view's measured size, UI/ViewSize). The gold stands left of "Wykuj" on the
+-- name's line (red when short, like a missing material), so the materials keep one line on a 667-px phone.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -23,10 +27,14 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Types = require(ReplicatedStorage.Shared.Types)
+local ViewSize = require(script.Parent.Parent.Parent.ViewSize)
 
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+-- the smith's view on PC (under its tabs, above its footer) until it is measured
+local AREA_PC = { w = 816, h = 448 }
 
 local SLOT_GROUPS: { { id: string, slots: { [string]: boolean } } } = {
 	{ id = "weapon", slots = { weapon = true } },
@@ -70,7 +78,20 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 		return Bases.tiers[use(tierIndex)] or 1
 	end)
 
+	-- the rows' height from the view's own size (GearLayout.smithCraft): compact while the list is low
+	local view = ViewSize.new(scope)
+	local layout = scope:Computed(function(use): GearLayout.SmithCraft
+		return GearLayout.smithCraft(use(view.size) or AREA_PC)
+	end)
+
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
+		-- one row: the item `pad` in from the row's edges; from L.x the name with the gold at its end and under them
+		-- the materials, up to "Wykuj" (`right` from the row's right end)
+		local C = GearLayout.CRAFT
+		local L = use(layout)
+		local pad = (L.row - L.icon) / 2
+		local right = C.forge + 2 * C.edge
+		local top = if L.compact then 3 else 6
 		local slots: { [string]: boolean } = {}
 		for _, g in SLOT_GROUPS do
 			if g.id == use(group) then
@@ -97,8 +118,9 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 					n = 1,
 					el = recipe.el,
 				}
-				local parts = { `◉ {Format.number(recipe.gold)}` }
-				local missing = (use(gold) or 0) < recipe.gold
+				local parts: { string } = {}
+				local poor = (use(gold) or 0) < recipe.gold
+				local missing = poor
 				local inv = use(inventory)
 				for _, material in recipe.materials do
 					local have = count(inv, material.id)
@@ -118,7 +140,7 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 					s:New("Frame")({
 						Name = recipe.id,
 						LayoutOrder = order,
-						Size = UDim2.new(1, 0, 0, 70),
+						Size = UDim2.new(1, 0, 0, L.row),
 						BackgroundColor3 = Theme.Paper.Raised,
 						BackgroundTransparency = 0.4,
 						[Children] = {
@@ -126,12 +148,12 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 							ItemSlot(s, {
 								SlotId = `view:craft:{recipe.id}`,
 								Item = preview,
-								Size = 56,
-								Position = UDim2.fromOffset(7, 7),
+								Size = L.icon,
+								Position = UDim2.fromOffset(pad, pad),
 							}),
 							s:New("TextLabel")({
-								Position = UDim2.fromOffset(74, 6),
-								Size = UDim2.new(1, -220, 0, 26),
+								Position = UDim2.fromOffset(L.x, top),
+								Size = UDim2.new(1, -(L.x + right + C.gold + C.edge), 0, 26),
 								BackgroundTransparency = 1,
 								Text = ItemText.get(use, recipe.item, nil, recipe.el),
 								FontFace = Theme.Fonts.BodyBold,
@@ -141,8 +163,20 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 								TextTruncate = Enum.TextTruncate.AtEnd,
 							}),
 							s:New("TextLabel")({
-								Position = UDim2.fromOffset(74, 34),
-								Size = UDim2.new(1, -220, 0, 30),
+								Name = "Gold",
+								AnchorPoint = Vector2.new(1, 0),
+								Position = UDim2.new(1, -right, 0, top),
+								Size = UDim2.fromOffset(C.gold, 26),
+								BackgroundTransparency = 1,
+								Text = `◉ {Format.number(recipe.gold)}`,
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Body,
+								TextColor3 = if poor then Theme.Paper.Danger else Theme.Paper.Heading,
+								TextXAlignment = Enum.TextXAlignment.Right,
+							}),
+							s:New("TextLabel")({
+								Position = UDim2.fromOffset(L.x, top + 28),
+								Size = UDim2.new(1, -(L.x + right), 0, L.row - 2 * top - 28),
 								BackgroundTransparency = 1,
 								RichText = true,
 								TextWrapped = true,
@@ -154,8 +188,8 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 							}),
 							Button(s, {
 								AnchorPoint = Vector2.new(1, 0.5),
-								Position = UDim2.new(1, -8, 0.5, 0),
-								Size = UDim2.fromOffset(130, 48),
+								Position = UDim2.new(1, -C.edge, 0.5, 0),
+								Size = UDim2.fromOffset(C.forge, if L.compact then GearLayout.TOUCH else C.button),
 								Variant = "primary",
 								Text = Text.T(s, "smith.craft"),
 								Disabled = missing,
@@ -186,11 +220,12 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 		return list
 	end)
 
-	local view = scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Name = "Craft",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
+			view.ruler,
 			Tabs(scope, {
 				Selected = group,
 				Tabs = {
@@ -210,15 +245,19 @@ local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 				ScrollBarThickness = 6,
 				ScrollBarImageColor3 = Theme.Paper.Rule,
 				[Children] = {
-					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-					scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
+					scope:New("UIListLayout")({
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, GearLayout.CRAFT.gap),
+					}),
+					scope:New("UIPadding")({ PaddingRight = UDim.new(0, GearLayout.CRAFT.inset) }),
 					rows :: any,
 				},
 			}),
 		},
 	})
+	view.watch(root)
 	return {
-		View = view,
+		View = root,
 		-- the footer's row: the filters, from its left end
 		Footer = scope:New("Frame")({
 			Name = "Filters",
