@@ -14,12 +14,20 @@
 -- Review 2026-11-10: a window's footer rule stays out of its buttons' list; on touch the item tooltip stands at the top
 -- of its half, under the window's title bar, and keeps off the action strip at the window's bottom (at the slot's
 -- height it covered the backpack's Załóż / Użyj bar for every slot of a phone's backpack).
+-- Review 2026-11-11: the touch item tooltip is never taller than that room (Popover.awayRoom): the full view of a
+-- mythic item scrolls its rows there and keeps "Mniej ▾" on the screen.
 
 local fs = require("@lune/fs")
 
+local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local Items = require("../src/shared/Data/Items")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local Popover = require("../src/shared/Logic/Popover")
+local Rarities = require("../src/shared/Data/Rarities")
+local Rng = require("../src/shared/Logic/Rng")
 local T = require("./Test")
+local TextCaps = require("../src/shared/Logic/TextCaps")
+local TooltipModel = require("../src/shared/Logic/TooltipModel")
 local UiScale = require("../src/shared/Logic/UiScale")
 local WindowFrame = require("../src/shared/Logic/WindowFrame")
 local WindowRules = require("../src/shared/Logic/WindowRules")
@@ -491,6 +499,12 @@ T.describe("Windows (L7, owner 2026-11-10)", function()
 				"avoid = window.footer,",
 				"keepOff = avoidRects(),",
 				"{ prefer = open.side :: Popover.Side, gap = DETAIL_GAP }",
+				-- review 2026-11-11: capped at the room away() gives it, the rows scroll, the view switch pinned
+				"Popover.awayRoom(safe, { top = window.header.bottom, avoid = window.footer })",
+				"Popover.capped(",
+				'Name = "Lines",',
+				'[OnChange("CanvasPosition")]',
+				"toggle = viewToggle(s, TOGGLE_ORDER, entry.text)",
 			}),
 			{ "Scale.VirtualSize" }
 		)
@@ -720,5 +734,73 @@ T.describe("Popovers (L8, owner 2026-11-10)", function()
 		})
 		T.expect(overlaps(rect, buttons) or overlaps(rect, frame.footer) or overlaps(rect, slot)).toBe(false)
 		T.expect(rect.top).toBe(buttons.bottom + Popover.GAP)
+	end)
+
+	-- Review 2026-11-11: a mythic item's full view ("Więcej ▸", 20-25 rows) is taller than the room on every phone;
+	-- capped at Popover.awayRoom it stands under the title bar and over the action strip, its rows scroll and the
+	-- pinned "Mniej ▾" row stays on the screen (it ran 100-400 px off the bottom, over the title bar at the top).
+	T.it("on touch, the item tooltip's full view scrolls in its room and keeps 'Mniej ▾' on the screen", function()
+		local SIZE = { large = 24, body = 20, small = 17 }
+		-- the rows' height, at least: each line of text as tall as its type (TextCaps' width model, 316-px rows)
+		local function rowsHeight(lines: { TooltipModel.Line }): number
+			local h = 0
+			for i, entry in lines do
+				if entry.role == "gap" then
+					h += 4
+				elseif entry.role ~= "lessHint" and entry.role ~= "moreHint" then
+					local size = if entry.size then SIZE[entry.size] else SIZE.small
+					local width = if entry.kind == "bonus" then 316 - 54 - 22 else 316
+					h += TextCaps.lines(TextCaps.plain(entry.text), size, width) * size
+				end
+				h += if i > 1 then 3 else 0
+			end
+			return h
+		end
+		local tallest = 0
+		for _, id in { "sword1h_60", "sword2h_60", "bow_60", "staff_60", "ring_60" } do
+			local def = assert(Items.get(id), id)
+			local item: any = ItemRoll.rollItem(id, def.level, Rarities.MYTHIC, Rng.new(7), `{id}:full`)
+			for _, lang in { "pl", "en" } do
+				local full = TooltipModel.build(item, def, { lang = lang, input = "touch", view = "full" }).lines
+				T.expect(full[#full].role).toBe("lessHint")
+				tallest = math.max(tallest, rowsHeight(full))
+			end
+		end
+		local fixed = 2 * 10 + 3 + 44 -- the panel's padding, the gap and the pinned 44-px "Mniej ▾" row
+		local checked = 0
+		for _, screen in screens() do
+			if not screen.touch then
+				continue
+			end
+			local layer = { w = screen.w, h = screen.h }
+			local safe = { left = 0, top = screen.bar, right = screen.w, bottom = screen.h }
+			local area = { left = 8, top = screen.bar + 8, right = screen.w - 8, bottom = screen.h - 8 }
+			local frame = WindowFrame.rect(layer, layer, nil, true, screen.bar, screen.compact)
+			local options = { top = frame.header.bottom, avoid = frame.footer }
+			local room = Popover.awayRoom(safe, options)
+			if screen.compact and screen.bar == 58 then
+				-- the review's phones: the full view is taller than the room there
+				T.expect(`{screen.name} {tallest + fixed > room}`).toBe(`{screen.name} true`)
+			end
+			local h, rows = Popover.capped(tallest, fixed, room)
+			T.expect(h <= room + 1e-6 and rows >= 0 and h == rows + fixed).toBe(true)
+			for _, slot in grid(WindowFrame.body(frame, true), 64) do
+				checked += 1
+				local rect = Popover.away(slot, { w = 340, h = h }, safe, options)
+				local toggle =
+					{ left = rect.left, top = rect.bottom - 10 - 44, right = rect.right, bottom = rect.bottom - 10 }
+				local where = `{screen.name}, a {h}-px full view for the slot {show(slot)}`
+				if not inside(rect, area) or not inside(toggle, area) then
+					error(`{where}: {show(rect)} leaves the safe area less 8`)
+				elseif rect.top < frame.header.bottom + Popover.MARGIN - 1e-6 then
+					error(`{where}: {show(rect)} covers the title bar`)
+				elseif overlaps(rect, frame.footer) then
+					error(`{where}: {show(rect)} covers the action strip {show(frame.footer)}`)
+				end
+			end
+		end
+		T.expect(checked > 0).toBe(true)
+		-- a short tooltip shows whole: nothing to scroll
+		T.expect({ Popover.capped(120, fixed, 400) }).toEqual({ 120 + fixed, 120 })
 	end)
 end)

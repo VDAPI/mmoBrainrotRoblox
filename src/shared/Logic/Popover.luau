@@ -12,6 +12,9 @@
 -- Review 2026-11-10: `away` stands at the top of its half again, under a full-screen window's title bar, as the touch
 -- tooltip did before (at the slot's height it went down over the backpack's Załóż / Użyj bar), and keeps off a
 -- window's action strip by rising over that title bar when it is too tall for the room between them.
+-- Review 2026-11-11: a popover taller than that room (the touch item tooltip's full view: 20-25 lines) is capped at
+-- it (`awayRoom`, `capped`): its body scrolls and what is pinned under the body (the "Mniej ▾" row) stays on the
+-- screen, instead of the panel covering the title bar and losing its bottom under the screen's edge.
 
 local Popover = {}
 
@@ -211,6 +214,29 @@ function Popover.away(anchor: Rect, size: Size, safe: Rect, options: Options?): 
 		end
 	end
 	return best, side
+end
+
+-- The height a popover placed by `away` with the same options has at its first place: from under `top` (the
+-- window's title bar) to the safe area's bottom less the margin, or to `avoid` (the action strip) less the gap when
+-- that strip is under it. A popover at most this tall stands there, clear of both.
+function Popover.awayRoom(safe: Rect, options: Options?): number
+	local o: Options = options or {}
+	local margin = o.margin or Popover.MARGIN
+	local gap = o.gap or Popover.GAP
+	local area = inset(safe, margin)
+	local top = if o.top then math.max(area.top, o.top + margin) else area.top
+	local bottom = area.bottom
+	if o.avoid and o.avoid.top > top then
+		bottom = math.min(bottom, o.avoid.top - gap)
+	end
+	return math.max(0, bottom - top)
+end
+
+-- A popover whose body scrolls inside `room`: its height and the body's, for a body `body` tall and `fixed` pixels
+-- around it (the padding, the rows pinned under the body). The body shows whole while it fits.
+function Popover.capped(body: number, fixed: number, room: number): (number, number)
+	local shown = math.max(0, math.min(body, room - fixed))
+	return shown + fixed, shown
 end
 
 return Popover

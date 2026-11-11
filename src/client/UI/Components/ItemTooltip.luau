@@ -30,6 +30,10 @@
 -- pinned Footer) as well as what windows register; it had followed the slot's height down over that bar. The S68
 -- details panel stands where Popover.place puts it in the same safe area (it was kept in the whole viewport, under the
 -- top bar and the home indicator), and its touch "×" is a 44-px target.
+-- Review 2026-11-11: the panel is never taller than its room (Popover.awayRoom on touch: under the title bar, over the
+-- action strip; the safe area on PC): its lines scroll and on touch "Więcej ▸" / "Mniej ▾" stays pinned under them
+-- (the full view of a mythic item ran 100-400 px off a phone's bottom with "Mniej ▾"). Scrolling the lines closes an
+-- open details panel, which stands at its row's place; a new item or view starts at the top.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -64,7 +68,7 @@ local UiArtState = require(script.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 
-local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
+local Children, OnChange, OnEvent, Out = Fusion.Children, Fusion.OnChange, Fusion.OnEvent, Fusion.Out
 
 type ItemInstance = Types.ItemInstance
 type Scope = Fusion.Scope<typeof(Fusion)>
@@ -120,6 +124,11 @@ local shownCtx = moduleScope:Value(nil :: TooltipModel.Ctx?)
 local merchantOpen = moduleScope:Value(false)
 local GAP = 8
 local GROUP_GAP = 4 -- S134g: the thin space between two stat groups (role "gap")
+-- The panel's padding (10 over and under its lines) and its list's gap (3): with the pinned "More ▸" / "Less ▾" row
+-- (touch) what stays around the scrolling lines.
+local PADDING_Y = 2 * 10
+local LIST_GAP = 3
+local TOGGLE_ORDER = 2
 local owner: GuiObject? = nil
 local getters: { [string]: () -> ItemInstance? } = {}
 -- Root of the layer the tooltip is mounted in (FIX 2026-10-14: GUI points are measured from it, Scale.toLayer).
@@ -380,7 +389,8 @@ local function detailRow(
 	return button :: GuiObject
 end
 
--- "More ▸" / "Less ▾" on touch: a row that switches the view (PC: the same line is a plain hint).
+-- "More ▸" / "Less ▾" on touch: a row that switches the view (PC: the same line is a plain hint). Pinned under the
+-- scrolling lines (TOGGLE_ORDER in the panel), so it stays on the screen.
 local function viewToggle(s: Scope, order: number, text: string): Instance
 	return s:New("TextButton")({
 		Name = "ViewToggle",
@@ -400,6 +410,7 @@ local function viewToggle(s: Scope, order: number, text: string): Instance
 	})
 end
 
+-- The tooltip's rows, and on touch the view switch ("More ▸" / "Less ▾") kept apart, pinned under the rows.
 local function build(
 	s: Scope,
 	item: ItemInstance,
@@ -407,7 +418,7 @@ local function build(
 	extra: TooltipModel.Ctx?,
 	merchant: boolean,
 	full: boolean
-): { Instance }
+): ({ Instance }, Instance?)
 	local def = Items.get(item.id)
 	local equipment = State.Get({ "character", "equipment" })
 	local gear: { [string]: any } = if type(equipment) == "table" then equipment else {}
@@ -441,6 +452,7 @@ local function build(
 		end
 	end
 	local out: { Instance } = {}
+	local toggle: Instance? = nil
 	for order, entry in TooltipModel.build(item, def, ctx).lines do
 		if entry.role == "gap" then
 			-- S134g: a thin space between two stat groups
@@ -455,8 +467,12 @@ local function build(
 			)
 			continue
 		elseif entry.role == "moreHint" or entry.role == "lessHint" then
-			-- touch gets the switch, PC the plain hint
-			table.insert(out, if touch then viewToggle(s, order, entry.text) else line(s, order, entry.text, MUTED))
+			-- touch gets the switch (pinned under the rows), PC the plain hint
+			if touch then
+				toggle = viewToggle(s, TOGGLE_ORDER, entry.text)
+			else
+				table.insert(out, line(s, order, entry.text, MUTED))
+			end
 			continue
 		end
 		local ref = entry.detail
@@ -507,7 +523,7 @@ local function build(
 			table.insert(out, row)
 		end
 	end
-	return out
+	return out, toggle
 end
 
 -- Show / hide -----------------------------------------------------------------------------------------------
@@ -684,33 +700,67 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		local item = use(shown)
 		return IconState.picture(use, use(shownDef), if item then ItemRoll.elementOf(item) else nil) ~= nil
 	end)
-	local mainPanel = scope:New("Frame")({
-		Name = "Item",
-		LayoutOrder = 2,
-		Size = UDim2.fromOffset(WIDTH, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Iron.Surface,
+	-- the rows (the scroll's content) and, on touch, the view switch pinned under them
+	type Built = { lines: { Instance }, toggle: Instance? }
+	local built = scope:Computed(function(use, s: Scope): Built
+		local item = use(shown)
+		local lang = use(Text.Lang)
+		if item then
+			local lines, toggle = build(s, item, lang, use(shownCtx), use(merchantOpen), use(fullView))
+			-- The name, the head line and the rarity line keep clear of the picture.
+			if use(showIcon) then
+				for i = 1, math.min(3, #lines) do
+					s:New("UIPadding")({ PaddingRight = UDim.new(0, ICON_SIZE + 6), Parent = lines[i] })
+				end
+			end
+			return { lines = lines, toggle = toggle }
+		end
+		local text = use(emptyText)
+		return { lines = if text then { line(s, 1, text, DARK) } else {}, toggle = nil }
+	end)
+	-- Review 2026-11-11: the room the panel has (Popover.awayRoom on touch, under the full-screen window's title bar
+	-- and over its action strip, where Popover.away puts it; the safe area less its margins on PC) and the height its
+	-- scrolling rows show in it (Popover.capped: whole while they fit).
+	local contentSize = scope:Value(Vector2.zero)
+	local room = scope:Computed(function(use): number
+		local safe = use(Tooltip.SafeArea)
+		if use(onTouch) then
+			local layer = { w = safe.right, h = safe.bottom }
+			local window = WindowFrame.rect(layer, layer, nil, true, safe.top, use(PhoneLayout.Compact))
+			return Popover.awayRoom(safe, { top = window.header.bottom, avoid = window.footer })
+		end
+		return Popover.awayRoom(safe)
+	end)
+	local linesHeight = scope:Computed(function(use): number
+		local fixed = PADDING_Y + (if use(built).toggle then LIST_GAP + Theme.Size.MinTouch else 0)
+		local _, shownHeight = Popover.capped(use(contentSize).Y / use(Scale.Value), fixed, use(room))
+		return shownHeight
+	end)
+	local lines = scope:New("ScrollingFrame")({
+		Name = "Lines",
+		LayoutOrder = 1,
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 0, use(linesHeight))
+		end),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = MUTED,
 		ZIndex = 200,
+		-- a details panel stands at its row's place: scrolling the rows closes it
+		[OnChange("CanvasPosition")] = function()
+			if Fusion.peek(detail) then
+				closeDetail()
+			end
+		end,
 		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			-- W28: the rarity border (3 px from Unique, gradient for Legendary / Mythic)
-			RarityFrame.panelStroke(
-				scope,
-				scope:Computed(function(use): number?
-					local item = use(shown)
-					return if item then Rarities.get(item.rarity).id else nil
-				end),
-				Theme.Brass.Line
-			),
-			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, 10),
-				PaddingBottom = UDim.new(0, 10),
-				PaddingLeft = UDim.new(0, 12),
-				PaddingRight = UDim.new(0, 12),
-			}),
 			scope:New("UIListLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, 3),
+				Padding = UDim.new(0, LIST_GAP),
+				[Out("AbsoluteContentSize")] = contentSize,
 			}),
 			-- S35: the item's picture in the top right corner (only with the atlases; the glyph is not repeated here).
 			scope:New("Frame")({
@@ -730,21 +780,42 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 					Visible = showIcon,
 				}),
 			}),
-			scope:Computed(function(use, s: Scope): { Instance }
-				local item = use(shown)
-				local lang = use(Text.Lang)
-				if item then
-					local lines = build(s, item, lang, use(shownCtx), use(merchantOpen), use(fullView))
-					-- The name, the head line and the rarity line keep clear of the picture.
-					if use(showIcon) then
-						for i = 1, math.min(3, #lines) do
-							s:New("UIPadding")({ PaddingRight = UDim.new(0, ICON_SIZE + 6), Parent = lines[i] })
-						end
-					end
-					return lines
-				end
-				local text = use(emptyText)
-				return if text then { line(s, 1, text, DARK) } else {}
+			scope:Computed(function(use): { Instance }
+				return use(built).lines
+			end) :: any,
+		},
+	}) :: ScrollingFrame
+	local mainPanel = scope:New("Frame")({
+		Name = "Item",
+		LayoutOrder = 2,
+		Size = UDim2.fromOffset(WIDTH, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Theme.Iron.Surface,
+		ZIndex = 200,
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			-- W28: the rarity border (3 px from Unique, gradient for Legendary / Mythic)
+			RarityFrame.panelStroke(
+				scope,
+				scope:Computed(function(use): number?
+					local item = use(shown)
+					return if item then Rarities.get(item.rarity).id else nil
+				end),
+				Theme.Brass.Line
+			),
+			scope:New("UIPadding")({
+				PaddingTop = UDim.new(0, PADDING_Y / 2),
+				PaddingBottom = UDim.new(0, PADDING_Y / 2),
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+			}),
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, LIST_GAP),
+			}),
+			lines,
+			scope:Computed(function(use): Instance?
+				return use(built).toggle
 			end) :: any,
 		},
 	})
@@ -801,6 +872,11 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 	scope:Observer(shown):onChange(function()
 		closeDetail()
 		touchFull:set(false) -- 2026-10-21: every new item opens compact
+		lines.CanvasPosition = Vector2.zero
+	end)
+	-- review 2026-11-11: the other view starts at its top too
+	scope:Observer(fullView):onChange(function()
+		lines.CanvasPosition = Vector2.zero
 	end)
 	local detailSize = scope:Value(Vector2.zero)
 	local model = scope:Computed(function(use): TooltipModel.Details?
