@@ -8776,7 +8776,7 @@ return {
 	["arena.queueLeft.dungeon"] = "Entering a dungeon took you out of the arena queue.",
 	["arena.panel.queue"] = "⌛ {mode} · {time}",
 	["arena.panel.waiting"] = "{mode} queue: {n} waiting",
-	["arena.panel.window"] = "{mode} queue: rating range ±{n}",
+	["arena.panel.window"] = "{mode} queue: rating ±{n}",
 	["arena.panel.round"] = "Round {n} / {of}",
 	["arena.panel.potions"] = "Potions: {n}",
 	["arena.phase.waiting"] = "Waiting for free sand ({n})",

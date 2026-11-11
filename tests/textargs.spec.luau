@@ -5,10 +5,12 @@
 -- in Hud/AreaBanner (package B) passes `range`; a banner that still passed `min` and `max` (package B's own version
 -- of the file, the natural pick in a merge) read "Polana Królików · {range}". The check: every Text.get, Text.now,
 -- Text.T and Locale.T call in src with a literal key and a literal argument table names each placeholder of the key's
--- pl and en text, so such a merge fails here instead of on the screen.
+-- pl and en text, so such a merge fails here instead of on the screen. Final UI review 2026-11-10: the arena's queue
+-- texts pass the mode's name, never its id.
 
 local fs = require("@lune/fs")
 
+local Arena = require("../src/shared/Data/Arena")
 local T = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
@@ -184,5 +186,25 @@ T.describe("Localized text calls (package A review, owner 2026-11-10)", function
 			table.insert(missing, `{p.line} {p.key} {p.lang} {p.missing}`)
 		end
 		T.expect(missing).toEqual({ "2 area.label pl range", "2 area.label en range" })
+	end)
+
+	T.it("the arena's queue texts name the mode, never its id (final UI review 2026-11-10)", function()
+		-- known item 2: the pill read '⌛ 1v1 · 0:42', its tooltip 'Kolejka 1v1: czeka 3' and the join toast 'Czekasz w
+		-- kolejce 1v1.', where the arena window says '1 na 1'
+		local panel = fs.readFile("src/client/UI/Screens/Hud/ArenaPanel.luau")
+		T.expect(string.find(panel, "mode = q.mode", 1, true)).toBeNil()
+		local _, named = string.gsub(panel, "mode = modeName%(use, q%.mode%)", "")
+		T.expect(named).toBe(3)
+		T.expect(string.find(panel, "return Text.get(use, `arena.mode.{id}`)", 1, true) ~= nil).toBe(true)
+		-- the server's toast sends the name's key ('@', UI/NotificationController's escapeArgs)
+		local service = fs.readFile("src/server/Services/ArenaService.luau")
+		T.expect(string.find(service, '"arena.joined", { mode = "@arena.mode." .. modeId }', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(service, "{ mode = modeId }", 1, true)).toBeNil()
+		for _, id in { "1v1", "3v3" } do
+			T.expect(Arena.mode(id) ~= nil).toBe(true)
+			for _, lang in LANGS do
+				T.expect({ lang.name, id, type(lang.texts[`arena.mode.{id}`]) }).toEqual({ lang.name, id, "string" })
+			end
+		end
 	end)
 end)

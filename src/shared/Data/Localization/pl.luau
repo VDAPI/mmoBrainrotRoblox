@@ -8774,7 +8774,7 @@ return {
 	["arena.queueLeft.dungeon"] = "Wejście do lochu zdjęło cię z kolejki areny.",
 	["arena.panel.queue"] = "⌛ {mode} · {time}",
 	["arena.panel.waiting"] = "Kolejka {mode}: czeka {n}",
-	["arena.panel.window"] = "Kolejka {mode}: zakres rankingu ±{n}",
+	["arena.panel.window"] = "Kolejka {mode}: rating ±{n}",
 	["arena.panel.round"] = "Runda {n} / {of}",
 	["arena.panel.potions"] = "Mikstury: {n}",
 	["arena.phase.waiting"] = "Czekamy na wolny piasek ({n})",

@@ -17,9 +17,10 @@
 -- shows, the match panel steps aside and the return panel carries the match's result. On a phone they join the stack
 -- as "arena" (Logic/PhoneHud) with a header line (Hud/PanelHeader: the score and the round's time), folded by default
 -- (Section.state "hudArena", Data/Folds/Hud), and the column folds them to that line while it has no room.
--- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): the pill says "⌛ 1v1 · 0:42"
--- and its tooltip the players waiting (or the global queue's rating window); the 3v3 result line reads its three keys
--- by name (the toast and the banner of the result are the message band's).
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): the pill says
+-- "⌛ 1 na 1 · 0:42" (the mode's name, final UI review 2026-11-10) and its tooltip the players waiting (or the global
+-- queue's rating window); the 3v3 result line reads its three keys by name (the toast and the banner of the result are
+-- the message band's).
 -- Package A review (owner 2026-11-10, "things covering each other"): on PC and a tablet both panels take the arena
 -- place's size (68 tall; the return panel grew to 140 and its button stood in the message zone under the band, where
 -- the result's toast shows): after the match the result line stands in the round line's place, and the return panel is
@@ -66,6 +67,12 @@ local BACK_BUTTON = 140
 -- the team result of a 3v3 match
 local RESULT3: { [string]: string } =
 	{ win = "arena.result3.win", loss = "arena.result3.loss", draw = "arena.result3.draw" }
+
+-- The queue's mode by its name ("1 na 1", as the arena window says it), never its id ("1v1"; final UI review
+-- 2026-11-10, known item 2).
+local function modeName(use: Fusion.Use, id: any): string
+	return Text.get(use, `arena.mode.{id}`)
+end
 
 local function ArenaPanel(scope: Scope, props: Props): Instance
 	local live = State.Value({ "arenaLive" })
@@ -136,7 +143,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 					end
 					local t = use(now)
 					local time = Time.format(t - (tonumber(q.since) or t))
-					return Text.get(use, "arena.panel.queue", { mode = q.mode, time = time })
+					return Text.get(use, "arena.panel.queue", { mode = modeName(use, q.mode), time = time })
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
@@ -171,9 +178,9 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 			end
 			if q.waiting == nil and tonumber(q.window) then
 				-- S127: the global queue: the rating window it searches now
-				return Text.get(use, "arena.panel.window", { mode = q.mode, n = tonumber(q.window) })
+				return Text.get(use, "arena.panel.window", { mode = modeName(use, q.mode), n = tonumber(q.window) })
 			end
-			return Text.get(use, "arena.panel.waiting", { mode = q.mode, n = tonumber(q.waiting) or 0 })
+			return Text.get(use, "arena.panel.waiting", { mode = modeName(use, q.mode), n = tonumber(q.waiting) or 0 })
 		end)
 	)
 

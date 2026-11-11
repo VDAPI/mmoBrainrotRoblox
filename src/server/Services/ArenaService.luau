@@ -612,7 +612,7 @@ function ArenaService.Join(player: Player, modeId: string): (boolean, string?)
 			toast(member, "arena.queue3.teamJoined", nil, "success")
 		end
 	else
-		toast(player, "arena.joined", { mode = modeId }, "success")
+		toast(player, "arena.joined", { mode = "@arena.mode." .. modeId }, "success") -- the mode's name, not its id
 	end
 	return true, nil
 end
