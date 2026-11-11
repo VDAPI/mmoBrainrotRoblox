@@ -642,6 +642,7 @@ export type Card = {
 	note: string?, -- a phone's card without a full view: one more line in its sheet (the better item's "instead of")
 	accent: Color3?,
 	seconds: number?,
+	wait: number?, -- the longest wait for its place, else the class's (Logic/NoticeQueue.WAIT, LEGENDARY)
 	details: (() -> ())?, -- 'Szczegóły': the full view (Notify.details)
 	action: { text: string, run: () -> () }?, -- a second button (the better item's "Załóż")
 	build: ((s: Scope, live: Live) -> Instance)?, -- its own look on PC (the better item's card with its icon)
@@ -740,7 +741,8 @@ local OPEN_MARK = 16 -- the ▸ at the end of a phone's line that opens on a tap
 
 -- The card summary: on PC the title, a line, 'Szczegóły' and ✕ in HudZones.cardSlot (a tablet: under the toasts); on a
 -- phone one line in M that opens with a tap. A card that waits too long drops (it stays in the fight log or the loot
--- log).
+-- log); the legendary card, the only way to the reveal, stands 20 s and waits up to ten minutes (Logic/NoticeQueue
+-- .LEGENDARY).
 function Notify.card(card: Card): Handle?
 	local function look(s: Scope, live: Live): Instance
 		local accent = card.accent or Theme.Brass.Bright
@@ -926,6 +928,7 @@ function Notify.card(card: Card): Handle?
 	return Notify.push({
 		class = card.class,
 		seconds = card.seconds,
+		wait = card.wait,
 		w = HudZones.CARD_W,
 		height = function(phone: boolean): number
 			return if phone then Theme.Size.HudLine else HudZones.CARDS[kind]

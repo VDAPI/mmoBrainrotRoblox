@@ -130,8 +130,10 @@ HudZones.GUIDE_W = 264
 HudZones.WAITING_MAX = 4
 
 -- Z6. [proposed] The card slot of the PC corner (owner question 1 of the plan, on by default): one card at a time,
--- this wide, bottom-aligned; the height of each kind's one-line summary.
-HudZones.CARD_W = 330
+-- this wide, bottom-aligned; the height of each kind's one-line summary. Final UI review 2026-11-10: 318 (it was 330),
+-- so the slot starts where the centred backpack window (1240 wide) ends on a 16:9 screen: at 330 a legendary card
+-- met that window by 12 px and waited while the player looked at the new item (tests/hudzones.spec).
+HudZones.CARD_W = 318
 HudZones.CARDS = table.freeze({ betterItem = 96, fight = 152, bossReward = 152, legend = 152 } :: { [string]: number })
 
 -- Z7. Hud/init's action bar: SKILL_SLOTS (Data/Skills.HOTBAR_SLOTS) slots of SLOT_SIZE, then a Gap frame

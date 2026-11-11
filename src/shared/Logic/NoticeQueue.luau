@@ -175,6 +175,13 @@ NoticeQueue.HOLD = table.freeze({ toast = 10, crossServer = 30, bark = 30, bette
 -- Alerts and prompts have none (a prompt has its deadline, an alert takes its place at once).
 NoticeQueue.WAIT = table.freeze({ toast = 20, banner = 60, bark = 10, card = 30 } :: { [string]: number })
 
+-- Final UI review 2026-11-10 (known item 4): the legendary card (a legendary or mythic drop, the first valuable drop)
+-- is the only way to the reveal (owner question UI 10: it opens from 'Szczegóły' only), and it lived 8 s and dropped
+-- after 30 s of waiting, while a window met its slot or a higher card held it. It stands as long as the boss reward
+-- card (20 s) and waits for its place up to ten minutes (a fight, a look into the backpack), not for ever: nothing
+-- clears the queue on a character switch.
+NoticeQueue.LEGENDARY = table.freeze({ seconds = 20, wait = 600 })
+
 -- Where a kind stands on a device.
 function NoticeQueue.place(device: Device, kind: Kind): string
 	return PLACE[device][kind]
@@ -252,7 +259,7 @@ local function secondsOf(spec: Spec, kind: Kind): number?
 	elseif kind == "bark" then
 		return s.bark
 	elseif kind == "card" then
-		return s.card
+		return if spec.class == "legendary" then NoticeQueue.LEGENDARY.seconds else s.card
 	end
 	return nil -- a prompt: until answered or its deadline
 end
@@ -351,7 +358,10 @@ function NoticeQueue.push(q: Queue, now: number, spec: Spec): Entry?
 		left = seconds,
 		ends = if spec.deadline then now + spec.deadline else nil,
 		hold = if spec.hold == false then nil elseif type(spec.hold) == "number" then spec.hold else holdOf(spec, kind),
-		wait = spec.wait or NoticeQueue.WAIT[kind] or math.huge,
+		wait = spec.wait
+			or (if spec.class == "legendary" then NoticeQueue.LEGENDARY.wait else nil)
+			or NoticeQueue.WAIT[kind]
+			or math.huge,
 		crossServer = spec.crossServer == true,
 		windowWaits = spec.windowWaits == true,
 		penalty = spec.penalty == true,

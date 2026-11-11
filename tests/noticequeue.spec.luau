@@ -10,7 +10,8 @@
 -- bar, the PC party frames and the arena's return panel; an alert goes at its deadline and a blow to dodge goes first;
 -- the arena's offer takes the prompt's place; a modal dialog keeps the messages off.
 -- Final UI review 2026-11-10: the death screen's content keeps the messages off as a dialog does, and what waits keeps
--- its time while it shows (the killer's toast of a PvP death showed under it and dropped unseen).
+-- its time while it shows (the killer's toast of a PvP death showed under it and dropped unseen); the legendary card,
+-- the only way to the reveal, stands 20 s and waits ten minutes for its place.
 
 local fs = require("@lune/fs")
 
@@ -402,6 +403,34 @@ T.describe("NoticeQueue: the policy (fake clock)", function()
 		T.expect(NoticeQueue.find(q4, quiet.id) ~= nil).toBe(true)
 		NoticeQueue.update(q4, 30.5)
 		T.expect(quiet.shown).toBe(true)
+	end)
+
+	T.it("final UI review 2026-11-10: the legendary card stands 20 s and waits ten minutes for its place", function()
+		-- known item 4: the card is the only way to the reveal (owner question UI 10: from 'Szczegóły' only); it lived
+		-- 8 s and dropped after 30 s of waiting while a window met its slot or a higher card held it
+		local q = NoticeQueue.new("pc")
+		local card = NoticeQueue.push(q, 0, { class = "legendary" }) :: Entry
+		T.expect({ card.seconds, card.wait }).toEqual({ 20, 600 })
+		T.expect({ card.seconds, card.wait }).toEqual({ NoticeQueue.LEGENDARY.seconds, NoticeQueue.LEGENDARY.wait })
+		-- nine minutes with no place (a window over the slot, Logic/TopBand.slots): it still comes, for its 20 s
+		run(q, 0, 540, 1, { room = { card = 0 } })
+		T.expect(NoticeQueue.find(q, card.id) ~= nil and not card.shown).toBe(true)
+		run(q, 541, 560, 0.5)
+		T.expect(card.shown).toBe(true)
+		NoticeQueue.update(q, 561.5)
+		T.expect(NoticeQueue.find(q, card.id)).toBeNil()
+		-- never for ever: nothing clears the queue on a character switch
+		local q2 = NoticeQueue.new("pc")
+		local late = NoticeQueue.push(q2, 0, { class = "legendary" }) :: Entry
+		run(q2, 0, 600, 1, { room = { card = 0 } })
+		T.expect(NoticeQueue.find(q2, late.id)).toBeNil()
+		-- the other cards keep the kind's time and wait; a card's own wait reaches the queue (UI/Notify.card)
+		local fight = NoticeQueue.push(q2, 601, { class = "fightResult" }) :: Entry
+		T.expect({ fight.seconds, fight.wait }).toEqual({ NoticeQueue.SECONDS.card, NoticeQueue.WAIT.card })
+		local own = NoticeQueue.push(q2, 601, { class = "legendary", wait = 5 }) :: Entry
+		T.expect(own.wait).toBe(5)
+		local notify = fs.readFile("src/client/UI/Notify.luau")
+		T.expect(string.find(notify, "wait = card.wait,", 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it("lets the achievement wait for an open window, and a prompt show until its deadline", function()

@@ -17,6 +17,7 @@ local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
 local TextScan = require("./TextScan")
+local WindowFrame = require("../src/shared/Logic/WindowFrame")
 
 type Rect = HudZones.Rect
 type State = HudZones.State
@@ -393,6 +394,28 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		T.expect(HudZones.barkSlot({ touch = true, party = 2 })).toBeNil()
 	end)
 
+	T.it("the card slot stands beside the centred backpack window on 16:9 and 16:10 screens", function()
+		-- final UI review 2026-11-10 (known item 4): the legendary card is the only way to the reveal; it met the
+		-- centred backpack window (Controllers/ScreenController: "character") by 12 px, so it waited while the player
+		-- looked at the new item, then dropped
+		local src = fs.readFile("src/client/Controllers/ScreenController.luau")
+		local from = assert(string.find(src, 'id = "character",', 1, true), "the backpack window's registration")
+		local cw, ch = string.match(src, "size = Vector2%.new%((%d+), (%d+)%)", from)
+		local size = { w = assert(tonumber(cw), "its width"), h = assert(tonumber(ch), "its height") }
+		for _, screen in { { 1920, 1080 }, { 1366, 768 }, { 1280, 720 }, { 1920, 1200 }, { 2560, 1080 } } do
+			for _, bar in BARS do
+				local w, h = HudZones.layer(screen[1], screen[2], false, bar)
+				local window = WindowFrame.rect({ w = w, h = h }, size, nil, false, bar).window
+				for kind in HudZones.CARDS do
+					local card = HudZones.cardSlot(w, h, kind :: any)
+					if card.left < window.right then
+						error(`{screen[1]} x {screen[2]} bar {bar}: the {kind} card {show(card)} meets the window`)
+					end
+				end
+			end
+		end
+	end)
+
 	T.it("reproduces the zone map's numbers at 1920 x 1080 with the 58 px bar", function()
 		local w, h = HudZones.layer(1920, 1080, false, 58)
 		T.expect(h).toBe(1022)
@@ -412,7 +435,8 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		T.expect(busy.minimap).toEqual(rect(1634, 82, 1898, 348))
 		T.expect(busy.guide).toEqual(rect(1634, 356, 1898, 400))
 		T.expect(busy.column).toEqual(rect(1598, 356 + 52 + 52, 1898, 830))
-		T.expect(busy.card).toEqual(rect(1568, 838, 1898, 990))
+		-- final UI review 2026-11-10: 12 px narrower than the plan's 1568, beside the centred backpack window
+		T.expect(busy.card).toEqual(rect(1580, 838, 1898, 990))
 		T.expect(busy.castLine).toEqual(rect(780, 896, 1140, 922))
 		T.expect(busy.actionBar.top).toBe(h - 84)
 		T.expect(busy.actionBar.bottom).toBe(h - 28)
