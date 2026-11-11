@@ -400,7 +400,8 @@ describe("textcaps T2: universal rules", function()
 	-- Seams 2026-11-11 (UI-ZASADY §3): players who play together are a "grupa" with a "lider", as the party's window,
 	-- its ☰ tile and the HUD say; a "drużyna" is a side of an arena match and the "przywódca" leads a guild. The boss's
 	-- mechanics said "Odejdź od drużyny!" under their (i) "od drużyny", the party board "nikt nie szuka drużyny" and the
-	-- invite's reason "przywódca grupy".
+	-- invite's reason "przywódca grupy". The arena's texts say "drużyna" for a side; one whose English names only the
+	-- party speaks of the grupa (the toast before the teleport said "Opuszczasz drużynę na czas meczu.").
 	it("the party is a grupa with a lider", function()
 		local PARTY = { "party.", "finder.", "dungeon.", "fight.", "boss.mechanic.", "social.", "luck." }
 		local problems = {}
@@ -408,6 +409,10 @@ describe("textcaps T2: universal rules", function()
 			local party = key == "worldmap.cat.party"
 			for _, prefix in PARTY do
 				party = party or string.sub(key, 1, #prefix) == prefix
+			end
+			if string.sub(key, 1, 6) == "arena." then
+				local english = string.lower((en :: { [string]: string })[key] or "")
+				party = string.find(english, "party", 1, true) ~= nil and string.find(english, "team", 1, true) == nil
 			end
 			local lower = string.lower(text)
 			if party and (string.find(lower, "drużyn", 1, true) or string.find(lower, "przywódc", 1, true)) then
@@ -419,6 +424,7 @@ describe("textcaps T2: universal rules", function()
 		expect(pl["party.promote"]).toBe("Lider")
 		expect(pl["guild.leader"]).toBe("Przywódca")
 		expect(string.find(pl["arena.team.ally"], "drużyna", 1, true) ~= nil).toBe(true)
+		expect(string.find(pl["arena.net.partyLeft"], "grupę", 1, true) ~= nil).toBe(true) -- the party, left for a match
 	end)
 
 	it("C, D and E buttons and tabs use the words of what they show", function()

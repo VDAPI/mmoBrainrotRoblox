@@ -8835,7 +8835,7 @@ return {
 	["arena.net.localDecline"] = "Czekasz dalej na przeciwnika z innych światów.",
 	["arena.net.teleporting"] = "Przejście na arenę…",
 	["arena.net.teleportFailed"] = "Nie udało się przejść na arenę. Wracasz do kolejki.",
-	["arena.net.partyLeft"] = "Opuszczasz drużynę na czas meczu.",
+	["arena.net.partyLeft"] = "Opuszczasz grupę na czas meczu.",
 	["arena.net.loading"] = "Wejście na arenę…",
 	["arena.net.returnIn"] = "Powrót za {s} s",
 	["arena.net.returnNow"] = "Wróć teraz",
