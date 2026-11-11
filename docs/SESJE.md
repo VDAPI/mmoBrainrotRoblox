@@ -15072,7 +15072,29 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   łupu, poczcie i ustawieniach (znajomi zostają przy 56); paski zakładek mają wysokość z pakietu C
   (`Theme.Size.TabHeight`, `WindowFrame.tabStrip`) w osiągnięciach, arenie, grupie (było 40), przepustce, Krwawym
   Księżycu, tablicy zleceń, gildii i u znajomych. „Jak zdobywać EXP gildii” to sekcja `guildSources`. Toasty
-  `skills.toast.many`, `bp.toast.many`, `unlock.arena`, `unlock.mounts` i `guild.sys.goalDone` bez klawisza PC (pl i en,
-  `dialogue.spec`). `worldlayout.spec` ma 18 testów (nowe: okna ze stopką, zakładki dziennika). Poza pakietem zostają do
-  przeglądu końcowego: surowe id trybu w `Hud/ArenaPanel` (A) i w toaście `arena.joined` (B) oraz „(L)” w
-  `quest.side.error.limit` (B). Bramka zielona: 10270 testów, `wikidump --check` aktualny.
+  odblokowania `unlock.arena` i `unlock.mounts` oraz linia czatu gildii `guild.sys.goalDone` bez klawisza PC (pl i en,
+  `dialogue.spec`); `skills.toast.many` i `bp.toast.many` nie mają czytelnika (po przeglądzie usunięte).
+  `worldlayout.spec` ma 18 testów (nowe: okna ze stopką, zakładki dziennika). Poza pakietem zostają do przeglądu
+  końcowego: surowe id trybu w `Hud/ArenaPanel` (A) i w toaście `arena.joined` (B) oraz „(L)” w `quest.side.error.limit`
+  (B). Bramka zielona: 10270 testów, `wikidump --check` aktualny.
+- Po przeglądzie adopcji (2026-11-11, gałąź `ui-e-adopt`). Bestiariusz (`892a75cf`): wpis ma jedną linię na każdym
+  urządzeniu, bo dwie linie zostawiały pod otwartymi regionami 2 wpisy na PC i tablecie; poziomy i punkty są w panelu
+  szczegółów albo w arkuszu; test chce 3 wpisów pod regionami na PC i tablecie, 2 na telefonie i 5 na PC ze zwiniętymi
+  regionami; `best.unknownSub` i `best.unknownBoss` bez czytelnika usunięte. „Dokąd?” (`db9edd77`): test okien ze stopką
+  liczył wiersze 48, a okno ma 66 i 88 pod nagłówkiem i ostrzeżeniami (na telefonie przy pasku 58 było 1,7 wiersza pod
+  oboma ostrzeżeniami, na PC 4); kolumnę liczy teraz `WorldLayout.areaPicker`, telefon ma zwarte wiersze 56 i 72, portal
+  podaje oba zagrożenia jedną linią (`portal.warnBoth`), okno na PC ma 560×720, a test liczy wiersze pod najdłuższym
+  ostrzeżeniem pl i en: 2 na telefonie, 5 na PC. Przyciski (`20221f95`) mają na dotyku co najmniej 44
+  (`Theme.Size.MinTouch`), małe na PC 40 (`ButtonHeightSmall`): „Lider” i „Wyrzuć” w drużynie, „Zamień” na tablicy (na
+  telefonie obok „Odbierz”, na PC i tablecie „Odbierz” na dole karty), akcje członków gildii, „Edytuj” wiadomości
+  gildii, ulepszenie umiejętności gildii, wiersze tabeli uprawnień 48, szybkie wybory w nowym liście, filtry Party
+  Findera, przyciski i wiersze dziennika; przycisk skrótu w ustawieniach zostaje 40, bo tej grupy nie ma na dotyku;
+  `worldlayout.spec` czyta każdy rozmiar `Button` w ekranach pakietu. Toasty (`e2778a23`): `textcaps.spec` czyta
+  `unlock.*` jako toasty (reguła w `fixtures/textcaps/E`), `unlock.mounts` (pl i en) i angielski `unlock.dungeon`
+  skrócone do 60 znaków, `skills.toast.many` i `bp.toast.many` (bez czytelnika od S137, z nazwą okna wbrew UI-ZASADY §3)
+  usunięte; `dialogue.spec` szuka w toastach `unlock.*` klawisza i nazwy okna. Nagłówki (`eb57c200`): nagroda dnia
+  zaczyna od „Dzień 3 z 7”, Krwawy Księżyc nie ma linii „☾ Krwawy Księżyc” pod paskiem tytułu o tej samej nazwie, krótki
+  opis ma (i) pełnego, a linia stanu znika, gdy następny start nie jest znany (powtarzała krótki opis). Dokumenty:
+  UI-ZASADY §4 (zwinięte „Jak zdobywać EXP gildii” oraz zasady i nagrody Krwawego Księżyca, obie bez linii
+  podsumowania), zasada toastu w DECYZJE, JAK-DODAC i komentarzu `dialogue.spec` zgodna z §3. `worldlayout.spec` ma 20
+  testów. Bramka zielona: 10272 testy, `wikidump --check` aktualny.

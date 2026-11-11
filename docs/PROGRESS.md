@@ -80,15 +80,20 @@
   częściami okna pakietu C okna dialogowe pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego, „Dokąd?”, rozmowa z
   questem, nowy list, zakładanie gildii) z akcją w przypiętej stopce i przewijaną treścią („Wkrótce” tylko przewija),
   karta postaci z „Usuń” i „Graj” w jednym rzędzie stopki, dziennik 680 szerokości z sześcioma zakładkami całymi w
-  1280×720, filtr klas rankingów na telefonie w pasku tytułu, wiersze list 48 i 64, toasty pakietu bez klawiszy PC;
-  nieobejrzane w Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica zleceń na telefonie, rozmowa z NPC
-  z najdłuższą linią i (i) linii questu u Brata Kaspara, karta wyboru postaci na telefonie, koło emotek na niskim
-  ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy, rankingi na PC z otwartym podium,
-  wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem, przyciski kolejki
-  areny, modal portalu z dwoma zagrożeniami, okna ze stopką na telefonie i na niskim ekranie PC, Krwawy Księżyc z
-  miejscem gracza w stopce, nagroda dnia z linią postaci obok „Odbierz”, „Usuń” i „Graj” w jednym rzędzie karty postaci,
-  zakładki dziennika w 1280×720, filtr rankingów w pasku tytułu telefonu, wiersze osiągnięć i bestiariusza jedną linią
-  na telefonie).
+  1280×720, filtr klas rankingów na telefonie w pasku tytułu, wiersze list 48 i 64, toasty odblokowania i linia czatu
+  gildii bez klawiszy PC (nieużywane `skills.toast.many` i `bp.toast.many` usunięte); po przeglądzie adopcji wpisy
+  bestiariusza jedną linią na każdym urządzeniu, „Dokąd?” z `WorldLayout.areaPicker` (pod ostrzeżeniem 2 regiony na
+  telefonie, 5 na PC), przyciski na dotyku co najmniej 44, toasty `unlock.*` do 60 znaków, nagroda dnia i Krwawy Księżyc
+  bez powtórzonego tytułu; nieobejrzane w Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica zleceń na
+  telefonie, rozmowa z NPC z najdłuższą linią i (i) linii questu u Brata Kaspara, karta wyboru postaci na telefonie,
+  koło emotek na niskim ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy, rankingi na PC
+  z otwartym podium, wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem,
+  przyciski kolejki areny, modal portalu z dwoma zagrożeniami, okna ze stopką na telefonie i na niskim ekranie PC,
+  Krwawy Księżyc z miejscem gracza w stopce, nagroda dnia z linią postaci obok „Odbierz”, „Usuń” i „Graj” w jednym
+  rzędzie karty postaci, zakładki dziennika w 1280×720, filtr rankingów w pasku tytułu telefonu, wiersze osiągnięć i
+  bestiariusza jedną linią na telefonie, wpisy bestiariusza jedną linią na PC, „Dokąd?” na telefonie pod ostrzeżeniem,
+  karta zlecenia z „Zamień” obok „Odbierz” na telefonie, przyciski 44 w drużynie, gildii, dzienniku i Party Finderze na
+  dotyku, nagłówki nagrody dnia i Krwawego Księżyca).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa

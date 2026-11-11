@@ -329,5 +329,9 @@
   się z treści nad stopką (`WindowFrame.body(ramka, true)`), wiersze to `WorldLayout.ROW` (48) albo `ROW_TALL` (64),
   paski zakładek `WindowFrame.tabStrip`. Okno dopisz do testu „footer windows” w `tests/worldlayout.spec.luau` (id z
   `WindowManager.Register`, plik ekranu, czy przewija): stopka stoi na ekranie pod paskiem Robloxa i w oknie, a nad nią
-  mieszczą się co najmniej 2 wiersze na telefonie i 5 na PC. Toast, który odsyła do okna, nazywa okno albo menu ☰, bez
-  klawisza PC (`tests/dialogue.spec`).
+  mieszczą się co najmniej 2 wiersze na telefonie i 5 na PC. Toast jest bez klawisza i bez nazwy okna (UI-ZASADY §3),
+  drogę wskazuje HUD (☰, „!” na przycisku); toasty `unlock.*` sprawdza `tests/dialogue.spec`. Przycisk ma na dotyku co
+  najmniej 44 px wysokości (mały: `if touch then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall`), czego pilnuje
+  `tests/worldlayout.spec`. Okno z własnymi wierszami (jak „Dokąd?”) opisuje swoją kolumnę w `WorldLayout`
+  (`areaPicker`), a w teście „footer windows” ma `ownRows = true` i osobny test liczby wierszy. Treść pod paskiem tytułu
+  nie powtarza tytułu okna (UI-ZASADY §1).

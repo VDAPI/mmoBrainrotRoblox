@@ -1769,8 +1769,11 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   znajomi jednym rzędem z przyciskami po prawej. Wybór postaci: „Usuń” i „Graj” w jednym rzędzie stopki przypiętej do
   dołu karty, na telefonie mniejszy nagłówek i herb. Okna dialogowe (loch, Krwawy Księżyc, nagroda dnia, Co nowego,
   „Dokąd?”, rozmowa z questem, nowy list, zakładanie gildii) mają akcję w przypiętej stopce okna, a treść przewija się
-  nad nią; Krwawy Księżyc bez akcji ma w stopce miejsce gracza. Wiersze list mają 48, z drugą linią 64 (osiągnięcia i
-  bestiariusz na telefonie jedną linią, znajomi 56). Dziennik: 680 szerokości, sześć zakładek całych w 1280×720. Koło
+  nad nią; Krwawy Księżyc bez akcji ma w stopce miejsce gracza. Pod paskiem tytułu okno nie powtarza tytułu: nagroda
+  dnia zaczyna od „Dzień 3 z 7”, Krwawy Księżyc od stanu i krótkiego opisu z (i). „Dokąd?”: 560×720, na telefonie zwarte
+  wiersze, ostrzeżenia portalu jedną linią, pod nimi 2 regiony na telefonie i 5 na PC. Wiersze list mają 48, z drugą
+  linią 64 (osiągnięcia na telefonie jedną linią, bestiariusz jedną linią na każdym urządzeniu, znajomi 56); małe
+  przyciski mają na dotyku 44 px wysokości, na PC 40. Dziennik: 680 szerokości, sześć zakładek całych w 1280×720. Koło
   emotek i panel łowienia układają się w warstwie okien (bezpieczny obszar urządzenia). Koło emotek: promień z wysokości
   ekranu poniżej paska Robloxa, koło szersze niż wysokie. Łowienie: panel nie wchodzi pod pasek Robloxa; na telefonie
   stoi między kolumnami HUD, z podpowiedzią dotyku, „Anuluj” w czasie czekania. Portal do czerwonej strefy przy za
