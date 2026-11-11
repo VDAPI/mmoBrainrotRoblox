@@ -585,7 +585,9 @@ end
 -- The alert line (at most 28 characters): a boss's blow until its cast ends (Vfx/BossCastBar), the fight's countdown,
 -- phases and victory (DungeonController). `color`: the blow's colour (danger: first among the alerts), else brass.
 -- Review 2026-11-10: its seconds are its deadline too: an alert another one pushed off the line never comes back
--- after its moment (the countdown's "3" after "Walcz!").
+-- after its moment (the countdown's "3" after "Walcz!"). Final UI review 2026-11-10 (UI-ZASADY §8: no TextScaled in
+-- texts; on a phone's M line the size jumped with the text's length): one size, Title on PC (the size TextScaled drew
+-- there: 28 characters fit the 640-px line) and Body on a phone, cut at the end.
 function Notify.alert(text: string, seconds: number?, color: Color3?): Handle?
 	local time = seconds or NoticeQueue.SECONDS.alert
 	return Notify.push({
@@ -594,7 +596,7 @@ function Notify.alert(text: string, seconds: number?, color: Color3?): Handle?
 		tone = if color then "danger" else nil,
 		seconds = time,
 		deadline = time,
-		build = function(s: Scope, _live: Live): Instance
+		build = function(s: Scope, live: Live): Instance
 			local tint = color or Theme.Brass.Bright
 			local parts: { Instance } = {
 				s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -604,12 +606,12 @@ function Notify.alert(text: string, seconds: number?, color: Color3?): Handle?
 					BackgroundTransparency = 1,
 					Text = text,
 					RichText = true,
-					TextScaled = true,
+					TextSize = if live.phone then Theme.TextSize.Body else Theme.TextSize.Title,
+					TextTruncate = Enum.TextTruncate.AtEnd,
 					FontFace = Theme.Fonts.Display,
 					TextColor3 = if color then tint:Lerp(Theme.Plain, 0.35) else tint,
 					TextStrokeColor3 = Theme.Shade,
 					TextStrokeTransparency = 0.2,
-					[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = Theme.TextSize.Title }),
 				}),
 			}
 			if color then

@@ -324,6 +324,14 @@ T.describe("NoticeQueue: the policy (fake clock)", function()
 		T.expect(again.shown).toBe(true)
 		NoticeQueue.update(q3, 5)
 		T.expect(NoticeQueue.find(q3, again.id)).toBeNil()
+		-- final UI review 2026-11-10 (UI-ZASADY §8): the line draws its text at one size, Title on PC and Body on a
+		-- phone, cut at the end (TextScaled made it jump with the text's length on a phone's M line)
+		local notify = fs.readFile("src/client/UI/Notify.luau")
+		T.expect(string.find(notify, "TextScaled =", 1, true)).toBeNil()
+		T.expect(
+			string.find(notify, "TextSize = if live.phone then Theme.TextSize.Body else Theme.TextSize.Title,", 1, true)
+				~= nil
+		).toBe(true)
 	end)
 
 	T.it(
