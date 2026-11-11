@@ -2,11 +2,14 @@
 -- Mount buttons (S96, docs/DESIGN-15.md §2): a slot after the potions in the action bar on PC (with the key label)
 -- and a round button right of the sprint button on touch devices. Both only show once the character owns a mount
 -- (MountController.Has); the accent colour means riding. Both call MountController.Toggle.
+-- Final UI review 2026-11-10: a tablet's stands in the touch corner left of the page button (Logic/HudStack.MOUNT); at
+-- its literal offsets it stood on party rows 3 and 4 and inside the thumbstick zone.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
@@ -27,7 +30,7 @@ export type Props = {
 	SlotSize: number?, -- slot: side (the action bar's slot size)
 }
 
-local TOUCH_SIZE = 64
+local TOUCH_SIZE = HudStack.TOUCH_BUTTON
 local GLYPH = "🐎"
 
 local MountButton = {}
@@ -102,8 +105,9 @@ end
 function MountButton.Touch(scope: Scope, props: Props): Instance
 	local button = scope:New("TextButton")({
 		Name = "MountButton",
-		AnchorPoint = PhoneLayout.Anchor(scope, "mount", Vector2.new(0, 1)), -- W29: Logic/PhoneHud
-		Position = PhoneLayout.Position(scope, "mount", UDim2.new(0, 132, 1, -260)),
+		-- W29: a phone's place is Logic/PhoneHud's; a tablet's the touch corner's (Logic/HudStack.MOUNT, its centre)
+		AnchorPoint = PhoneLayout.Anchor(scope, "mount", Vector2.new(0.5, 0.5)),
+		Position = PhoneLayout.Position(scope, "mount", UDim2.new(1, HudStack.MOUNT.x, 1, HudStack.MOUNT.y)),
 		Size = PhoneLayout.Size(scope, "mount", UDim2.fromOffset(TOUCH_SIZE, TOUCH_SIZE)),
 		Visible = scope:Computed(function(use): boolean
 			return use(props.Has) == true and use(Device.Touch) == true

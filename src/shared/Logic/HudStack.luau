@@ -3,11 +3,12 @@
 -- attack button, the world boss panel covers the tracker's first line"): where the HUD's column of panels and the
 -- buttons of the bottom-right corner stand, so that nothing covers anything at its built-in place.
 -- * The corner (`fixed`): the PvP toggle with its countdown badge under it, the mail envelope in its own slot under
---   both, and on a touch screen the attack button, the skill arc around it and its page / target buttons
---   (Hud/PvpToggle, MailButton, AttackButton, MobileSkills read their places here).
+--   both, and on a touch screen the attack button, the skill arc around it, its page / target buttons and the sprint
+--   and mount buttons left of the page button (Hud/PvpToggle, MailButton, AttackButton, MobileSkills, SprintButton,
+--   MountButton read their places here).
 -- * The column (`column`): PC the right side under the menu, the minimap (and the guide bar while it shows) down to
 --   the corner's buttons; a touch screen that is not a phone the left side under the portrait (and the party frames)
---   down to the sprint / mount row; a phone in landscape the left stack of Logic/PhoneHud.
+--   down to GAP over the thumbstick zone; a phone in landscape the left stack of Logic/PhoneHud.
 -- * The stack (`place`, `layout`): the arena queue's pill, the event panels (world boss, world event, Blood Moon,
 --   tournament), the Elite II timers on a touch screen and the quest tracker, in that order, top down. An element the
 --   player has moved (HudLayout) stays where it is and the others go round it: above it, under it or, when the column
@@ -98,8 +99,12 @@ HudStack.WAITING = 44
 HudStack.TOUCH_TOP = HudStack.MARGIN + HudStack.PORTRAIT.h + HudStack.GAP + HudStack.EFFECTS + HudStack.GAP
 HudStack.PARTY_TOP = HudStack.MARGIN + HudStack.PORTRAIT.h + 70
 HudStack.PARTY_ROW = 64
--- A touch screen: the sprint and mount buttons stand this high over the bottom (Hud/SprintButton: 260 + 64).
-HudStack.TOUCH_ROW = 324
+-- A touch screen: its column ends GAP over the thumbstick zone (Logic/PhoneHud.thumb's top: nothing persistent belongs
+-- there). Final UI review 2026-11-10: it ended over the sprint and mount row at literal offsets (260 + 64 over the
+-- bottom), which stood on party rows 3 and 4 and inside the thumbstick zone; that row moved into the corner (SPRINT).
+function HudStack.touchFloor(h: number): number
+	return h * PhoneHud.THUMB.y - HudStack.GAP
+end
 
 -- Widths of the column's elements (Hud/WorldBossPanel and the other panels, Hud/QuestTracker, Hud/Elite2Timer,
 -- Hud/ArenaPanel's queue pill).
@@ -121,6 +126,17 @@ HudStack.ARC = table.freeze({ x = -162, y = -202, radius = 120, size = 68, angle
 HudStack.SMALL = table.freeze({ w = 84, h = 44 })
 HudStack.PAGE = table.freeze({ x = -162 - 120 - 76, y = -202 + 40 }) -- left of the arc's first button, clear of it
 HudStack.TARGET = table.freeze({ x = -162, y = -202 - 120 - 56 })
+-- Touch (final UI review 2026-11-10): the sprint and mount buttons (64, round) in a row left of the page button, GAP
+-- apart, their bottoms on the page button's: centres as offsets from the bottom-right corner, the mount's nearer to it.
+HudStack.TOUCH_BUTTON = 64
+HudStack.MOUNT = table.freeze({
+	x = HudStack.PAGE.x - HudStack.SMALL.w / 2 - HudStack.GAP - HudStack.TOUCH_BUTTON / 2,
+	y = HudStack.PAGE.y + HudStack.SMALL.h / 2 - HudStack.TOUCH_BUTTON / 2,
+})
+HudStack.SPRINT = table.freeze({
+	x = HudStack.MOUNT.x - HudStack.TOUCH_BUTTON - HudStack.GAP,
+	y = HudStack.MOUNT.y,
+})
 
 -- The "Auto" button right of the portrait (Hud/AutoGroup: GAP right of it, 44 px, aligned to the portrait's bottom;
 -- UI plan phase 2: it holds the Cloak of Luring, Auto Hunt and Auto Potions, the login reward and the season pass
@@ -190,6 +206,9 @@ function HudStack.fixed(touch: boolean, w: number, h: number): { [string]: Rect 
 		end
 		out.page = centred(w + HudStack.PAGE.x, h + HudStack.PAGE.y, HudStack.SMALL.w, HudStack.SMALL.h)
 		out.target = centred(w + HudStack.TARGET.x, h + HudStack.TARGET.y, HudStack.SMALL.w, HudStack.SMALL.h)
+		local side = HudStack.TOUCH_BUTTON
+		out.sprint = centred(w + HudStack.SPRINT.x, h + HudStack.SPRINT.y, side, side)
+		out.mount = centred(w + HudStack.MOUNT.x, h + HudStack.MOUNT.y, side, side)
 	end
 	return out
 end
@@ -307,7 +326,7 @@ function HudStack.column(
 			x = HudStack.MARGIN,
 			right = false,
 			top = top,
-			floor = h - HudStack.TOUCH_ROW - HudStack.GAP,
+			floor = HudStack.touchFloor(h),
 			-- right of the buttons right of the portrait (Cloak of Luring and the auto buttons end above TOUCH_TOP)
 			spares = { HudStack.EXTRAS.x + HudStack.EXTRAS.w + HudStack.GAP },
 			spareTop = math.max(HudStack.TOUCH_TOP, underMessages),

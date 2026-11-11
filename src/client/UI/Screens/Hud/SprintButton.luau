@@ -1,12 +1,14 @@
 --!strict
--- Sprint toggle for touch devices (S18, DESIGN §24), above the movement joystick. S96: hidden while riding (no
--- sprint in the saddle).
+-- Sprint toggle for touch devices (S18, DESIGN §24). S96: hidden while riding (no sprint in the saddle).
+-- Final UI review 2026-11-10: a tablet's stands in the touch corner left of the mount button (Logic/HudStack.SPRINT);
+-- at its literal offsets over the joystick it stood on party rows 3 and 4 and inside the thumbstick zone.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -25,15 +27,16 @@ export type Props = {
 }
 
 local ART = UiArt.hud("sprint") -- S119
-local SIZE = 64
+local SIZE = HudStack.TOUCH_BUTTON
 
 local function SprintButton(scope: Scope, props: Props): Instance
 	local artShown = ArtIcon.Shown(scope, ART)
 	local button = scope:New("TextButton")({
 		Name = "SprintButton",
-		-- W29: over the potions on a phone in landscape, clear of the thumbstick (Logic/PhoneHud)
-		AnchorPoint = PhoneLayout.Anchor(scope, "sprint", Vector2.new(0, 1)),
-		Position = PhoneLayout.Position(scope, "sprint", UDim2.new(0, 60, 1, -260)),
+		-- W29: over the potions on a phone in landscape, clear of the thumbstick (Logic/PhoneHud); a tablet's in the
+		-- touch corner (Logic/HudStack.SPRINT, its centre)
+		AnchorPoint = PhoneLayout.Anchor(scope, "sprint", Vector2.new(0.5, 0.5)),
+		Position = PhoneLayout.Position(scope, "sprint", UDim2.new(1, HudStack.SPRINT.x, 1, HudStack.SPRINT.y)),
 		Size = PhoneLayout.Size(scope, "sprint", UDim2.fromOffset(SIZE, SIZE)),
 		Visible = scope:Computed(function(use): boolean
 			return use(Device.Touch) and not (props.Riding ~= nil and use(props.Riding) == true)

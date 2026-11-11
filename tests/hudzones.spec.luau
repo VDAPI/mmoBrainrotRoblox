@@ -514,6 +514,61 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		T.expect(thumb.bottom).toBeNear(401.2, 0.05)
 	end)
 
+	T.it("a tablet's corner buttons, sprint and mount among them, stand clear of the thumbstick's zone", function()
+		-- final UI review 2026-11-10: the sprint and mount buttons stood at literal offsets over the joystick (60 and 132
+		-- from the left, 260 over the bottom), on party rows 3 and 4 and inside the thumbstick's zone; they stand in the
+		-- touch corner left of the page button now (Logic/HudStack.SPRINT and MOUNT), so the collision check above meets
+		-- them too
+		for _, screen in screens() do
+			if not screen.touch then
+				continue
+			end
+			local thumb = HudZones.thumb(screen.w, screen.h)
+			for _, named in states() do
+				local s = table.clone(named.state)
+				s.touch = true
+				s.scale = screen.scale
+				local corner = HudZones.pc(screen.w, screen.h, s).corner
+				T.expect(corner.sprint ~= nil and corner.mount ~= nil).toBe(true)
+				for name, r in corner do
+					if HudStack.overlaps(r, thumb) then
+						error(`{screen.name}, {named.name}: corner.{name} {show(r)} stands in the thumbstick's zone`)
+					end
+				end
+			end
+		end
+		-- the review's numbers: 1280 x 720 with no bar, 1024 x 600 under the 58 px bar
+		local function at(w: number, h: number, bar: number): (Rect, Rect)
+			local lw, lh = HudZones.layer(w, h, true, bar)
+			local f = HudStack.fixed(true, lw, lh)
+			return f.sprint, f.mount
+		end
+		local sprint, mount = at(1280, 720, 0)
+		T.expect({ sprint.left, sprint.right, mount.left, mount.right, mount.top, mount.bottom }).toEqual({
+			736,
+			800,
+			808,
+			872,
+			516,
+			580,
+		})
+		sprint, mount = at(1024, 600, 58)
+		T.expect(math.floor(sprint.left)).toBe(666)
+		T.expect(math.floor(mount.right)).toBe(802)
+		T.expect(math.floor(mount.top)).toBe(436)
+		-- the buttons read them, and a phone keeps Logic/PhoneHud's places
+		for file, literal in
+			{
+				SprintButton = "UDim2.new(1, HudStack.SPRINT.x, 1, HudStack.SPRINT.y)",
+				MountButton = "UDim2.new(1, HudStack.MOUNT.x, 1, HudStack.MOUNT.y)",
+			}
+		do
+			local src = fs.readFile(`src/client/UI/Screens/Hud/{file}.luau`)
+			T.expect(string.find(src, literal, 1, true) ~= nil).toBe(true)
+			T.expect(string.find(src, "1, -260)", 1, true)).toBeNil()
+		end
+	end)
+
 	T.it("the arena's match and return panels hold their rows in the arena place on PC and a tablet", function()
 		-- package A review (owner 2026-11-10, "things covering each other"): the return panel grew to 140 px under its
 		-- AutomaticSize and stood in the message zone with its button, where the result's toast shows

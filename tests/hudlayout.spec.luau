@@ -311,8 +311,8 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 							error(`{where}: {id} {show(r)} leaves the screen`)
 						end
 					end
-					-- every shown element has a place above the column's floor (PC the corner, a touch screen the sprint
-					-- row) of its full height (the tracker: at least its header), its folded line, or stands behind the
+					-- every shown element has a place above the column's floor (PC the corner, a touch screen the
+					-- thumbstick's zone) of its full height (the tracker: at least its header), its folded line, or stands behind the
 					-- '+N' chip (UI plan package A: nothing passes the floor)
 					local floor = HudStack.column(touch, false, w, h, 0).floor
 					local placed = HudStack.arrange(touch, false, w, h, 0, boxes, nil, guide, waiting)
@@ -390,14 +390,17 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(after.questTracker.top).toBe(after.worldEvent.bottom + HudStack.GAP)
 	end)
 
-	T.it("a touch screen stacks the column under the portrait and the party, clear of the sprint row", function()
+	T.it("a touch screen stacks the column under the portrait and the party, clear of the thumbstick's zone", function()
+		-- final UI review 2026-11-10: the floor is the thumbstick's zone (Logic/HudZones.thumb, Logic/PhoneHud.THUMB)
+		-- less a gap; the sprint and mount buttons moved into the corner beside the page button
 		for _, size in TABLET do
 			local w, h = size[1], size[2]
+			T.expect(HudStack.column(true, false, w, h, 0).floor).toBe(HudStack.touchFloor(h))
 			for others = 0, 4 do
 				local places = HudStack.layout(true, false, w, h, others, scenario("tracker", true, w))
 				local tracker = places.questTracker
 				local top = if others > 0 then HudStack.PARTY_TOP + others * HudStack.PARTY_ROW else HudStack.TOUCH_TOP
-				local floor = h - HudStack.TOUCH_ROW - HudStack.GAP
+				local floor = HudStack.touchFloor(h)
 				if top + HudStack.TRACKER_MIN <= floor then
 					T.expect(tracker.left).toBe(HudStack.MARGIN)
 					T.expect(tracker.top).toBe(top)
