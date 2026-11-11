@@ -67,7 +67,7 @@
     {"color":"#8FD8FF","glyph":"♛","id":"worldboss","live":false,"name":{"en":"World boss","pl":"Boss świata"},"shape":"square"},
     {"color":"#D8C27A","glyph":"⚔","id":"area","live":false,"name":{"en":"Hunting grounds","pl":"Łowiska"},"shape":"square"},
     {"color":"#E8C25A","glyph":"●","id":"node","live":false,"name":{"en":"Gathering","pl":"Zbieractwo"},"shape":"round"},
-    {"color":"#4A8FE7","glyph":"●","id":"party","live":true,"name":{"en":"Party","pl":"Drużyna"},"shape":"round"},
+    {"color":"#4A8FE7","glyph":"●","id":"party","live":true,"name":{"en":"Party","pl":"Grupa"},"shape":"round"},
     {"color":"#E8C25A","glyph":"⚑","id":"mark","live":true,"name":{"en":"My marks","pl":"Moje znaczniki"},"shape":"round"},
     {"color":"#E8C25A","glyph":"★","id":"objective","live":true,"name":{"en":"Quest target","pl":"Cel questa"},"shape":"round"},
     {"color":"#E0564A","glyph":"⚔","id":"event","live":true,"name":{"en":"Events","pl":"Wydarzenia"},"shape":"round"}

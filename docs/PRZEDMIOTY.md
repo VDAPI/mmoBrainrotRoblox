@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych ab3dad87 (`wiki/src/data/meta.json`).
+> Odcisk danych 89f250f0 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1154,7 +1154,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Przedmiot | Boss | Poziom | Statystyki | Bonusy stałe |
 |---|---|---|---|---|
 | Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 544,3 | +{v} Życia +260, +{v}% Odporności na ogień +25%, Przeciw żywiołakom i demonom +{v}% +12% |
-| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Pancerz 129,8, hp 163,8 | +{v} Witalności +20, +{v} Obrony +90, Odporność na żywiołaki i demony {v}% +10% |
+| Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Pancerz 129,8, hp 163,8 | +{v} Witalności +20, +{v} Pancerza +90, Odporność na żywiołaki i demony {v}% +10% |
 | Kostur Pożogi | Azgor, Pan Płomieni | 70 | obr. 0, obr. mag. 296, szybkość 0,85 | +{v}% Ataku magicznego +9%, +{v} Intelektu +22, +{v}% obrażeń ran, trucizn i podpaleń +15% |
 | Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 72, szybkość 1,05 | +{v}% Ataku fizycznego +6%, +{v} Siły +6, Przeciw ludziom i plemionom +{v}% +12% |
 | Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,2, Atak fizyczny % 5,2 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6 |
@@ -1162,17 +1162,17 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Topór Praojca | — | 100 | obr. 535, szybkość 0,8 | +{v}% Ataku fizycznego +12%, +{v} Siły +38, +{v}% Obrażeń krytycznych +44% |
 | Łuk Zamieci | — | 100 | obr. 465, szybkość 0,78 | +{v}% Ataku fizycznego +8%, +{v} Zręczności +29, +{v}% Szansy na krytyk +4% |
 | Pastorał Pierwszego Śniegu | — | 100 | obr. 158, obr. mag. 475, szybkość 0,8 | +{v}% Ataku magicznego +10%, +{v} Intelektu +30, +{v}% mocy leczenia +11% |
-| Korona Szronowego Kurhanu | — | 100 | Pancerz 204,4, hp 257,6 | +{v} Witalności +26, +{v} Obrony +110, +{v}% Odporności na lód +16% |
+| Korona Szronowego Kurhanu | — | 100 | Pancerz 204,4, hp 257,6 | +{v} Witalności +26, +{v} Pancerza +110, +{v}% Odporności na lód +16% |
 | Płaszcz Białej Grani | — | 100 | Pancerz 242,2, Unik 3,5, hp 357 | +{v} Zręczności +28, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
 | Szata Lodowego Snu | — | 100 | Pancerz 142,8, hp 214,2, mana 357, Odporność magiczna 198,8 | +{v} Intelektu +28, +{v} Many +200, +{v}% Odporności na lód +16% |
-| Tarcza z Kurhanu | — | 100 | Pancerz 228,2, hp 574 | +{v} Obrony +185, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
+| Tarcza z Kurhanu | — | 100 | Pancerz 228,2, hp 574 | +{v} Pancerza +185, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
 | Kostur Wiecznej Zimy | — | 100 | obr. 0, obr. mag. 465, szybkość 0,85 | +{v}% Ataku magicznego +10%, +{v} Intelektu +32, Przebicie magii {v}% +11% |
 | Łuk Zawodzących Cieni | Morvane, Królowa Krypt | 45 | obr. 152, szybkość 1 | +{v}% Ataku fizycznego +6%, +{v} Zręczności +10, +{v}% szansy na zatrucie +5% |
 | Berło Krypt | Morvane, Królowa Krypt | 45 | obr. 53, obr. mag. 146, szybkość 1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +12, +{v}% mocy leczenia +8% |
 | Całun Królowej | Morvane, Królowa Krypt | 45 | Pancerz 59,2, hp 89,5, mana 148,7, Odporność magiczna 81,9 | +{v} Intelektu +14, +{v} Many +120, Odporność na nieumarłych {v}% +10% |
 | Oko Zimy | Vaelgrath, Smok Mrozu | 100 | Atak magiczny % 15,1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +29, Przebicie magii {v}% +10% |
 | Kieł Vaelgratha | Vaelgrath, Smok Mrozu | 100 | obr. 456, szybkość 0,85 | +{v}% Ataku fizycznego +11%, +{v} Siły +35, +{v}% Obrażeń krytycznych +40% |
-| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Pancerz 205,4, hp 516,6 | +{v} Obrony +160, +{v}% Życia +7%, Odporność na smoki {v}% +10% |
+| Łuska Smoka Mrozu | Vaelgrath, Smok Mrozu | 100 | Pancerz 205,4, hp 516,6 | +{v} Pancerza +160, +{v}% Życia +7%, Odporność na smoki {v}% +10% |
 
 ## Materiały
 

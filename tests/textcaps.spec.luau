@@ -6,8 +6,8 @@
 --   T1 every mapped key, pl and en, fits each of its surfaces (TextCaps.check after the sample values), or is listed
 --   T2 no em dash in any text; no control words or "(K)" key hints on toasts, banners, alerts, prompts and the HUD;
 --      ratchets in the same lists, hard for every key once the lists are empty; the A and B texts keep the
---      glossary's words for a quest and the backpack; a message that names a PC key ({key}) has a `.touch`
---      twin without it
+--      glossary's words for a quest and the backpack, every text its words for armor, the premium currency and the
+--      party; a message that names a PC key ({key}) has a `.touch` twin without it
 --   T3 the lists: a listed key that now passes, got longer or belongs to another package fails
 --   T4 every literal key at a toast, banner, alert, prompt or card site exists and has its surface; the scan read
 --      every file to its end and found today's message calls
@@ -283,23 +283,22 @@ describe("textcaps T2: universal rules", function()
 	-- Final UI review 2026-11-11: the windows' texts (packages C, D and E) keep the glossary's words too. The premium
 	-- currency is "Smocza Waluta" (DECYZJE S120), ◆ beside a number in a reward list: the arena's season tab, the
 	-- tournament, the quest board and the rankings said "Smocze Odłamki" or a bare "odłamków", which reads like the
-	-- upgrade material; en says "Dragon Shards" everywhere.
-	it("C, D and E texts name the premium currency one way", function()
-		local OTHER = { "smocz[^ ]* odłamk", "}%s*odłamk", "%d%s*odłamk", "odłamki z kompletu" }
+	-- upgrade material; en says "Dragon Shards" everywhere. Seams 2026-11-11: the HUD's and the messages' texts too
+	-- (the guild's toast said "te odłamki").
+	it("every text names the premium currency one way", function()
+		local OTHER = { "smocz[^ ]* odłamk", "}%s*odłamk", "%d%s*odłamk", "odłamki z kompletu", "te odłamki" }
 		local problems = {}
 		for key, text in pl :: { [string]: string } do
 			local owner = TextScan.owner(key)
-			if owner == "C" or owner == "D" or owner == "E" then
-				local lower = string.lower(text)
-				for _, pattern in OTHER do
-					if string.find(lower, pattern) then
-						table.insert(problems, `{key} ({owner}): {pattern}`)
-					end
+			local lower = string.lower(text)
+			for _, pattern in OTHER do
+				if string.find(lower, pattern) then
+					table.insert(problems, `{key} ({owner}): {pattern}`)
 				end
-				local english = (en :: { [string]: string })[key]
-				if english and string.find(english, "Dragon Currency", 1, true) then
-					table.insert(problems, `{key} ({owner}) en: Dragon Currency`)
-				end
+			end
+			local english = (en :: { [string]: string })[key]
+			if english and string.find(english, "Dragon Currency", 1, true) then
+				table.insert(problems, `{key} ({owner}) en: Dragon Currency`)
 			end
 		end
 		fail(problems, "a second name for the premium currency")
@@ -310,35 +309,34 @@ describe("textcaps T2: universal rules", function()
 
 	-- Final UI review 2026-11-11: armor is "Pancerz" (en "Armor"): the derived list said "Obrona" and the skills
 	-- "obniża obronę celu" beside "Przebicie pancerza" and the stats' "+12 pancerza". "Obrona" stays the name of a
-	-- defence (a path's role, the skills' tank role, a monster's defence in the bestiary, a lair defended, en's stat
-	-- group).
-	it("C, D and E texts call armor pancerz", function()
+	-- defence (a path's role, the skills' tank role, a monster's defence in the bestiary and its toast, a lair
+	-- defended, en's stat group). Seams 2026-11-11: the HUD's and the messages' texts too (an item card's "+12 Obrony",
+	-- the effect "Rozbita obrona").
+	it("every text calls armor pancerz", function()
 		local DEFENCE = {
 			["paths.role.tank"] = true,
 			["skills.role.O"] = true,
 			["best.defence"] = true,
 			["best.reveal2"] = true,
+			["best.toast.reveal2"] = true,
 			["quest.wyrmSpire.p1b"] = true,
 			["statGroup.defense"] = true,
 		}
 		local problems = {}
 		for key, text in pl :: { [string]: string } do
 			local owner = TextScan.owner(key)
-			if (owner == "C" or owner == "D" or owner == "E") and not DEFENCE[key] then
-				if string.find(string.lower(text), "obron", 1, true) then
-					table.insert(problems, `{key} ({owner})`)
-				end
+			if not DEFENCE[key] and string.find(string.lower(text), "obron", 1, true) then
+				table.insert(problems, `{key} ({owner})`)
 			end
-			if (owner == "C" or owner == "D" or owner == "E") and (en :: { [string]: string })[key] then
-				local english = string.lower((en :: { [string]: string })[key])
-				if string.find(english, "defense", 1, true) and not DEFENCE[key] then
-					table.insert(problems, `{key} ({owner}) en: defense`)
-				end
+			local english = (en :: { [string]: string })[key]
+			if english and not DEFENCE[key] and string.find(string.lower(english), "defense", 1, true) then
+				table.insert(problems, `{key} ({owner}) en: defense`)
 			end
 		end
 		fail(problems, "armor called obrona or defense")
 		expect(pl["stat.armor"]).toBe("Pancerz")
 		expect(en["stat.armor"]).toBe("Armor")
+		expect(pl["bonus.armor"]).toBe("+{v} Pancerza")
 	end)
 
 	-- Final UI review 2026-11-11: the windows say "quest" too (UI 3's default): a quest item's tooltip said "• zadania:",
@@ -368,14 +366,59 @@ describe("textcaps T2: universal rules", function()
 	end)
 
 	-- Final UI review 2026-11-11: the ☰ tile, the ✧ tooltip and the toast say "Nagroda dnia", the window they open said
-	-- "Nagroda za logowanie" and so did the reward's mail with a full backpack.
+	-- "Nagroda za logowanie" and so did the reward's mail with a full backpack. Seams 2026-11-11: and so did the ✧
+	-- button's tooltip before the reward's state arrives (login.title, Hud/LoginButton).
 	it("the daily reward has one name from the tile to its window and its mail", function()
 		for lang, texts in { pl = pl, en = en } :: { [string]: { [string]: string } } do
 			local name = texts["menu.tile.login"]
 			expect({ lang, texts["window.login.title"] }).toEqual({ lang, name })
+			expect({ lang, texts["login.title"] }).toEqual({ lang, name })
 			expect({ lang, string.sub(texts["mail.subject.login"], 1, #name) }).toEqual({ lang, name })
 		end
 		expect(string.find(pl["login.button"], pl["menu.tile.login"], 1, true) ~= nil).toBe(true)
+	end)
+
+	-- Seams 2026-11-11: the tracker's "+3 w dzienniku" sent the player to a window titled "Questy"; "Dziennik" is the
+	-- backpack's loot log ("Dziennik łupu").
+	it("the tracker names the quests' window by its title", function()
+		local problems = {}
+		for key, text in pl :: { [string]: string } do
+			if string.sub(key, 1, 8) == "tracker." and string.find(string.lower(text), "dziennik", 1, true) then
+				table.insert(problems, `{key}: {text}`)
+			end
+		end
+		for key, text in en :: { [string]: string } do
+			if string.sub(key, 1, 8) == "tracker." and string.find(string.lower(text), "journal", 1, true) then
+				table.insert(problems, `{key} en: {text}`)
+			end
+		end
+		fail(problems, "the tracker sends the player to the journal")
+		expect(pl["tracker.contracts.more"]).toBe("+{n} w Questach") -- the locative of "Questy"
+		expect(string.find(en["tracker.contracts.more"], en["window.quests.title"], 1, true) ~= nil).toBe(true)
+	end)
+
+	-- Seams 2026-11-11 (UI-ZASADY §3): players who play together are a "grupa" with a "lider", as the party's window,
+	-- its ☰ tile and the HUD say; a "drużyna" is a side of an arena match and the "przywódca" leads a guild. The boss's
+	-- mechanics said "Odejdź od drużyny!" under their (i) "od drużyny", the party board "nikt nie szuka drużyny" and the
+	-- invite's reason "przywódca grupy".
+	it("the party is a grupa with a lider", function()
+		local PARTY = { "party.", "finder.", "dungeon.", "fight.", "boss.mechanic.", "social.", "luck." }
+		local problems = {}
+		for key, text in pl :: { [string]: string } do
+			local party = key == "worldmap.cat.party"
+			for _, prefix in PARTY do
+				party = party or string.sub(key, 1, #prefix) == prefix
+			end
+			local lower = string.lower(text)
+			if party and (string.find(lower, "drużyn", 1, true) or string.find(lower, "przywódc", 1, true)) then
+				table.insert(problems, `{key}: {text}`)
+			end
+		end
+		fail(problems, "another word for the party or its leader")
+		expect(pl["window.party.title"]).toBe("Grupa")
+		expect(pl["party.promote"]).toBe("Lider")
+		expect(pl["guild.leader"]).toBe("Przywódca")
+		expect(string.find(pl["arena.team.ally"], "drużyna", 1, true) ~= nil).toBe(true)
 	end)
 
 	it("C, D and E buttons and tabs use the words of what they show", function()
@@ -396,11 +439,18 @@ describe("textcaps T2: universal rules", function()
 		expect(pl["quest.claimedButton"]).toBe(pl["season.cell.claimed"])
 	end)
 
+	-- Seams 2026-11-11: and so do the errors the server sends to it (CharacterService: "Ten slot jest pusty.").
 	it("the character select calls a character's place miejsce, never slot", function()
+		local service = fs.readFile("src/server/Services/CharacterService.luau")
+		local sent: { [string]: boolean } = {}
+		for key in string.gmatch(service, '"([%w_]+%.[%w_%.]+)"') do
+			sent[key] = true
+		end
+		expect({ sent["error.slotEmpty"], sent["error.slotTaken"] }).toEqual({ true, true })
 		local found = {}
 		for key, text in pl do
 			local words = string.lower((string.gsub(text, "{%w+}", ""))) -- not the {slot} placeholder
-			if string.sub(key, 1, 11) == "charSelect." and string.find(words, "slot", 1, true) then
+			if (string.sub(key, 1, 11) == "charSelect." or sent[key]) and string.find(words, "slot", 1, true) then
 				table.insert(found, `{key}: {text}`)
 			end
 		end
