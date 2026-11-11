@@ -1794,10 +1794,13 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   także pod pełnym paskiem Robloxa, przełom wybierany na karcie; na dotyku plecak ma sloty 56 px (także obok usługi),
   a sortowanie, akcje plecaka, przyciski statystyk i Zwój Ochrony 44 px. Usługi (kowal, aukcja, alchemik, wygląd,
   plecakarz) i handel: główne przyciski stoją w przypiętej stopce okna (u kowala i na aukcji rząd wybranej zakładki),
-  długa treść przewija się w swoim miejscu nad nią, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą (lista
-  przedmiotów kowala zostaje kolumną z lewej, obie strony handlu przewijają się); kolejka alchemika to wiersze listy
-  64 px z paskiem postępu; plecak obok usługi zostaje przy własnym pasku akcji, a tooltip przedmiotu na dotyku go omija;
-  lista tytułów ma wiersze z drugą linią.
+  szary przycisk ma obok siebie powód, a czynny swoją cenę (kowal: Przemiana, Efekt, Wygląd; okno wyglądu: powód pod
+  ceną), na dotyku ostrzeżenie handlu stoi w stopce przy jego przyciskach, długa treść przewija się w swoim miejscu nad
+  nią, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą (lista przedmiotów kowala zostaje kolumną z lewej,
+  obie strony handlu przewijają się, niska lista wytwarzania ma wiersze 58 px, żeby widać było dwie receptury); kolejka
+  alchemika to wiersze listy 64 px z paskiem postępu i nazwą tekstem Small 17 (300 px tam, gdzie receptury mieszczą się
+  obok: PC i telefon 932 px); plecak obok usługi zostaje przy własnym pasku akcji, a tooltip przedmiotu na dotyku go
+  omija; lista tytułów ma wiersze z drugą linią.
   Teksty tych okien (część tekstowa pakietu D) mieszczą się w limitach `docs/UI-ZASADY.md` §2: krótki opis
   umiejętności i krótka linia węzła najwyżej 60 znaków, przełom najwyżej 48 i zawsze z liczbami („Rozprysk: 13%
   obrażeń do 4 st. od celu”), linia okna 60, przycisk 18, zakładka 12 (całe terminy słownika mogą być dłuższe:
@@ -1805,10 +1808,10 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   potwierdzenia pyta w najwyżej 90 znakach, a to, co nie zmienia wyboru (zawartość skrzyni łowów, klasa i premie sprzętu
   wędrowca), leży pod „Więcej ▸”; pod pytaniem o sprzęt wędrowca zostają poziom i wiązanie; zakup za Smoczą Walutę ma
   cenę raz, na przycisku („Kup za ◆ 500”), a w treści pytanie i saldo po zakupie. Przycisk mówi, co robi, a liczba stoi
-  w linii obok („Przemień wszystkie”, pod nim „Zwoje Przemiany: N”). Podpowiedzi mówią, co wybrać („Wybierz węzeł, aby
-  zobaczyć opis.”), bez „kliknij”, „najedź” i „przeciągnij”; wyjątek to podpowiedź skrótu „Podwójny klik lub
-  przytrzymanie” w pełnym tooltipie przedmiotu. Smocza Waluta ma pełną nazwę raz na ekranie (notka waluty, saldo), dalej
-  ◆ („500 ◆”, „Na stałe 120 ◆”, „Dzienne ◆: odebrane”).
+  w osobnej linii („Przemień wszystkie” w stopce, „Zwoje Przemiany: N” na kowadle pod nazwą przedmiotu). Podpowiedzi
+  mówią, co wybrać („Wybierz węzeł, aby zobaczyć opis.”), bez „kliknij”, „najedź” i „przeciągnij”; wyjątek to podpowiedź
+  skrótu „Podwójny klik lub przytrzymanie” w pełnym tooltipie przedmiotu. Smocza Waluta ma pełną nazwę raz na ekranie
+  (notka waluty, saldo), dalej ◆ („500 ◆”, „Na stałe 120 ◆”, „Dzienne ◆: odebrane”).
 
 ### Ikony w UI (S35)
 

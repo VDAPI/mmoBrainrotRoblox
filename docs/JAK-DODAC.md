@@ -363,4 +363,10 @@
   `Window.Parts`, z częściami od góry (`fromOffset`), nie przypiętymi do dołu. Pasek akcji przy slotach, poza stopką,
   okno zgłasza tooltipowi: `ItemTooltip.avoid(scope, pasek)`. Liczby `GearLayout` to miary ramki okna i `Theme`
   (`WindowFrame.FOOTER`, `TAB_HEIGHT`, `tabStrip`, `Theme.Size`); nowa miara dostaje porównanie w teście „measures with
-  the window frame's and Theme's sizes”.
+  the window frame's and Theme's sizes”. Główny przycisk w stopce się nie chowa, tylko szarzeje (`Disabled`), a pierwsza
+  w rzędzie stoi linia, która mówi, dlaczego jest szary, a gdy jest czynny, podaje jego cenę (u kowala `Picker.status`:
+  `Reason`, `Hints` dla wyciszonych podpowiedzi, `Price`, `Inset` = szerokość przycisków z odstępami); test w
+  `gearlayout.spec` mierzy każdy powód i najdroższą cenę w dwóch liniach Small 17 na każdym ekranie. Ramka z `UIStroke`
+  w przewijaniu stoi o grubość ramki od jego krawędzi, bo przewijanie ucina wszystko poza sobą, a lista, która na niskim
+  telefonie nie mieści dwóch wierszy, dostaje niższe wiersze z funkcji widoku w `GearLayout` (jak
+  `GearLayout.smithCraft` z rozmiaru widoku w `UI/ViewSize`).

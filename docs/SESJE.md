@@ -15142,6 +15142,31 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Screens/Wardrobe`, `Screens/WanderingMerchantWindow`, `Screens/HuntShopWindow`, `UI/PremiumConfirm`,
   `UI/SeasonPassBuy`, `tests/gearlayout.spec`, `tests/textcaps.spec`, `wiki/src/data/meta|recipes.json`,
   `docs/PRZEDMIOTY.md`.
+- **Po przeglądzie etapu przyjęcia (2026-11-11):** dziesięć uwag recenzentów sprawdzonych z kodem. Kowal (Przemiana,
+  Efekt, Wygląd): pierwsza w stopce stoi linia `Picker.status` (Small 17, najwyżej dwie linie): powód szarego przycisku
+  (Danger; podpowiedź wyboru linii, efektu albo wyglądu wyciszona) albo cena czynnego (◉ złoto i materiały,
+  `Picker.price`) w szerokości rzędu bez przycisków (na 667×375 to 272 px obok dwóch przycisków); przedmiot, którego nie
+  da się zmienić, wyszarza też główny przycisk; wynik przemiany, wynik „Przemień wszystkie” (czyszczony przy zmianie
+  przedmiotu), linia zwojów i wynik zmiany efektu stoją pod nazwą przedmiotu; „Nałóż wygląd” jest zawsze widoczny, tylko
+  szarzeje. Okno wyglądu: w stopce pod ceną (26 px) linia powodu (20 px, Small 17; „To jest twój obecny wygląd.”
+  wyciszone). Handel: strony w ramce większej o 2 × 3 px, 3 px od krawędzi przewijania (`UIStroke` rysuje się na
+  zewnątrz, a przewijanie ucinało ramki), na dotyku ostrzeżenie (o wartości albo o trybie podglądu) pierwsze w stopce
+  (najwyżej dwie linie Small 17 obok „Akceptuj” 200 i „Potwierdź” 220), na PC pod stronami. Aukcja: linia stron zawija
+  się (na 667×375 ma 260 px). Wytwarzanie: `GearLayout.smithCraft` (lista pod zakładkami z rozmiaru widoku,
+  `UI/ViewSize`): poniżej 2 × 70 + 6 px wiersze 58 px (przedmiot i „Wykuj” po 44 px), złoto w linii nazwy obok „Wykuj”
+  (czerwone, gdy go brakuje), materiały w jednej linii. Alchemik: wiersze kolejki `Dense` (Small 17), kolejka 300 px
+  tam, gdzie receptury zachowują 570 px (PC i telefon 932 px); na węższych telefonach cztery eliksiry odporności po
+  polsku kończą się na „Eliksir Odporności …” i różnią się ikoną. Odrzucone: cena w pytaniu przed przemianą i nałożeniem
+  wyglądu (cena stoi obok czynnego przycisku, a pytanie przekroczyłoby 90 znaków okna potwierdzenia), liczba zwojów w
+  stopce (dwie linie stopki na 667×375 mieszczą tylko cenę, a zwoje stoją pod nazwą przedmiotu), kolejka 300 px na
+  telefonach 667 i 844 px (zakładki alchemika przewijałyby się na 667×375, a linia składników receptury na 844×390 nie
+  mieściłaby się w dwóch wierszach). `gearlayout.spec`: powód i cena kowala w stopce (każdy powód i najdroższa cena w
+  dwóch liniach na każdym ekranie), cena i powód okna wyglądu, handel (ramki, ostrzeżenie w stopce telefonu w dwóch
+  liniach), linia stron aukcji (pl i en w dwóch liniach), wytwarzanie (dwa wiersze na telefonie, pięć na PC, każda
+  nazwa, złoto i materiały w jednej linii), kolejka alchemika (nazwy różnią się w szerokiej kolejce, błogosławieństwa w
+  każdej, receptury obok szerokiej kolejki w dwóch liniach). Pliki: `Logic/GearLayout`,
+  `Screens/BlacksmithWindow/Picker|Reroll|Effect|Transmog|Craft`, `Screens/LookWindow`, `Screens/TradeWindow`,
+  `Screens/AuctionWindow/Browse`, `Screens/AlchemyWindow`, `tests/gearlayout.spec`.
 
 ### Plan UI 2026-11-10, pakiet D, część tekstowa: teksty plecaka, umiejętności, usług i sklepów (2026-11-10)
 - Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
