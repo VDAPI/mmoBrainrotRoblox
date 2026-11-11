@@ -15625,3 +15625,34 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   ma go w wierszu celu), „+3 w dzienniku” ma rozmiar zdań. Liczby HUD mają przecinek: odnowienie „2,5”, efekty, EXP
   „45,3%”, udział w bossie świata i karta nagrody. Krok plecaka mówi na tablecie „Dotknij plecaka u góry ekranu.”, a na
   telefonie „Dotknij ☰ w rogu, potem plecaka.”.
+
+### Szwy po ostatnim przeglądzie UI (2026-11-11)
+
+- Ostatni krok planu UI: rzeczy, które ścieżki HUD i okien przekazały sobie nawzajem, bo leżały w plikach żadnej z
+  nich. Każda sprawdzona z `main`; część była już poprawiona w ścieżkach i tylko ją odnotowano.
+- Prowadzenie („Idź”, „Prowadź”): na telefonie i tablecie dojście do NPC mówi „Jesteś na miejscu: porozmawiaj.”, a
+  portal i wejście do lochu na trasie „Podróżuj dalej: Łąki” i „Wejście do lochu: …”, bez klawisza [E], którego dotyk
+  nie ma (rozmowę i przejście otwiera przycisk nad NPC, portalem albo bramą). PC zostaje przy „Rozmawiaj [E]”.
+- Legendarny łup i pierwszy cenny przedmiot: nazwę podniesionego przedmiotu podaje tylko karta („Legendarny
+  przedmiot!” i „Szczegóły”; na PC w rogu, na telefonie linia w strefie M), bez toastu „+1 Ostrze Pustki” w tej samej
+  sekundzie; reszta worka ma swoje toasty.
+- Grupa: w walce z bossem lochu „Piętno! Odejdź od grupy!” i „Zaklęcie uderza w grupę!”, tak samo w (i) mechanik i na
+  wiki; tablica grup „Na tym serwerze nikt teraz nie szuka grupy.”, odmowa zaproszenia „Zaprasza tylko lider grupy.”,
+  karta nagrody „Szczęście grupy: …”, filtr mapy „Grupa”.
+- Jedno słowo na jedną rzecz: dymek ✧ zanim przyjdzie stan nagrody mówi „Nagroda dnia” (en „Daily reward”), jak
+  kafelek, okno i list; tropiciel „+3 w Questach” zamiast „+3 w dzienniku” (Dziennik to dziennik łupu w plecaku);
+  dymek i karta przedmiotu „+12 Pancerza” (było „Obrony”), efekt „Rozbity pancerz”; błąd celu gildii „W tym tygodniu
+  tę nagrodę odebrała już inna Twoja postać.” (bez „te odłamki”); wybór postaci „To miejsce jest puste.” i „To miejsce
+  jest już zajęte.” (bez „slot”).
+- Karta walki ma przecinek w udziale: „Miejsce 3 z 14 · udział 12,5%”.
+- Testy: `textcaps.spec` (komunikat z klawiszem PC ma tekst `.touch` bez niego i kod go czyta na dotyku; pancerz i
+  waluta w tekstach wszystkich pakietów; grupa i lider w tekstach grupy, tablicy, lochu, walki, mechanik i szczęścia;
+  dymek ✧ z nazwą nagrody dnia; tropiciel bez „dziennika”; błędy wyboru postaci z serwera bez „slot”), `textargs.spec`
+  (`FightView.placeLine` czyta `format.decimal`), `noticequeue.spec` (przedmiot z karty bez toastu). Usunięty klucz
+  `contract.trackerMore`, którego nic nie czytało. Dane wiki odświeżone (premia pancerza, opisy mechanik bossów, filtr
+  mapy, `docs/PRZEDMIOTY.md`).
+- Bez zmian, już poprawione w ścieżkach: „Smocze Odłamki” w nagrodach osiągnięć i w liście, „zadanie” w tekstach okien,
+  nagłówek okna nagrody dnia, przecinek w pasku zaklęcia bossa i w karcie nagrody bossa świata.
+- **Pliki:** `Controllers/NavController`, `LootController`, `UI/FightView`, `Data/Localization/pl|en`,
+  `tests/textcaps|textargs|noticequeue|panelheader.spec.luau`, `docs/UI-ZASADY.md`, `DESIGN.md`, `DECYZJE.md`, wiki
+  (`docs/PRZEDMIOTY.md`, `wiki/src/data`).

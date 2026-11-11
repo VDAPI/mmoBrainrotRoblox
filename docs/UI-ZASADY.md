@@ -34,7 +34,7 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
   sekcji: 36. Etykieta: 20 plus wartość.
 - Linia w oknie (stan, `.short`): 60, jedna linia.
 - HUD:
-  - linia (wpis tropiciela, panel, drużyna, prowadzenie): 32;
+  - linia (wpis tropiciela, panel, grupa, prowadzenie): 32;
   - dymek elementu: 48, jedna linia (nazwa i stan);
   - kafelek ☰ i przycisk paska: 18 razem z klawiszem.
 - Komunikaty:
@@ -65,14 +65,16 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
 - Bez długiego myślnika (U+2014). Zamiast niego: dwukropek, przecinek albo dwa zdania.
 - Bez rad w komunikatach („spróbuj ponownie”, „możesz grać dalej”).
 - Bez opisu sterowania poza samouczkiem i listą klawiszy („kliknij”, „najedź”, „przeciągnij”, „prawy klik”).
-- W toastach bez klawiszy i nazw okien („(K)”, „w oknie Umiejętności”).
+- W toastach bez klawiszy i nazw okien („(K)”, „w oknie Umiejętności”). Wyjątek to podpowiedzi prowadzenia na PC
+  (S25: „Rozmawiaj [E]”): ekran dotykowy czyta ich tekst `.touch` bez klawisza.
 - Długą nazwę własną piszemy raz, potem symbol (◆ zamiast „Smoczej Waluty”).
 - Liczby piszemy cyframi, jednostki skrótem (s, min, m, %). Ułamek ma znak języka z `format.decimal` („1,5 s” po
   polsku, „1.5 s” po angielsku).
 - „Lv N” na plakietkach i ramkach (decyzja 2026-10-21), „poziom N” w zdaniach.
 - Jedno słowo na jedną rzecz: Plecak, Umiejętności, Mapa, Questy (przycisk, okno, grupa tropiciela), Cele (nagłówek
   tropiciela), Zlecenia, Sklep (kupiec NPC; Handel to wymiana między graczami), Smoczy Sklep, Smocza Waluta (◆ przy
-  liczbach), Pancerz (statystyka; Zbroja to część ekwipunku), miejsce na postać, Menu ☰, Ustawienia. Nazewnictwo
+  liczbach), Pancerz (statystyka; Zbroja to część ekwipunku), Grupa (gracze, którzy grają razem; prowadzi ją lider,
+  Drużyna to strona meczu areny, a Przywódca prowadzi gildię), miejsce na postać, Menu ☰, Ustawienia. Nazewnictwo
   questów czeka na potwierdzenie właściciela. Nowe słowo wchodzi tylko przez dopisanie go tutaj.
 - pl i en zmieniamy razem, z tymi samymi placeholderami.
 
@@ -222,7 +224,8 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
 
 - `textcaps.spec`: każdy klucz pl i en mieści się w limicie swojej powierzchni i nie ma długiego myślnika. Mapę kluczy
   buduje `tests/TextScan.luau` z kodu. Reguły i listę „do skrócenia” każdego pakietu trzyma `tests/fixtures/textcaps`.
-  Lista „do skrócenia” może tylko maleć.
+  Lista „do skrócenia” może tylko maleć. Ten sam spec pilnuje słów ze słownika §3 (quest, plecak, pancerz, waluta,
+  grupa, miejsce na postać, nagroda dnia) i tego, że komunikat z klawiszem PC ma tekst `.touch` bez niego.
 - `hudzones.spec`, `phonehud.spec`, `hudlayout.spec`: prostokąty HUD z tych samych modułów, których używa gra. Ekrany:
   PC 1920×1080, 1366×768 i 1280×720 (oraz 4:3, niskie okno, ultrawide), telefony 844×390, 667×375 i 932×430, pasek
   Robloxa 0, 36 i 58 px. Pas wiadomości mieści linię alarmu (`HudZones.MESSAGE.alert`, 44). Dzisiejsze kolizje stoją
