@@ -5,7 +5,8 @@
 -- listed per package of the UI plan in tests/fixtures/textcaps, lists that only shrink.
 --   T1 every mapped key, pl and en, fits each of its surfaces (TextCaps.check after the sample values), or is listed
 --   T2 no em dash in any text; no control words or "(K)" key hints on toasts, banners, alerts, prompts and the HUD;
---      ratchets in the same lists, hard for every key once the lists are empty
+--      ratchets in the same lists, hard for every key once the lists are empty; the A and B texts keep the
+--      glossary's words for a quest and the backpack
 --   T3 the lists: a listed key that now passes, got longer or belongs to another package fails
 --   T4 every literal key at a toast, banner, alert, prompt or card site exists and has its surface; the scan read
 --      every file to its end and found today's message calls
@@ -197,6 +198,26 @@ describe("textcaps T2: universal rules", function()
 			end
 		end
 		fail(problems, "em dash not reported")
+	end)
+
+	-- Final UI review 2026-11-10 (the toasts said "Przyjęto zadanie" under the button "Questy", a tablet's tutorial
+	-- named a "torba"): the HUD's and the messages' texts (packages A and B) keep the glossary's words of
+	-- docs/UI-ZASADY.md §3: a quest is a "quest", the backpack a "plecak".
+	it("A and B texts call a quest a quest and the backpack a backpack", function()
+		local OTHER = { "zadani", "zadań", "torb" }
+		local problems = {}
+		for key, text in pl :: { [string]: string } do
+			local owner = TextScan.owner(key)
+			if owner == "A" or owner == "B" then
+				local lower = string.lower(text)
+				for _, word in OTHER do
+					if string.find(lower, word, 1, true) then
+						table.insert(problems, `{key} ({owner}): {word}`)
+					end
+				end
+			end
+		end
+		fail(problems, "a word the glossary replaced")
 	end)
 end)
 
