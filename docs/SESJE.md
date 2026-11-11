@@ -15366,6 +15366,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Screens/Hud/AchievementToast|BarkToast|ZoneBanner`, `Controllers/Dungeon|Loot|LootComfortController`,
   `Controllers/WindowManager` (jedna linia, pakiet C), `Data/Localization/pl|en`, `tests/noticequeue.spec.luau`,
   `tests/topband.spec.luau`, `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|meta.json`.
+- Ostatni przegląd całego UI (2026-11-10): linia alarmu, toasty i linia M telefonu nie stają już na tytule i odliczaniu
+  ekranu śmierci; to, co czeka, pokazuje się po odrodzeniu (także toast z imieniem zabójcy w PvP). Karta legendy i
+  pierwszego cennego łupu stoi 20 s i czeka na swoje miejsce do 10 min, więc „Szczegóły” z odsłonięciem nie przepadają w
+  walce; na PC karta ma 318 szerokości i nie wchodzi pod wyśrodkowane okno plecaka. Alarm ma jeden rozmiar tekstu (na
+  telefonie cyfra odliczania i ostrzeżenie bossa są równe), a na niskim telefonie komunikaty i pasek bossa lochu mają
+  całą szerokość strefy M. Pigułka kolejki areny, jej dymek i toast dołączenia mówią „1 na 1”, nie „1v1”. Toasty mówią
+  „Przyjęto quest”, „Wykonane: Wataha. Wróć do: …” i „Masz już quest.”, kończą się bez rad („Coś poszło nie tak.”, „Nic
+  tu nie zostało.”), grupa ma „lidera”, odpowiedzi innych graczy nie zakładają rodzaju („Ola odrzuca zaproszenie.”),
+  nagroda osiągnięcia to „◆ 25”, a podpowiedzi telefonu wskazują „⋯” przy celu i ✧ w ☰.
 
 ### Plan UI 2026-11-10, pakiet A: HUD bez nakładania, zwijana kolumna, siatka telefonu (2026-11-10)
 - Właściciel 2026-11-10: „niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się zwinąć”. Pakiet A planu
@@ -15540,3 +15549,12 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `WorldEventPanel`, `init`, `Screens/PartyFrames`, `Logic/HudStack`, `HudZones`, `PhoneHud`, `QuestRows`,
   `Data/Localization/pl|en`, `tests/FusionGraph.luau` (nowy),
   `tests/hudslots|hudtips|panelheader|textargs|hudzones|hudlayout|phonehud|questrows.spec.luau`.
+- Ostatni przegląd całego UI (2026-11-10): na telefonie karta samouczka stoi w lewej kolumnie nad strefą kciuka, bez
+  strzałki, z krzyżykiem pominięcia w linii podpisu, więc nie zasłania mikstur, sprintu ani celu i nie leży pod lewym
+  kciukiem. Otwarte okno chowa panele wydarzeń, drużyny areny i rzędy drużyny, które zasłania (obok okna usługi z
+  plecakiem wystawały do połowy), a kolumna trzyma ich miejsca. Na tablecie sprint i wierzchowiec stoją w rzędzie na
+  lewo od przycisku strony, nie na rzędach drużyny ani w strefie kciuka. Efekty celu na telefonie mają swoje miejsce nad
+  linią rzucania, a przy pasku bossa lochu wchodzą do ramki celu. Tropiciel podaje licznik questu raz (rozwinięty quest
+  ma go w wierszu celu), „+3 w dzienniku” ma rozmiar zdań. Liczby HUD mają przecinek: odnowienie „2,5”, efekty, EXP
+  „45,3%”, udział w bossie świata i karta nagrody. Krok plecaka mówi na tablecie „Dotknij plecaka u góry ekranu.”, a na
+  telefonie „Dotknij ☰ w rogu, potem plecaka.”.

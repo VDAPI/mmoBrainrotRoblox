@@ -479,7 +479,7 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   godzinę Elit (bez szczęścia).
 - Materiały/zioła/kamienie z tabel potworów (`Data/Monsters`).
 - Przedmiot ląduje na ziemi jako „worek łupu” widoczny **tylko dla właściciela** (lokalnie po stronie klienta); podniesienie klawiszem/klikiem lub automatycznie z gamepassem Auto-łup. Znika po 120 s.
-- **Drop legendy / mityka**: pomarańczowy (mityk: wyższy czerwony z żarem) słup światła na ziemi, specjalny dźwięk, krótki flash ekranu, komunikat na całym serwerze „⚜ {gracz} zdobył legendarny przedmiot: {nazwa}!” (i między serwerami przez MessagingService). Po podniesieniu: okno odsłonięcia z animacją pojawiania się bonusów jeden po drugim.
+- **Drop legendy / mityka**: pomarańczowy (mityk: wyższy czerwony z żarem) słup światła na ziemi, specjalny dźwięk, krótki flash ekranu, baner na całym serwerze „⚜ {gracz}: {przedmiot}!” (mityk „✦”, z innego serwera z 🌐, przez MessagingService). Po podniesieniu: karta w rogu (`UI/Notify.card`; na PC nad paskiem EXP, na telefonie linia w strefie M) z nazwą przedmiotu, a jej „Szczegóły” otwierają odsłonięcie z animacją pojawiania się bonusów jeden po drugim i „Załóż”. Okno odsłonięcia nie otwiera się samo (pytanie właściciela UI 10, odpowiedź domyślna). Karta jest jedyną drogą do odsłonięcia, więc stoi 20 s i czeka na swoje miejsce do 10 min, gdy zasłania je walka, okno albo ekran śmierci (`NoticeQueue.LEGENDARY`, przegląd całego UI 2026-11-10).
 
 ### 5.6 Wiązanie
 
@@ -1346,7 +1346,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   każda nowa postać (także po pominięciu) dostaje tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia
   (wolne od 2026-10-31, §5.6), bez EXP i złota (`Data/Tutorial`). Lejek onboardingu: kroki samouczka, zadania fabuły 1–10, 5. poziom.
   S155b: pierwszy potwór nowej postaci zostawia raz osobny worek z Heroiczną, związaną kopią trzymanej broni (ten sam
-  rodzaj i żywioł, więc pula umiejętności się nie zmienia; słup światła, toast i okno odsłonięcia z „Załóż”). Nagroda za
+  rodzaj i żywioł, więc pula umiejętności się nie zmienia; słup światła, toast i karta,
+  której „Szczegóły” otwierają odsłonięcie z „Załóż”, jak przy legendzie, §5.5). Nagroda za
   logowanie nie pokazuje toastu w trakcie samouczka (tylko „!” na przycisku). Konto z postacią na 5.+ poziomie widzi
   „Znam grę, pomiń samouczek”. HUD sam się tłumaczy: „!” na plecaku przy nierozdanych punktach statystyk, a awans na
   poziom nowej funkcji (pierwszy loch, wierzchowce, arena; `Logic/Unlocks`) pokazuje toast i „!” na jej przycisku do
@@ -1664,7 +1665,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   jedna kolumna (`Logic/HudStack`, `UI/HudSlots`, przegląd Studio 2026-10-21): pigułka kolejki areny, boss świata,
   wydarzenie świata, Krwawy Księżyc, turniej, na dotyku liczniki Elity II, tropiciel. PC: prawa strona od minimapy i
   paska prowadzenia (`HudDrag.RIGHT_TOP`) do przycisków rogu; tablet: lewa strona pod portretem i ramkami drużyny do
-  rzędu sprintu; telefon: lewy stos (`PhoneHud`). Przesunięty element zostaje na swoim miejscu, reszta go omija (nad,
+  odstępu nad strefą kciuka (`HudStack.touchFloor`); telefon: lewy stos
+  (`PhoneHud`). Przesunięty element zostaje na swoim miejscu, reszta go omija (nad,
   pod albo w zapasowej kolumnie obok); tropiciel bierze resztę miejsca do podłogi kolumny (w ciasnym układzie sam
   nagłówek z przewijaną listą), a podłoga stoi nad przełącznikiem PvP, jego plakietką i pocztą także pod paskiem
   Robloxa (wysokość warstwy HUD, `Scale.HudSize`, i zmierzone położenie przycisków rogu, `HudSlots.corner`,
@@ -1725,8 +1727,14 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   to „⚜ gracz: przedmiot!” (rzadkość mówią znak i kolor banera), także legenda z Fortuną kapłana (kapłana wymienia karta
   nagrody drużyny, „Szczęście drużyny”), ulepszenie bez nazwy przedmiotu. Alarmy bossa nie powtarzają jego imienia (stoi
   na pasku rzucania i pasku bossa), zaproszenia nie podają sekund (odlicza pasek czasu), rating przeciwnika w propozycji
-  meczu areny stoi w drugiej linii, a karta nagrody bossa ma własną linię prób dnia. Opis pasa u góry w akapicie HUD to
-  stan sprzed pakietu B.
+  meczu areny stoi w drugiej linii, a karta nagrody bossa ma własną linię prób dnia. **Przegląd całego UI
+  (2026-11-10)**: ekran śmierci jest dla pasa jak okienko potwierdzenia: komunikat, który trafiłby na jego tytuł albo
+  odliczanie, czeka, a czekające nie tracą czasu, dopóki ekran stoi (`HudCover.SetDeath`, `NoticeQueue` `paused`), więc
+  toast z imieniem zabójcy w PvP nie przepada pod ekranem. Linia alarmu ma jeden rozmiar tekstu (na PC Title, na
+  telefonie Body, za długi kończy się „…”), bez `TextScaled`. Karta na PC ma 318 szerokości (zaczyna się tam, gdzie
+  kończy się wyśrodkowane okno plecaka na 16:9 i 16:10), a karta legendy i pierwszego cennego łupu stoi 20 s i czeka do
+  10 min (§5.5). Strefa M telefonu w pasie to dokładnie `PhoneHud.mZone` (`TopBand.phoneZone`), więc komunikaty i pasek
+  bossa lochu mają jej szerokość także na niskim ekranie.
 - **Tabliczki potworów i NPC (S136)**: ten sam styl co tabliczki graczy (płytka żelaza, nazwa z obrysem, poziom `Small` na
   ciemnej plakietce w kolorze pasma); kolory rodzajów (`UiPalette.plate`: zwykły, Elita, Elita II, boss), liczebności
   grup (`group`) i znaków questów (`mark`) mają parę kontrastu; co pokazać decyduje `Logic/Nameplate` (`monster`, `npc`).
@@ -1744,7 +1752,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Tytuł w oknie Plecaka** (właściciel 2026-10-21): pod klasą obecny tytuł w swoim kolorze i wyraźny przycisk „Zmień
   tytuł”; otwiera listę nad całym oknem: „Brak tytułu” i wszystkie odblokowane tytuły (kolor, skąd pochodzi, „Noszony”
   przy obecnym, czas do końca tytułu czasowego). Wybór idzie przez `SetTitle`, serwer odrzuca tytuł nieodblokowany.
-- **HUD** (płytki żelaza, S136; plan UI, faza 4: jedna siatka, margines 22 od krawędzi wszędzie, odstęp 8, przycisk 52, `Logic/HudStack.MARGIN` / `GAP` / `ICON`): lewy górny: portret 340×110 (`HudStack.PORTRAIT`, wcześniej 400×136), poziom, paski HP / Mana / Energia, kropka PvP (na PC przełącznik), pod portretem jeden rząd wzmocnień (błogosławieństwo z czasem, eliksiry, premia powrotu, efekty), obok portretu przycisk „Auto” (Płaszcz Przynęty, Samodzielne Łowy, Samoczynne Mikstury w panelu na prawo od niego, pakiet A). Dół: cienki pasek EXP na całej szerokości (10 px, procent tylko po najechaniu), nad nim pasek 8 slotów umiejętności aktywnej puli broni (DESIGN-18 §4.1, S137) + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i jednym podpisem na plakietce (plan UI, faza 4: obszar z poziomami w kolorze trudności, a poza obszarem nazwa mapy albo strefy; dymek podaje oba; + i − tylko po najechaniu, na dotyku zawsze), nad nią jeden rząd sześciu przycisków (Plecak B, Umiejętności K, Mapa M, Questy L, Sklep, ☰ menu gry Esc; `Logic/HudMenu.BAR`; właściciel 2026-11-10: bez hubów, każdy przycisk otwiera swoje okno), pod minimapą rząd „coś czeka” (koperta poczty z liczbą, ✧ nagroda za logowanie, ❖ przepustka z nagrodą, ☾ wyniki Krwawego Księżyca; każdy tylko, gdy czeka; `Hud/WaitingRow`), pod nim tropiciel celów (`Logic/HudStack.RIGHT_TOP`, `WAITING`). Prawy dolny na dotyku: przełącznik PvP z plakietką odliczania (tylko w żółtej i czerwonej strefie albo w trakcie przełączania, `PvpRules.toggleShown`); na PC róg jest pusty, kopertę ma rząd pod minimapą. Okno, które zasłania tropiciel, przyciski menu, podpisy minimapy albo rząd „coś czeka”, chowa je do zamknięcia (`UI/HudCover`), a tropiciel chowa się pod każdym otwartym oknem (przegląd Studio 2026-10-31); pasek akcji, paski portretu i czat zostają. Element przesunięty przez gracza nie wchodzi pod menu nad minimapą (`HudStack.belowMenu`) i stoi cały na ekranie, 22 od krawędzi jak kolumna (`HudStack.insideX`), także gdy miejsce zapisano przy większym oknie. Lewy dolny: czat (na PC zwężony tak, by kończył się przed paskiem akcji; na dotyku zostaje u góry, bo dół zajmuje joystick). Nad celem: ramka celu (nazwa, poziom, HP, typ elity). Pas wiadomości u góry (`Logic/TopBand`): toasty najwyżej 2 naraz, zawsze pod banerem strefy, obszaru, ogłoszeniem serwera albo toastem osiągnięcia, który właśnie stoi (baner trzyma miejsce do końca zanikania), a pokazany toast nie podskakuje w górę, dopóki nie zniknie; toast osiągnięcia czeka, aż zgasną banery strefy i obszaru oraz ogłoszenie, a ogłoszenie czeka na koniec toastu osiągnięcia; karta samouczka u góry zostaje na miejscu, a kolumna toastów odsuwa się obok niej (`TopBand.toastShift`). Toasty, toast osiągnięcia i ogłoszenia stoją w warstwie na cały ekran, więc trzymają się co najmniej 8 pod paskiem Robloxa, niezależnie od jego wysokości (`Scale.TopBar`, `TopBand.underBars`); banery strefy i obszaru stoją w warstwie HUD pod tym paskiem, więc toasty liczą odstęp od nich z jego wysokością. Lista zabójstw PvP tylko w strefie żółtej i czerwonej. Ogłoszenia serwera tylko w banerze (bez kopii w czacie); toasty i banery ogłoszeń stoją pod paskiem tytułu otwartego okna.
+- **HUD** (płytki żelaza, S136; plan UI, faza 4: jedna siatka, margines 22 od krawędzi wszędzie, odstęp 8, przycisk 52, `Logic/HudStack.MARGIN` / `GAP` / `ICON`): lewy górny: portret 340×110 (`HudStack.PORTRAIT`, wcześniej 400×136), poziom, paski HP / Mana / Energia, kropka PvP (na PC przełącznik), pod portretem jeden rząd wzmocnień (błogosławieństwo z czasem, eliksiry, premia powrotu, efekty), obok portretu przycisk „Auto” (Płaszcz Przynęty, Samodzielne Łowy, Samoczynne Mikstury w panelu na prawo od niego, pakiet A). Dół: cienki pasek EXP na całej szerokości (10 px, procent tylko po najechaniu), nad nim pasek 8 slotów umiejętności aktywnej puli broni (DESIGN-18 §4.1, S137) + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i jednym podpisem na plakietce (plan UI, faza 4: obszar z poziomami w kolorze trudności, a poza obszarem nazwa mapy albo strefy; dymek podaje oba; + i − tylko po najechaniu, na dotyku zawsze), nad nią jeden rząd sześciu przycisków (Plecak B, Umiejętności K, Mapa M, Questy L, Sklep, ☰ menu gry Esc; `Logic/HudMenu.BAR`; właściciel 2026-11-10: bez hubów, każdy przycisk otwiera swoje okno), pod minimapą rząd „coś czeka” (koperta poczty z liczbą, ✧ nagroda za logowanie, ❖ przepustka z nagrodą, ☾ wyniki Krwawego Księżyca; każdy tylko, gdy czeka; `Hud/WaitingRow`), pod nim tropiciel celów (`Logic/HudStack.RIGHT_TOP`, `WAITING`). Prawy dolny na dotyku: przełącznik PvP z plakietką odliczania (tylko w żółtej i czerwonej strefie albo w trakcie przełączania, `PvpRules.toggleShown`); na PC róg jest pusty, kopertę ma rząd pod minimapą. Okno, które zasłania tropiciel, przyciski menu, podpisy minimapy albo rząd „coś czeka”, chowa je do zamknięcia (`UI/HudCover`), a tropiciel chowa się pod każdym otwartym oknem (przegląd Studio 2026-10-31); pasek akcji, paski portretu i czat zostają. Element przesunięty przez gracza nie wchodzi pod menu nad minimapą (`HudStack.belowMenu`) i stoi cały na ekranie, 22 od krawędzi jak kolumna (`HudStack.insideX`), także gdy miejsce zapisano przy większym oknie. Lewy dolny: czat (na PC zwężony tak, by kończył się przed paskiem akcji; na dotyku zostaje u góry, bo dół zajmuje joystick). Nad celem: ramka celu (nazwa, poziom, HP, typ elity). Toasty, banery, alarmy, zaproszenia i karty: akapit „Pas wiadomości” niżej (`UI/Notify`, `Logic/NoticeQueue`, `Logic/TopBand`). Lista zabójstw PvP tylko w strefie żółtej i czerwonej. Ogłoszenia serwera tylko w banerze (bez kopii w czacie).
 - **HUD: strefy, zwijana kolumna, siatka telefonu (właściciel 2026-11-10: „niektóre rzeczy zasłaniają inne, nie da się
   zwinąć”; plan UI, pakiet A).** Na PC i tablecie każdy element HUD stoi w swojej strefie (`Logic/HudZones` przez
   `UI/HudSlots.Zones`, `Screens/Hud` nie ma własnych przesunięć), a telefon ma jedną siatkę (`Logic/PhoneHud`). Pasek
@@ -1769,18 +1777,29 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   `hudBloodMoon`, `hudTourney`, `hudArena`; domyślnie otwarte na PC i tablecie, zwinięte na telefonie), Elity II dalej w
   `TrackerFold` „e2”. Tropiciel ma nagłówek i nagłówki grup w tym samym stylu (grupy i ich domyślne zwinięcie bez
   zmian), a cel questu to jedna linia do 32 znaków: licznik („0/12”) stoi cały na końcu, skraca się tylko nazwa przed
-  nim, a obszar i cały tekst są w dymku. **Telefon** (warstwa pod paskiem Robloxa, `PhoneHud.area`): pod portretem jeden
+  nim, a obszar i cały tekst są w dymku. Linia questu pokazuje postęp tylko zwinięta, jak nagłówek panelu; rozwinięta
+  mówi go w wierszach celów (przegląd całego UI 2026-11-10). **Telefon**
+  (warstwa pod paskiem Robloxa, `PhoneHud.area`): pod portretem jeden
   rząd z jednym przyciskiem „Auto” (Płaszcz Przynęty, Samodzielne Łowy i Samoczynne Mikstury w jego okienku),
   błogosławieństwem, eliksirami i efektami; pod nim lewy stos linii po 52 px od y 153 do min(H − 28, 0,58·H − 8), nad
   strefą kciuka: kafelki drużyny (najwyżej 3, dotknięcie zaznacza członka, reszta w „+N”), arena, panele wydarzeń, Elity
   II, prowadzenie (gdy nie mieści się w środku) i tropiciel, a co się nie mieści, za „+N” na końcu ostatniej linii. W
-  środku (strefa M) ramka celu z „⋯” obok (menu gracza), pod nią efekty celu, linia rzucania i pasek prowadzenia, póki
-  strefa sięga y 218. Prawy górny róg: minimapa 0,6 (0,5, gdy warstwa ma mniej niż 420), przycisk menu i przełącznik PvP
+  środku (strefa M) ramka celu z „⋯” obok (menu gracza), pod nią efekty celu (własne miejsce `targetEffects`:
+  ikony 22, najwyżej 8 i „+N”, 4 nad linią rzucania; pod paskiem bossa lochu wchodzą do ramki w miejsce
+  linii poziomu, 20 px bez sekund), linia rzucania i pasek prowadzenia, póki strefa sięga y 218.
+  Prawy górny róg: minimapa 0,6 (0,5, gdy warstwa ma mniej niż 420), przycisk menu i przełącznik PvP
   z odliczaniem w środku; szuflada menu otwiera się na lewo od przycisku i nie zasłania PvP. Dolny róg (atak, łuk
-  umiejętności, mikstury, sprint, wierzchowiec, poczta) bez zmian, ekran śmierci na środku warstwy. **Samouczek**
+  umiejętności, mikstury, sprint, wierzchowiec, poczta) bez zmian, ekran śmierci na środku warstwy. Na
+  tablecie sprint i wierzchowiec (64) stoją w jednym rzędzie na lewo od przycisku strony umiejętności
+  (`HudStack.SPRINT`, `MOUNT`, część `HudStack.fixed`), nie na rzędach drużyny ani w strefie
+  kciuka. Okno zasłaniające panele kolumny, drużyny areny albo rzędy drużyny chowa je do zamknięcia,
+  a kolumna trzyma ich miejsca (`HudCover.bind`, przegląd całego UI 2026-11-10). **Samouczek**
   wskazuje elementy po nazwach zamrożonych w `Logic/Tutorial.ANCHOR_NAMES`, karta (`Logic/TutorialTile`) stoi obok
   elementu, nigdy na nim, na pasie wiadomości (PC, tablet) ani na łuku umiejętności (telefon), a telefon czyta tekst
-  kroku `.phone`, gdy krok go ma. Panel przesunięty przez gracza nie staje w paśmie celu, w pasie wiadomości, w miejscu
+  kroku `.phone`, gdy krok go ma. Na telefonie karta stoi w lewej kolumnie obok strefy M, pod portretem i
+  nad strefą kciuka, bez strzałki (element ma obwódkę; tylko krok tropiciela stoi nad nim ze strzałką „▼”),
+  a pominięcie to krzyżyk 44 w linii podpisu, który zamienia ją w „Na pewno?” i „Pomiń” (przegląd całego
+  UI 2026-11-10). Panel przesunięty przez gracza nie staje w paśmie celu, w pasie wiadomości, w miejscu
   karty (PC) ani w strefie M i kciuka (telefon): upuszczony tam wraca na swoje miejsce, a zapisany tam wcześniej stoi w
   miejscu domyślnym (`HudLayout.usable`, zapis bez zmian). **Teksty HUD** (właściciel 2026-11-10: „bardzo dużo napisów,
   zbyt szczegółowe opisy”): linia HUD ma najwyżej 32 znaki, dymek najwyżej 48 w jednej linii, reszta jest szczegółami
@@ -1796,7 +1815,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   Pełni · za 2:30 · dziś 3/10”), a wybór prawym przyciskiem stoi w szczegółach na PC. Ekran śmierci odpowiada na „Gdzie
   chcesz się odrodzić?” miejscem („Miasto (za darmo)”, „Tutaj (◉ 120)”, „U wejścia do lochu”), pominięcie odliczania to
   „Teraz za 5 ◆”, a „[1]” i „[2]” stoją przed wyborem tylko przy klawiaturze. Pasek prowadzenia: cel i odległość, mapa
-  po drodze w dymku; pigułka kolejki areny „⌛ 1v1 · 0:42”, czekający (albo zakres rankingu kolejki globalnej) w dymku;
+  po drodze w dymku; pigułka kolejki areny „⌛ 1 na 1 · 0:42” (nazwa trybu,
+  nigdy jego id), czekający (albo zakres rankingu kolejki globalnej) w dymku;
   Inwazja „Faza 2/6”, potwory i pokonani w dymku linii; podpis obszaru „Polana Królików · 1–4”; cała linia bossa świata
   na innej mapie w „i” nagłówka. Słowa: grupa tropiciela i samouczek mówią „Questy”, „Cele” zostaje tylko nagłówkiem
   tropiciela (pytanie UI 3 w odpowiedzi domyślnej).
