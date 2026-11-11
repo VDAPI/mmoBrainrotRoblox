@@ -8,6 +8,8 @@
 -- checks at the end). Adoption stage (2026-11-10): the services (blacksmith, auction, alchemist, appearance, trade) put
 -- their main buttons in Components/Window's Footer, so their views are measured in the body above it
 -- (WindowFrame.body) and their buttons in the footer row; GearLayout's sizes are the window frame's and Theme's.
+-- Review 2026-11-11: the wardrobe keeps its saved looks with "Załóż" / "Zapisz obecny" on every phone (the preview
+-- gives up height, the hint goes behind an (i)) and 2 rows of its list under the balance row.
 
 local fs = require("@lune/fs")
 
@@ -45,6 +47,7 @@ local WINDOWS: { [string]: Size } = {
 	look = { w = 820, h = 600 },
 	backpacks = { w = 640, h = 640 },
 	trade = { w = 640, h = 520 },
+	wardrobe = { w = 980, h = 640 },
 }
 
 -- Each case: the window's content area as the view gets it (`tabs`: under the window's own tab strip).
@@ -923,6 +926,51 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 		T.expect(string.find(string.sub(source, 1, at), 'Name = "Why"', 1, true)).toBeNil()
 	end)
 
+	T.it("the wardrobe: the saved looks and their buttons on the screen, 2 list rows on a phone", function()
+		local W = GearLayout.WARDROBE
+		for _, case in cases("wardrobe") do
+			local phone = case.touch
+			local l = GearLayout.wardrobe(case.area, case.touch, phone)
+			local left: { [string]: Rect } = { preview = l.preview, outfits = l.outfits }
+			if l.hint then
+				left.hint = l.hint
+			end
+			check(case, left)
+			T.expect({ case.name, l.outfits.bottom - l.outfits.top }).toEqual({ case.name, W.outfits })
+			T.expect({ case.name, l.preview.bottom - l.preview.top >= W.minPreview }).toEqual({ case.name, true })
+			-- PC keeps today's column: the 370-px preview with the hint line under the saved looks
+			if not phone then
+				T.expect({ case.name, l.hint ~= nil, l.preview.bottom }).toEqual({ case.name, true, W.previewH })
+			end
+			-- the right column: the balance row's parts and the filter side by side, the list under them
+			local width = l.right.right - l.right.left
+			local column: Case = { name = `{case.name} right`, area = { w = width, h = case.area.h }, touch = phone }
+			check(column, { balance = l.balance, topUp = l.topUp, filter = l.filter })
+			T.expect({ case.name, l.topUp.bottom - l.topUp.top >= (if phone then GearLayout.TOUCH else 36) })
+				.toEqual({ case.name, true })
+			T.expect({ case.name, l.filter.right - l.filter.left >= (if phone then 150 else 400) })
+				.toEqual({ case.name, true })
+			for _, top in { l.listTop, l.listTopPlain } do
+				T.expect({ case.name, top >= l.filter.bottom or top >= l.topUp.bottom }).toEqual({ case.name, true })
+				local rows = math.floor((case.area.h - top + GearLayout.GAP) / (GearLayout.ROW_TALL + GearLayout.GAP))
+				T.expect({ case.name, rows >= (if phone then 2 else 4) }).toEqual({ case.name, true })
+			end
+			-- the labels of the saved looks' buttons fit their half of the column (Small, the button's padding)
+			for _, lang in { "pl", "en" } do
+				for _, key in { "wardrobe.outfit.wear", "wardrobe.outfit.save" } do
+					local half = W.preview / 2 - 4
+					T.expect({ case.name, lang, key, TextCaps.width(Locale.T(key, nil, lang), 17) + 28 <= half })
+						.toEqual({ case.name, lang, key, true })
+				end
+			end
+		end
+		-- the window reads it, and the hint's text is behind the (i) when its line has no room
+		local source = fs.readFile("src/client/UI/Screens/Wardrobe.luau")
+		for _, needle in { "GearLayout.wardrobe(", 'Name = "HintInfo"', "use(hinted)", "l.listTopPlain" } do
+			T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+		end
+	end)
+
 	T.it("the backpack shop: a row's text ends before its button", function()
 		for _, case in cases("backpacks") do
 			local row = GearLayout.backpackShop(case.area)
@@ -945,6 +993,7 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			"src/client/UI/Screens/AlchemyWindow.luau",
 			"src/client/UI/Screens/LookWindow.luau",
 			"src/client/UI/Screens/BackpackShop.luau",
+			"src/client/UI/Screens/Wardrobe.luau",
 		}
 		for _, path in readers do
 			local source = fs.readFile(path)

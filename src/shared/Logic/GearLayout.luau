@@ -26,6 +26,7 @@
 --   GearLayout.auctionSell(area) / GearLayout.auctionBrowse(area)  ("Wystaw", "Szukaj" and the pager in the footer)
 --   GearLayout.alchemy(area)              the recipes and the brewing queue ("Odbierz wszystko" in the footer)
 --   GearLayout.look(area)                 the appearance window: preview and picker side by side
+--   GearLayout.wardrobe(area, touch, compact)  the wardrobe: preview, saved looks, hint; tabs, balance and list
 --   GearLayout.backpackShop(area)         a row of the backpack shop: its text and its button
 
 local CharacterSections = require("./CharacterSections")
@@ -404,6 +405,77 @@ function GearLayout.look(area: Size): Look
 		picker = rect(px, h + L.gap, px + pickerW, math.max(area.h, h + L.gap + 1)),
 		cost = cost,
 		button = button,
+	}
+end
+
+-- The wardrobe (UI/Screens/Wardrobe): the 3D preview (330 x 370) with the saved looks under it ("Stroje": their label,
+-- the tiles, "Załóż" / "Zapisz obecny") and the hint line; right of them the group and kind tabs (two scrolling strips),
+-- the balance row ("◆ n" and "Doładuj"), the outfit list's class filter and the list. Review 2026-11-11 (on a phone
+-- the window cut off the saved looks and both buttons, and the list showed 1.3 rows): an area too low for all of the
+-- left column gives the preview less height (down to `minPreview`), so the saved looks end at the area's bottom, and
+-- moves the hint behind an (i) at the saved looks' label (`hint` nil); on a phone the class filter stands in the
+-- balance row, left of the balance, instead of a row of its own, so the list keeps 2 rows of ROW_TALL.
+export type Wardrobe = {
+	preview: Rect, -- the 3D preview and what is drawn over it
+	outfits: Rect, -- the saved looks
+	hint: Rect?, -- the hint line; nil: behind the (i) at the saved looks' label
+	right: Rect, -- the right column; the rects below are in it
+	balance: Rect, -- "◆ n", right-aligned
+	topUp: Rect, -- "Doładuj"
+	filter: Rect, -- the outfit list's class filter
+	listTop: number, -- the list's top on the outfit kind (under the filter, or beside it on a phone)
+	listTopPlain: number, -- the list's top on every other kind
+}
+
+GearLayout.WARDROBE = table.freeze({
+	preview = 330,
+	previewH = 370,
+	minPreview = 140,
+	gutter = 16,
+	gap = 6,
+	outfits = 22 + 44 + 6 + 44, -- the label line, the tiles, "Załóż" / "Zapisz obecny"
+	hint = 40, -- the hint line (Small text) with its (i)
+	topUp = 100,
+	topUpPc = 36,
+	balanceText = 96, -- "◆ 99 999" in Body bold
+	gapX = 10,
+})
+
+function GearLayout.wardrobe(area: Size, touch: boolean, compact: boolean): Wardrobe
+	local W = GearLayout.WARDROBE
+	local strip = WindowFrame.tabStrip(true).height -- the group tabs, the kind tabs and the filter scroll sideways
+	local under = W.gap + W.outfits
+	local hinted = area.h >= W.previewH + under + W.gap + W.hint
+	local previewH = if hinted then W.previewH else math.max(W.minPreview, math.min(W.previewH, area.h - under))
+	local outfits = rect(0, previewH + W.gap, W.preview, previewH + under)
+	local right = rect(W.preview + W.gutter, 0, math.max(W.preview + W.gutter, area.w), area.h)
+	local width = right.right - right.left
+	-- the balance row under the two strips: "Doładuj" MinTouch high on touch (36 on PC) and the gap under it
+	local top = 2 * strip
+	local row = if touch then GearLayout.TOUCH + W.gap else 40
+	local topUp = rect(width - W.topUp, top, width, top + (if touch then GearLayout.TOUCH else W.topUpPc))
+	local balance: Rect
+	local filter: Rect
+	local listTop: number
+	if compact then
+		balance = rect(topUp.left - W.gapX - W.balanceText, top + 4, topUp.left - W.gapX, top + 32)
+		filter = rect(0, top, math.max(0, balance.left - W.gapX), top + strip)
+		listTop = top + math.max(row, strip)
+	else
+		balance = rect(0, top + 4, topUp.left - W.gapX, top + 32)
+		filter = rect(0, top + row, width, top + row + strip)
+		listTop = filter.bottom + W.gap
+	end
+	return {
+		preview = rect(0, 0, W.preview, previewH),
+		outfits = outfits,
+		hint = if hinted then rect(0, outfits.bottom + W.gap, W.preview, outfits.bottom + W.gap + W.hint) else nil,
+		right = right,
+		balance = balance,
+		topUp = topUp,
+		filter = filter,
+		listTop = listTop,
+		listTopPlain = if compact then listTop else top + row,
 	}
 end
 

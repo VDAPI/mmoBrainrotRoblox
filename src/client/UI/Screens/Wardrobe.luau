@@ -28,6 +28,10 @@
 -- look through and the way to the blacksmith, who puts them on (weapon effects stay on their own tab).
 -- 2026-10-21 (owner: too many detailed descriptions): the hint under the preview is one short line, "looks only" (and
 -- for marks and gestures "others see them") behind its "i".
+-- Review 2026-11-11 (a phone cut off the saved looks with "Załóż" / "Zapisz obecny", and the list showed 1.3 rows): the
+-- parts stand where Logic/GearLayout.wardrobe puts them in the content's own size (UI/ViewSize). On a low screen the
+-- preview gives up height so the saved looks end at the content's bottom, and the hint line moves behind an (i) at
+-- their label; on a phone the outfit list's class filter stands in the balance row, so the list keeps 2 rows.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -47,11 +51,13 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local HuntShop = require(ReplicatedStorage.Shared.Data.HuntShop)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
 local Mounts = require(ReplicatedStorage.Shared.Logic.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local PremiumConfirm = require(script.Parent.Parent.PremiumConfirm)
@@ -73,6 +79,7 @@ local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local ViewSize = require(script.Parent.Parent.ViewSize)
 local WardrobeTransmog = require(script.Parent.WardrobeTransmog)
 local WardrobeStart = require(script.Parent.Parent.WardrobeStart)
 local WeeklyClock = require(script.Parent.Parent.WeeklyClock)
@@ -93,19 +100,18 @@ export type Props = {
 	GuideToSmith: (() -> ())?, -- S154: the weapon looks tab leads to the blacksmith (NpcController.GuideToNpc)
 }
 
-local PREVIEW = 330
-local PREVIEW_HEIGHT = PREVIEW + 40 -- S121: room for the looks under the preview
+-- S121: the preview with room for the saved looks under it, and their tiles (review 2026-11-11: the places of the
+-- parts come from Logic/GearLayout.wardrobe, these are its PC numbers)
 local OUTFIT_TILE = 44
-local TOP_UP_WIDTH = 100
+-- the content on PC (GearLayout.area of the 980 x 640 window), until the view has measured its own
+local AREA_PC = GearLayout.area({ w = 1920, h = 1080 }, { w = 980, h = 640 }, false)
 local MOUNT_ORBIT = 15 -- S97: the camera further out for a mount
 local CHARACTER_ORBIT = 11
 -- S123: the kind tabs under the group tabs, then the balance; both are Components/Tabs' scrolling strip (adoption
 -- stage 2026-11-10: WindowFrame.tabStrip(true), 44-px tabs over the bar's room, 50 high as these offsets were)
 local KIND_TABS_Y = WindowFrame.tabStrip(true).height
-local BALANCE_Y = 2 * WindowFrame.tabStrip(true).height
--- S132: the class filter of the outfit list (under the balance) and the pseudo-id of the class's default outfit;
--- adoption stage 2026-11-10: the filter is Components/Tabs' own scrolling strip (44-px tabs over the bar) and 6 px
-local FILTER_HEIGHT = WindowFrame.tabStrip(true).height + 6
+-- S132: the pseudo-id of the class's default outfit (the class filter of the outfit list: GearLayout.wardrobe's
+-- `filter`, Components/Tabs' own scrolling strip)
 local CLASS_DEFAULT = "$class"
 -- S154: the pseudo-group of the weapon looks tab (not a Data/Cosmetics group)
 local TRANSMOG = "transmog"
@@ -227,6 +233,33 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 		start = startTry.kind -- S120: the tab of the tried-on cosmetic
 	end
 	local kind = scope:Value(if start and table.find(Cosmetics.kinds, start :: any) then start else "outfit")
+	-- review 2026-11-11: the parts from the content's own size (GearLayout.wardrobe)
+	local view = ViewSize.new(scope)
+	local layout = scope:Computed(function(use): GearLayout.Wardrobe
+		return GearLayout.wardrobe(use(view.size) or AREA_PC, use(Device.Touch), use(PhoneLayout.Compact))
+	end)
+	local function at(pick: (GearLayout.Wardrobe) -> GearLayout.Rect?): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return if r then UDim2.fromOffset(r.left, r.top) else UDim2.new()
+		end)
+	end
+	local function sized(pick: (GearLayout.Wardrobe) -> GearLayout.Rect?): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return if r then UDim2.fromOffset(r.right - r.left, r.bottom - r.top) else UDim2.new()
+		end)
+	end
+	local function previewRect(l: GearLayout.Wardrobe): GearLayout.Rect?
+		return l.preview
+	end
+	local function hintRect(l: GearLayout.Wardrobe): GearLayout.Rect?
+		return l.hint
+	end
+	-- the hint stands under the saved looks while there is room, else behind the (i) at their label
+	local hinted = scope:Computed(function(use): boolean
+		return use(layout).hint ~= nil
+	end)
 	-- S123: the group of the kind (two-level tabs)
 	local function groupOf(k: string): string
 		for _, group in Cosmetics.groups do
@@ -281,7 +314,8 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 
 	-- Preview ------------------------------------------------------------------------------------
 	local viewport = scope:New("ViewportFrame")({
-		Size = UDim2.fromOffset(PREVIEW, PREVIEW_HEIGHT),
+		Position = at(previewRect),
+		Size = sized(previewRect),
 		BackgroundColor3 = Theme.Paper.Sunken,
 		Ambient = Color3.fromRGB(160, 150, 140),
 		LightColor = Color3.fromRGB(255, 240, 220),
@@ -866,8 +900,12 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 		table.insert(tiles, tile)
 	end
 	local outfitRow = scope:New("Frame")({
-		Position = UDim2.fromOffset(0, PREVIEW_HEIGHT + 6),
-		Size = UDim2.fromOffset(PREVIEW, 22 + OUTFIT_TILE + 6 + 44),
+		Position = at(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+			return l.outfits
+		end),
+		Size = sized(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+			return l.outfits
+		end),
 		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("TextLabel")({
@@ -878,6 +916,26 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+			-- review 2026-11-11: on a low screen the hint line's text behind an (i) at the label's right end (right of
+			-- the five tiles); the mount skins' line on their tab
+			InfoTip.new(scope, {
+				Name = "HintInfo",
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, 0, 0, 10),
+				Visible = scope:Computed(function(use): boolean
+					return not use(hinted) and use(group) ~= TRANSMOG
+				end),
+				Text = scope:Computed(function(use): string
+					if use(kind) == "mountskin" then
+						return Text.get(use, "wardrobe.mountskin.hint")
+					end
+					local g = use(group)
+					local info = `{Text.get(use, "wardrobe.hint.short")} {Text.get(use, "wardrobe.hint.info")}`
+					return if g == "marks" or g == "gestures"
+						then `{info} {Text.get(use, "wardrobe.hint.social")}`
+						else info
+				end),
 			}),
 			scope:New("Frame")({
 				Position = UDim2.fromOffset(0, 22),
@@ -929,7 +987,6 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			}),
 		},
 	})
-	local HINT_Y = PREVIEW_HEIGHT + 6 + 22 + OUTFIT_TILE + 6 + 44 + 6
 
 	-- S132: the class filter tabs of the outfit list
 	local filterTabs = { { id = "mine", label = Text.T(scope, "wardrobe.filter.mine") } }
@@ -999,7 +1056,8 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	local charName = State.Value({ "character", "name" })
 	local overlay = scope:New("Frame")({
 		Name = "PreviewOverlay",
-		Size = UDim2.fromOffset(PREVIEW, PREVIEW_HEIGHT),
+		Position = at(previewRect),
+		Size = sized(previewRect),
 		BackgroundTransparency = 1,
 		ZIndex = 5,
 		[Children] = {
@@ -1179,153 +1237,175 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			}),
 		},
 	})
-	return {
-		viewport :: Instance,
-		overlay,
-		outfitRow,
-		scope:New("Frame")({
-			Position = UDim2.fromOffset(0, HINT_Y),
-			Size = UDim2.fromOffset(PREVIEW, 56),
-			BackgroundTransparency = 1,
-			Visible = scope:Computed(function(use): boolean
-				return use(kind) ~= "mountskin" and use(group) ~= TRANSMOG
-			end),
-			[Children] = {
-				scope:New("UIListLayout")({
-					FillDirection = Enum.FillDirection.Horizontal,
-					HorizontalAlignment = Enum.HorizontalAlignment.Center,
-					VerticalAlignment = Enum.VerticalAlignment.Top,
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = UDim.new(0, 6),
-				}),
-				scope:New("TextLabel")({
-					LayoutOrder = 1,
-					Size = UDim2.new(),
-					AutomaticSize = Enum.AutomaticSize.XY,
-					BackgroundTransparency = 1,
-					Text = Text.T(scope, "wardrobe.hint.short"),
-					TextWrapped = true,
-					FontFace = Theme.Fonts.Body,
-					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Paper.TextMuted,
-					[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
-				}),
-				-- S123: the marks and gestures are seen by others (one more sentence)
-				InfoTip.new(scope, {
-					LayoutOrder = 2,
-					Text = scope:Computed(function(use): string
-						local g = use(group)
-						local info = Text.get(use, "wardrobe.hint.info")
-						return if g == "marks" or g == "gestures"
-							then `{info} {Text.get(use, "wardrobe.hint.social")}`
-							else info
-					end),
-				}),
-			},
-		}),
-		-- S97: an extra line on the mount skin tab (the look works on every mount)
-		scope:New("TextLabel")({
-			Position = UDim2.fromOffset(0, HINT_Y),
-			Size = UDim2.fromOffset(PREVIEW, 50),
-			BackgroundTransparency = 1,
-			Visible = scope:Computed(function(use): boolean
-				return use(kind) == "mountskin"
-			end),
-			Text = Text.T(scope, "wardrobe.mountskin.hint"),
-			TextWrapped = true,
-			FontFace = Theme.Fonts.Body,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.TextMuted,
-		}),
-		scope:New("Frame")({
-			Position = UDim2.fromOffset(PREVIEW + 16, 0),
-			Size = UDim2.new(1, -(PREVIEW + 16), 1, 0),
-			BackgroundTransparency = 1,
-			[Children] = {
-				Tabs(scope, { Selected = group, Tabs = groupTabs, Scroll = true }),
-				kindTabs :: any,
-				scope:New("TextLabel")({
-					Position = UDim2.fromOffset(0, BALANCE_Y + 4),
-					Size = UDim2.new(1, -(TOP_UP_WIDTH + 10), 0, 28),
-					BackgroundTransparency = 1,
-					Visible = notTransmog,
-					Text = scope:Computed(function(use): string
-						return `◆ {Format.number(use(shards) or 0)}`
-					end),
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Paper.Link,
-					TextXAlignment = Enum.TextXAlignment.Right,
-				}),
-				-- S120: "Top up" opens the Dragon Shop on the currency tab (44 px high on a phone).
-				Button(scope, {
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.new(1, 0, 0, BALANCE_Y),
-					Size = scope:Computed(function(use): UDim2
-						return UDim2.fromOffset(TOP_UP_WIDTH, if use(Device.Touch) then Theme.Size.MinTouch else 36)
-					end),
-					Variant = "primary",
-					TextSize = Theme.TextSize.Small,
-					Text = Text.T(scope, "premium.topUp"),
-					Visible = scope:Computed(function(use): boolean
-						return openShop ~= nil and use(notTransmog)
-					end),
-					OnClick = function()
-						if openShop then
-							openShop()
-						end
-					end,
-				}),
-				-- S132: the class filter of the outfits
-				scope:New("Frame")({
-					Name = "ClassFilter",
-					Position = scope:Computed(function(use): UDim2
-						return UDim2.fromOffset(0, BALANCE_Y + (if use(Device.Touch) then 50 else 40))
-					end),
-					Size = UDim2.new(1, 0, 0, FILTER_HEIGHT - 6),
-					BackgroundTransparency = 1,
-					Visible = scope:Computed(function(use): boolean
-						return use(kind) == "outfit" and use(notTransmog)
-					end),
-					[Children] = Tabs(scope, {
-						Selected = filter,
-						Tabs = filterTabs,
-						Scroll = true,
+	local root = scope:New("Frame")({
+		Name = "Wardrobe",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		[Children] = {
+			view.ruler,
+			viewport :: Instance,
+			overlay,
+			outfitRow,
+			scope:New("Frame")({
+				Position = at(hintRect),
+				Size = sized(hintRect),
+				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return use(hinted) and use(kind) ~= "mountskin" and use(group) ~= TRANSMOG
+				end),
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						VerticalAlignment = Enum.VerticalAlignment.Top,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 6),
 					}),
-				}),
-				scope:New("ScrollingFrame")({
-					Position = scope:Computed(function(use): UDim2
-						local extra = if use(kind) == "outfit" then FILTER_HEIGHT else 0
-						return UDim2.fromOffset(0, BALANCE_Y + (if use(Device.Touch) then 50 else 40) + extra)
-					end),
-					Size = scope:Computed(function(use): UDim2
-						local extra = if use(kind) == "outfit" then FILTER_HEIGHT else 0
-						return UDim2.new(1, 0, 1, -(BALANCE_Y + (if use(Device.Touch) then 50 else 40) + extra))
-					end),
-					CanvasSize = UDim2.new(),
-					AutomaticCanvasSize = Enum.AutomaticSize.Y,
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					ScrollBarThickness = 6,
-					Visible = notTransmog,
-					[Children] = {
-						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
-						rows :: any,
-					},
-				}),
-				-- S154: the weapon looks (the collection of item looks) under the group tabs
-				WardrobeTransmog(scope, {
-					Visible = scope:Computed(function(use): boolean
-						return not use(notTransmog)
-					end),
-					Position = UDim2.fromOffset(0, KIND_TABS_Y),
-					Size = UDim2.new(1, 0, 1, -KIND_TABS_Y),
-					GuideToSmith = props and props.GuideToSmith,
-				}),
-			},
-		}),
-	}
+					scope:New("TextLabel")({
+						LayoutOrder = 1,
+						Size = UDim2.new(),
+						AutomaticSize = Enum.AutomaticSize.XY,
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, "wardrobe.hint.short"),
+						TextWrapped = true,
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.TextMuted,
+						[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+					}),
+					-- S123: the marks and gestures are seen by others (one more sentence)
+					InfoTip.new(scope, {
+						LayoutOrder = 2,
+						Text = scope:Computed(function(use): string
+							local g = use(group)
+							local info = Text.get(use, "wardrobe.hint.info")
+							return if g == "marks" or g == "gestures"
+								then `{info} {Text.get(use, "wardrobe.hint.social")}`
+								else info
+						end),
+					}),
+				},
+			}),
+			-- S97: an extra line on the mount skin tab (the look works on every mount)
+			scope:New("TextLabel")({
+				Position = at(hintRect),
+				Size = sized(hintRect),
+				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return use(hinted) and use(kind) == "mountskin"
+				end),
+				Text = Text.T(scope, "wardrobe.mountskin.hint"),
+				TextWrapped = true,
+				FontFace = Theme.Fonts.Body,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.TextMuted,
+			}),
+			scope:New("Frame")({
+				Position = at(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+					return l.right
+				end),
+				Size = sized(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+					return l.right
+				end),
+				BackgroundTransparency = 1,
+				[Children] = {
+					Tabs(scope, { Selected = group, Tabs = groupTabs, Scroll = true }),
+					kindTabs :: any,
+					scope:New("TextLabel")({
+						Position = at(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+							return l.balance
+						end),
+						Size = sized(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+							return l.balance
+						end),
+						BackgroundTransparency = 1,
+						Visible = notTransmog,
+						Text = scope:Computed(function(use): string
+							return `◆ {Format.number(use(shards) or 0)}`
+						end),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = Theme.Paper.Link,
+						TextXAlignment = Enum.TextXAlignment.Right,
+					}),
+					-- S120: "Top up" opens the Dragon Shop on the currency tab (44 px high on a phone).
+					Button(scope, {
+						Position = at(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+							return l.topUp
+						end),
+						Size = sized(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+							return l.topUp
+						end),
+						Variant = "primary",
+						TextSize = Theme.TextSize.Small,
+						Text = Text.T(scope, "premium.topUp"),
+						Visible = scope:Computed(function(use): boolean
+							return openShop ~= nil and use(notTransmog)
+						end),
+						OnClick = function()
+							if openShop then
+								openShop()
+							end
+						end,
+					}),
+					-- S132: the class filter of the outfits
+					scope:New("Frame")({
+						Name = "ClassFilter",
+						Position = at(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+							return l.filter
+						end),
+						Size = sized(function(l: GearLayout.Wardrobe): GearLayout.Rect?
+							return l.filter
+						end),
+						BackgroundTransparency = 1,
+						Visible = scope:Computed(function(use): boolean
+							return use(kind) == "outfit" and use(notTransmog)
+						end),
+						[Children] = Tabs(scope, {
+							Selected = filter,
+							Tabs = filterTabs,
+							Scroll = true,
+						}),
+					}),
+					scope:New("ScrollingFrame")({
+						Position = scope:Computed(function(use): UDim2
+							local l = use(layout)
+							return UDim2.fromOffset(0, if use(kind) == "outfit" then l.listTop else l.listTopPlain)
+						end),
+						Size = scope:Computed(function(use): UDim2
+							local l = use(layout)
+							return UDim2.new(1, 0, 1, -(if use(kind) == "outfit" then l.listTop else l.listTopPlain))
+						end),
+						CanvasSize = UDim2.new(),
+						AutomaticCanvasSize = Enum.AutomaticSize.Y,
+						BackgroundTransparency = 1,
+						BorderSizePixel = 0,
+						ScrollBarThickness = 6,
+						Visible = notTransmog,
+						[Children] = {
+							scope:New("UIListLayout")({
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								Padding = UDim.new(0, 6),
+							}),
+							scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
+							rows :: any,
+						},
+					}),
+					-- S154: the weapon looks (the collection of item looks) under the group tabs
+					WardrobeTransmog(scope, {
+						Visible = scope:Computed(function(use): boolean
+							return not use(notTransmog)
+						end),
+						Position = UDim2.fromOffset(0, KIND_TABS_Y),
+						Size = UDim2.new(1, 0, 1, -KIND_TABS_Y),
+						GuideToSmith = props and props.GuideToSmith,
+					}),
+				},
+			}),
+		},
+	})
+	view.watch(root)
+	return root
 end
 
 return Wardrobe
