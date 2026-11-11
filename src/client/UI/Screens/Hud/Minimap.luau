@@ -860,7 +860,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 		if not area then
 			return nil
 		end
-		return Text.get(use, "area.label", { name = Text.get(use, area.nameKey), min = area.lv[1], max = area.lv[2] })
+		-- owner 2026-11-10 (UI plan package A, a HUD line at most 32 characters): the level band as one "{range}"
+		local range = `{area.lv[1]}–{area.lv[2]}`
+		return Text.get(use, "area.label", { name = Text.get(use, area.nameKey), range = range })
 	end)
 	local caption = scope:New("TextLabel")({
 		Name = "MapName",

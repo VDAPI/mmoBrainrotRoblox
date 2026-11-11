@@ -2,6 +2,10 @@
 -- Target frame at the top centre (DESIGN §23): name in the variant colour, level, elite badge, HP bar with
 -- numbers (percentage for players) and distance. Polls the selected model ten times per second.
 -- S157 (Logic/LevelLock): a monster over the player's level cap is greyed out with a lock and "Too high a level (max N)".
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): on PC and a tablet the frame stands at the zone
+-- map's target place, and while the dungeon's boss bar shows, an add or a player as the target stands under the bar
+-- (Logic/HudZones `addFrame`; it lay under the bar); a phone's player menu is a 44 px "⋯" right of the frame
+-- (Logic/PhoneHud `targetActions`; "Actions" under the cast bar reached into the M zone).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,6 +15,7 @@ local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local EffectIcons = require(script.Parent.EffectIcons)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
@@ -24,7 +29,7 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local PHONE_TARGET = assert(PhoneHud.place("target"))
-local PHONE_ACTIONS = assert(PhoneHud.place("actions"))
+local PHONE_ACTIONS = assert(PhoneHud.place("targetActions"))
 
 export type Props = {
 	Target: Fusion.Value<Model?>,
@@ -132,8 +137,16 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 	return scope:New("Frame")({
 		Name = "TargetFrame",
 		-- W29: narrower, right of the portrait on a phone in landscape (Logic/PhoneHud)
-		AnchorPoint = PhoneLayout.Anchor(scope, "target", Vector2.new(0.5, 0)),
-		Position = PhoneLayout.Position(scope, "target", UDim2.new(0.5, 0, 0, Theme.Padding.Large)),
+		AnchorPoint = PhoneLayout.Anchor(scope, "target", Vector2.zero),
+		Position = PhoneLayout.Position(
+			scope,
+			"target",
+			scope:Computed(function(use): UDim2
+				local zones = use(HudSlots.Zones)
+				local rect = zones.addFrame or zones.target
+				return if rect then UDim2.fromOffset(rect.left, rect.top) else UDim2.new()
+			end)
+		),
 		Size = PhoneLayout.Size(scope, "target", UDim2.fromOffset(420, 92)),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
@@ -147,11 +160,14 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 			scope:New("TextButton")({
 				Name = "PlayerMenu",
 				AnchorPoint = Vector2.new(0, 0),
-				-- S133: a labelled "Actions" button (the bare "⋯" was not found by players)
-				-- W29: on a phone in landscape under the cast bar (right of the frame is the minimap's column)
+				-- S133: a labelled "Actions" button (the bare "⋯" was not found by players); package A: a phone's 44 px
+				-- "⋯" right of the frame (its place is measured from the frame's padded corner: 14 in, 8 down)
 				Position = PhoneLayout.Pick(
 					scope,
-					UDim2.new(0, 0, 1, PHONE_ACTIONS.y - PHONE_TARGET.y - PHONE_TARGET.h),
+					UDim2.fromOffset(
+						PHONE_ACTIONS.x - PHONE_TARGET.x - Theme.Padding.Medium,
+						PHONE_ACTIONS.y - PHONE_TARGET.y - 8
+					),
 					UDim2.new(1, Theme.Padding.Medium + 8, 0, 0)
 				),
 				Size = PhoneLayout.Pick(
@@ -162,7 +178,7 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				-- S136: styled as a secondary iron button
 				BackgroundColor3 = Theme.Iron.Raised,
 				BackgroundTransparency = Theme.HudAlpha,
-				Text = Text.T(scope, "social.actions"),
+				Text = PhoneLayout.Pick(scope, "⋯", Text.T(scope, "social.actions")),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
 				TextColor3 = Theme.Iron.Text,

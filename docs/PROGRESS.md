@@ -49,6 +49,25 @@
 
 ## Niedokończone (kod)
 
+- **Plan UI 2026-11-10, pakiet A (HUD):** elementy HUD na PC i tablecie w strefach `Logic/HudZones` (linia rzucania
+  wspólna z nazwą puli, „Auto” na prawo, 9 efektów i „+N”, panel areny w paśmie celu, cel pod paskiem bossa lochu, czat
+  skrócony pod miejscem kwestii NPC), kolumna bez wychodzenia za podłogę (zwijanie do nagłówka, „+N” z listą,
+  `Hud/StackChip`), nagłówki `Hud/PanelHeader` ze zwijaniem na koncie (`Data/Folds/Hud`), siatka telefonu
+  (`Logic/PhoneHud`: jeden „Auto”, stos nad strefą kciuka, strefa M, „⋯”, PvP z odliczaniem w środku, kafelki drużyny),
+  karta samouczka obok elementu (`Logic/TutorialTile`), przesunięte panele poza zastrzeżonymi miejscami, czerwony błysk
+  pod oknami, teksty A w limitach `Logic/TextCaps` (lista A w `tests/fixtures/textcaps` pusta: dymek PvP w jednej linii
+  z zasadami w szczegółach, krótsze dymki „Auto”, Łowów i mikstur, przyciski ekranu śmierci, „Questy” w tropicielu i
+  samouczku), po przeglądzie kolumna bez pętli Fusion (`tests/FusionGraph`, `hudslots.spec`), stos telefonu o
+  szerokości 210 z listą „+N” na ekranie, panel areny na PC w swoich 68 px, okienko „Auto” w swoim miejscu, wartość
+  nagłówka tylko w zwiniętym panelu, cały licznik celu w tropicielu, przytrzymanie bez naciśnięcia na dotyku;
+  nieobejrzane w Studio (kolumna z „+N” na niskim oknie, nagłówki i zwijanie paneli, okienko „Auto”, skrócony czat,
+  panel areny i cel pod paskiem bossa, siatka telefonu na trzech telefonach, karta samouczka na telefonie, upuszczenie
+  panelu na pasie wiadomości, szczegóły dymków PvP, Łowów i mikstur pod klawiszem i przy dłuższym przytrzymaniu, „[1]”
+  i „[2]” na ekranie śmierci tylko z klawiaturą, dymki paska prowadzenia, pigułki kolejki areny i linii Inwazji,
+  wydarzenie świata, które startuje w trakcie gry, i boss, który rośnie po starcie, panel wyniku i powrotu areny na
+  PC, lista „+N” i zwinięty tropiciel na telefonie, licznik celu z nazwą skróconą w pikselach, przytrzymanie
+  przełącznika PvP, Płaszcza, Łowów i Mikstur na dotyku, panel łowienia nad paskiem prowadzenia na telefonie). Z planu
+  zostaje własny układ tabletu (listy `KNOWN` i `THIN` w `hudzones.spec`).
 - **Plan UI 2026-11-10, pakiet F (fundament):** zasady `docs/UI-ZASADY.md`, limity tekstu na powierzchnię
   (`Logic/TextCaps`, listy „do skrócenia” pakietów A–E), domyślne zwinięcie na urządzenie (`Data/Folds`,
   `Section.state`), czyste API układu (`Logic/HudZones`, `WindowFrame`, `Popover`), tokeny `Theme` i zaślepka
@@ -58,6 +77,21 @@
   D 237, E 203) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na strefach
   postaci i menu, przycisk celu dotyku w minimapie, pas wiadomości pod panelem areny i paskiem bossa niższy niż linia
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
+- **Plan UI 2026-11-10, pakiet B (komunikaty):** jedna kolejka wszystkich komunikatów (`UI/Notify`,
+  `Logic/NoticeQueue`), pas wiadomości 8 pod pasmem celu, karty z „Szczegóły” w prawym dolnym rogu PC, zaproszenia jako
+  jedna linia z ✓, ✕ i paskiem czasu (`Components/Prompt`), ostrzeżenia bossów na linii alarmu, pasek bossa lochu w
+  paśmie celu, na telefonie jeden komunikat naraz w strefie M; nieobejrzane w Studio (baner i dwa toasty pod ramką celu,
+  komunikat nad oknem i pod jego paskiem tytułu, toasty obok karty samouczka, karta w rogu i jej pełny widok, arkusz na
+  telefonie, „Więcej ▸” zaproszenia, gotowość przed bossem, linia alarmu w walce z bossem, pasek bossa lochu na
+  telefonie (pasek 20 pod ramką celu: nazwa, życie, ⌛), czy sygnał walki nie wstrzymuje toastów za często; po tekstach:
+  narysowane „i” na toaście i pełny widok po kliknięciu, 🌐 w czcionce banera, dwie linie przeciwnika w „Więcej ▸” oferty
+  areny, linia prób dnia na karcie nagrody bossa; po przeglądzie: strefa M na telefonach z wcięciami, arkusz zaproszenia
+  i karty pod paskiem Robloxa, obrysy komunikatów w powiększonej grupie, jedna zasłona odsłonięcia legendy, komunikat
+  przy okienku potwierdzenia, propozycja meczu przy otwartym zaproszeniu do drużyny). Teksty pakietu B w limitach (lista
+  `tests/fixtures/textcaps/B.luau` pusta): toast do 60, baner 56, alarm 28, bez rad i klawiszy, ogłoszenia z innych
+  serwerów z 🌐, alarmy bossów bez imion, zaproszenia bez sekund, reszta za „i” toastu (`.info`). Po przeglądzie: alarm
+  znika po swoim czasie, propozycja meczu areny idzie przed innymi zaproszeniami, okienka potwierdzenia są omijane,
+  napisy pasa co najmniej Small.
 - **Plan UI 2026-11-10, pakiet C (okna i komponenty):** ramka okna z `Logic/WindowFrame` (na dotyku pod paskiem
   Robloxa, na telefonie nagłówek 44 i ✕ 52×44, tytuł w jednej linii, przeciąganie pod paskiem), opcjonalne `Footer`,
   `Scroll` i `HeaderAction`, pary usługi i plecaka z `WindowFrame.pair`, przełącznik „Plecak” / „◂ <usługa>” na
@@ -76,13 +110,24 @@
   gildia, ustawienia, podium rankingów, regiony bestiariusza, łowy tablicy zleceń); po przeglądzie koło emotek i panel
   łowienia w bezpiecznym obszarze urządzenia, rankingi 900×720 (5 wierszy pod podium na PC, na telefonie odliczanie w
   tytule i „⚠ Tylko ten serwer” w stopce), zwinięty blok łowów z licznikami w nagłówku, przepustka z końcem sezonu w
-  nagłówku telefonu, przyciski „Do kolejki”, cele questów bez klawiszy PC, oba zagrożenia portalu jedną linią;
-  nieobejrzane w Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica zleceń na telefonie, rozmowa z NPC
-  z najdłuższą linią i (i) linii questu u Brata Kaspara, karta wyboru postaci na telefonie, koło emotek na niskim
-  ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy, rankingi na PC z otwartym podium,
-  wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem, przyciski kolejki
-  areny, modal portalu z dwoma zagrożeniami). Okna dialogowe pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego,
-  Wkrótce) jeszcze nie przeszły na stopkę i przewijanie okna z pakietu C.
+  nagłówku telefonu, przyciski „Do kolejki”, cele questów bez klawiszy PC, oba zagrożenia portalu jedną linią; z
+  częściami okna pakietu C okna dialogowe pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego, „Dokąd?”, rozmowa z
+  questem, nowy list, zakładanie gildii) z akcją w przypiętej stopce i przewijaną treścią („Wkrótce” tylko przewija),
+  karta postaci z „Usuń” i „Graj” w jednym rzędzie stopki, dziennik 680 szerokości z sześcioma zakładkami całymi w
+  1280×720, filtr klas rankingów na telefonie w pasku tytułu, wiersze list 48 i 64, toasty odblokowania i linia czatu
+  gildii bez klawiszy PC (nieużywane `skills.toast.many` i `bp.toast.many` usunięte); po przeglądzie adopcji wpisy
+  bestiariusza jedną linią na każdym urządzeniu, „Dokąd?” z `WorldLayout.areaPicker` (pod ostrzeżeniem 2 regiony na
+  telefonie, 5 na PC), przyciski na dotyku co najmniej 44, toasty `unlock.*` do 60 znaków, nagroda dnia i Krwawy Księżyc
+  bez powtórzonego tytułu; nieobejrzane w Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica zleceń na
+  telefonie, rozmowa z NPC z najdłuższą linią i (i) linii questu u Brata Kaspara, karta wyboru postaci na telefonie,
+  koło emotek na niskim ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy, rankingi na PC
+  z otwartym podium, wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem,
+  przyciski kolejki areny, modal portalu z dwoma zagrożeniami, okna ze stopką na telefonie i na niskim ekranie PC,
+  Krwawy Księżyc z miejscem gracza w stopce, nagroda dnia z linią postaci obok „Odbierz”, „Usuń” i „Graj” w jednym
+  rzędzie karty postaci, zakładki dziennika w 1280×720, filtr rankingów w pasku tytułu telefonu, wiersze osiągnięć i
+  bestiariusza jedną linią na telefonie, wpisy bestiariusza jedną linią na PC, „Dokąd?” na telefonie pod ostrzeżeniem,
+  karta zlecenia z „Zamień” obok „Odbierz” na telefonie, przyciski 44 w drużynie, gildii, dzienniku i Party Finderze na
+  dotyku, nagłówki nagrody dnia i Krwawego Księżyca).
 - **Plan UI 2026-11-10, pakiet D (plecak, umiejętności, usługi, sklepy, tooltip przedmiotu), część kodowa:** okna z
   prostokąta treści (`Logic/GearLayout`) mierzonego bez animacji okna (`UI/ViewSize`), jedna linia na statystykę i
   cztery zwijane sekcje pochodnych, zwijane „Koszt i odnowienie” i „Przełomy”, jeden pasek arkusza umiejętności na

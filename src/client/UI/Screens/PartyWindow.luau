@@ -7,7 +7,10 @@
 -- Owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"; UI plan E, Logic/WorldLayout.party): the
 -- bonus is one line (the pool, the variety while it pays) with the variety rule, Fortune and the loot rules behind its
 -- (i); the tabs, the invite row and the rows come from WorldLayout. A phone puts the invite, the chat and "Leave" into
--- one row on top and its rows are 52 tall, so at least three members show.
+-- one row on top and its rows are 48 tall, so at least three members show.
+-- UI package C (same owner note): the tabs and "Recent fights" are Theme.Size.TabHeight (44) high, a whole touch target
+-- (they were 40); the member rows are ListRow's heights, RowHeight on a phone (the bars moved up to fit) and
+-- RowHeightTall on PC.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
@@ -92,6 +95,9 @@ local function bar(scope: Scope, ratio: Fusion.UsedAs<number>, color: Color3, y:
 	})
 end
 
+-- The width of "Recent fights" beside the tabs.
+local FIGHT_LOG = 180
+
 -- S134f: what the party controller passes (the fight log window, the guide to a finder listing).
 export type Options = {
 	OpenFightLog: (() -> ())?,
@@ -126,6 +132,8 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 		local inset = (l.row - avatar) / 2
 		local left = avatar + inset + 14
 		local compact = l.row < 64
+		-- review 2026-11-11 ("Lider" and "Wyrzuć" 40 high in a phone's 48-px row): touch targets on touch
+		local action = if use(Device.Touch) == true then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
 		local list = {}
 		if type(p) ~= "table" then
 			table.insert(
@@ -198,20 +206,20 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 							s,
 							member.hp / math.max(1, member.maxHp),
 							Theme.Resource.Hp,
-							if compact then 28 else 34,
+							if compact then 27 else 34,
 							left
 						),
 						bar(
 							s,
 							member.mana / math.max(1, member.maxMana),
 							Theme.Resource.Mana,
-							if compact then 40 else 48,
+							if compact then 37 else 48,
 							left
 						),
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -92, 0.5, 0),
-							Size = UDim2.fromOffset(84, 40),
+							Size = UDim2.fromOffset(84, action),
 							TextSize = Theme.TextSize.Small,
 							Text = Text.T(s, "party.promote"),
 							Visible = use(amLeader) and member.id ~= myId,
@@ -222,7 +230,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -6, 0.5, 0),
-							Size = UDim2.fromOffset(80, 40),
+							Size = UDim2.fromOffset(80, action),
 							TextSize = Theme.TextSize.Small,
 							Variant = "danger",
 							Text = Text.T(s, "party.kick"),
@@ -483,7 +491,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 	local openLog = options.OpenFightLog
 	return {
 		Tabs(scope, {
-			Size = UDim2.new(1, -190, 0, 40),
+			Size = UDim2.new(1, -(FIGHT_LOG + 10), 0, Theme.Size.TabHeight),
 			Selected = tab,
 			Tabs = {
 				{ id = "members", label = Text.T(scope, "window.party.title") },
@@ -493,7 +501,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 		Button(scope, {
 			AnchorPoint = Vector2.new(1, 0),
 			Position = UDim2.fromScale(1, 0),
-			Size = UDim2.fromOffset(180, 40),
+			Size = UDim2.fromOffset(FIGHT_LOG, Theme.Size.TabHeight),
 			TextSize = Theme.TextSize.Small,
 			Text = Text.T(scope, "fight.recent"),
 			Visible = openLog ~= nil,

@@ -17,6 +17,10 @@
 -- golden arrow" mean that guide (the owner saw no arrow before: the only one was the tracker's small glyph). When the
 -- server finishes the tutorial the closing hint stays Data/Tutorial.DONE_SECONDS (a touch closes it), and when the
 -- level reward arrives a toast lists it.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): where the tile stands is Logic/TutorialTile.place
+-- (pure, tested in tests/tutorial.spec): next to its element and, besides, off the message zone on PC and a tablet
+-- (toasts and banners stand there) and off the attack button's skill arc on a phone. On a phone in landscape a step
+-- reads its `.phone` text when there is one (Logic/Tutorial.text: the backpack sits in the drawer behind "Menu").
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -29,11 +33,12 @@ local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudAnchors = require(script.Parent.Parent.UI.HudAnchors)
 local HudSlots = require(script.Parent.Parent.UI.HudSlots)
-local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local GuidePointer = require(script.Parent.GuidePointerController)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local PhoneLayout = require(script.Parent.Parent.UI.PhoneLayout)
 local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
@@ -44,6 +49,7 @@ local TopBandState = require(script.Parent.Parent.UI.TopBandState)
 local Tutorial = require(ReplicatedStorage.Shared.Logic.Tutorial)
 local TutorialData = require(ReplicatedStorage.Shared.Data.Tutorial)
 local TutorialHint = require(script.Parent.Parent.UI.Screens.Hud.TutorialHint)
+local TutorialTile = require(ReplicatedStorage.Shared.Logic.TutorialTile)
 
 local TutorialController = {
 	Name = "TutorialController",
@@ -70,16 +76,6 @@ local TargetController: any
 
 local TICK = 0.2 -- seconds between two placements of the hint
 local RESEND = 3 -- seconds before a client step is reported again (the state did not count it yet)
-local MARGIN = 16 -- virtual px from the layer's edge
-local GAP = 10 -- virtual px between the element and the arrow
-local ARROW = 24 -- virtual px the arrow takes between the tile and the element
-local WIDTH_PC = 440
-local WIDTH_TOUCH = 360
-local TOUCH_CLUSTER = 150 -- virtual px kept free left of the phone's attack and skill buttons
--- Studio check of phase 4 (the closing tile stood 114 screen px over the action bar): on PC the tile at the default
--- place ends this far over the HUD's bottom, GAP over the cast bar (Hud/CastBar: 100 over the bottom, 26 tall), which
--- stands right over the action bar
-local OVER_BAR = 100 + 26 + GAP
 -- Windows that are a conversation or a letter: the hint waits until they close.
 local BLOCKING = { "npc", "questnpc", "login", "whatsnew" }
 
@@ -93,7 +89,7 @@ local position = scope:Value(UDim2.new())
 local arrow = scope:Value(nil :: TutorialHint.Arrow?)
 local outline = scope:Value(nil :: HudAnchors.Rect?)
 local width = scope:Computed(function(use): number
-	return if use(Device.Touch) then WIDTH_TOUCH else WIDTH_PC
+	return TutorialTile.width(use(Device.Touch) == true, use(PhoneLayout.Compact))
 end)
 
 local root: Frame
@@ -205,6 +201,11 @@ local function watchClientSteps(state: Tutorial.State)
 	end
 end
 
+-- Whether a text key exists in the UI's language (a step's `.phone` text is optional).
+local function hasText(key: string): boolean
+	return Locale.has(key, Fusion.peek(Text.Lang))
+end
+
 -- The first key label of a step on PC (the plaque), nil without keys.
 local function plaque(args: { [string]: string }): string?
 	local names: { string } = {}
@@ -213,78 +214,6 @@ local function plaque(args: { [string]: string }): string?
 	end
 	table.sort(names)
 	return if #names > 0 then args[names[1]] else nil
-end
-
--- Top left corner of the tile and its arrow for an element at `rect` (nil: the default place). `menu`: the menu over
--- the minimap as measured (UI/HudSlots.Menu), which a tile left of one of its buttons keeps clear of. `bh`: the tile's
--- height with a floor (room for the arrow), `tall`: its own height (the default place ends OVER_BAR over the bottom).
-local function place(
-	rect: HudAnchors.Rect?,
-	w: number,
-	h: number,
-	bw: number,
-	bh: number,
-	touch: boolean,
-	menu: HudStack.Rect?,
-	tall: number
-): (number, number, TutorialHint.Arrow?)
-	local function clampX(x: number): number
-		return math.clamp(x, MARGIN, math.max(MARGIN, w - bw - MARGIN))
-	end
-	local function clampY(y: number): number
-		return math.clamp(y, MARGIN, math.max(MARGIN, h - bh - MARGIN))
-	end
-	if not rect then
-		-- PC: over the action bar; phone: in the upper middle, clear of the thumbstick and the attack button
-		-- `tall`: the tile's own height (bh has a floor for the arrow's room)
-		return clampX((w - bw) / 2), clampY(if touch then h * 0.16 else h - OVER_BAR - tall), nil
-	end
-	local cx, cy = rect.x + rect.w / 2, rect.y + rect.h / 2
-	local function left(extra: number): (number?, number?, TutorialHint.Arrow?)
-		-- Studio check 2026-10-31 (UI plan phase 4: early in the tutorial the menu's row holds only the backpack, the
-		-- skills and the ☰, right over the minimap): a button of the menu gets its tile left of the whole menu, so the
-		-- tile never covers the minimap
-		local edge = rect.x
-		if
-			menu
-			and rect.x >= menu.left - 1
-			and rect.x + rect.w <= menu.right + 1
-			and rect.y < menu.bottom
-			and rect.y + rect.h > menu.top
-		then
-			edge = math.min(edge, menu.left)
-		end
-		local x = edge - GAP - ARROW - bw - extra
-		if x < MARGIN then
-			return nil, nil, nil
-		end
-		local y = clampY(cy - bh / 2)
-		local ay = math.clamp(cy, y + 16, y + bh - 16)
-		return x, y, { glyph = "▶", position = UDim2.fromOffset(x + bw + ARROW / 2 + 2, ay) }
-	end
-	if touch and cx > w * 0.6 and cy > h * 0.55 then
-		-- the attack and skill buttons of a phone: left of their arc, never over them
-		local x, y, a = left(TOUCH_CLUSTER)
-		if x and y then
-			return x, y, a
-		end
-	end
-	if cy > h * 0.55 then
-		local x = clampX(cx - bw / 2)
-		local y = clampY(rect.y - GAP - ARROW - bh)
-		local ax = math.clamp(cx, x + 16, x + bw - 16)
-		return x, y, { glyph = "▼", position = UDim2.fromOffset(ax, y + bh + ARROW / 2 + 2) }
-	end
-	if cx > w * 0.6 then
-		local x, y, a = left(0)
-		if x and y then
-			return x, y, a
-		end
-	end
-	local x = clampX(cx - bw / 2)
-	local y = clampY(rect.y + rect.h + GAP + ARROW)
-	local ax = math.clamp(cx, x + 16, x + bw - 16)
-	return x, y, { glyph = "▲", position = UDim2.fromOffset(ax, y - ARROW / 2 - 2) }
 end
 
 local function sameView(a: TutorialHint.View?, b: TutorialHint.View?): boolean
@@ -419,6 +348,7 @@ local function tick()
 	end
 
 	local touch = Fusion.peek(Device.Touch) == true
+	local compact = Fusion.peek(PhoneLayout.Compact) == true
 	local away = step.travel == true and Fusion.peek(zoneMap) == Config.StartingMap
 	-- owner 2026-10-20: the hint says "follow the quest arrow" and there was none without a tracked quest: the travel
 	-- step guides to the first hunting ground of the Meadows itself (once per step). S155b: only without a tracked
@@ -436,7 +366,7 @@ local function tick()
 		caption = if finale
 			then title
 			else Text.now("tutorial.caption", { title = title, n = index, total = Tutorial.ACTIONS }),
-		text = Text.now(Tutorial.text(step, touch, away), args),
+		text = Text.now(Tutorial.text(step, touch, away, compact, hasText), args),
 		key = if touch or away then nil else plaque(args),
 		finale = finale,
 		veteran = Tutorial.veteran(State.Get({ "slots" })),
@@ -459,7 +389,17 @@ local function tick()
 	local tall = hint.box.AbsoluteSize.Y / factor
 	local bh = math.max(tall, 120)
 	local rect = if finale then nil else HudAnchors.find(root, Tutorial.anchorOf(step, away), touch, factor)
-	local x, y, a = place(rect, size.X, size.Y, bw, bh, touch, Fusion.peek(HudSlots.Menu), math.max(tall, 1))
+	local x, y, pointer = TutorialTile.place(
+		rect,
+		{ w = bw, h = bh, tall = math.max(tall, 1) },
+		{ w = size.X, h = size.Y },
+		touch,
+		Fusion.peek(HudSlots.Menu),
+		TutorialTile.avoid(size.X, size.Y, touch, compact)
+	)
+	local a: TutorialHint.Arrow? = if pointer
+		then { glyph = pointer.glyph, position = UDim2.fromOffset(pointer.x, pointer.y) }
+		else nil
 	local at = UDim2.fromOffset(math.floor(x), math.floor(y))
 	if Fusion.peek(position) ~= at then
 		position:set(at)

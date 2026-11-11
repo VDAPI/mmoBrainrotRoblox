@@ -70,6 +70,19 @@ Tutorial.STEPS = table.freeze({
 	step("done", "server", nil),
 } :: { Step })
 
+-- Owner 2026-11-10 (UI plan package A: the tutorial's pointers must survive the HUD's rework): the element each anchor
+-- points at, by its Name in Screens/Hud, on PC and on a touch screen (nil: no element on that device), and `drawer`:
+-- a menu button that may stand in the phone's closed drawer, whose button (DRAWER) it points at then. "joystick" has no
+-- element (Logic/HudZones.thumb). The names are frozen: tests/tutorial.spec checks that Screens/Hud still builds each.
+Tutorial.ANCHOR_NAMES = table.freeze({
+	questTracker = table.freeze({ pc = "QuestTracker", touch = "QuestTracker" }),
+	backpackButton = table.freeze({ pc = "inventory", touch = "inventory", drawer = true }),
+	potionBar = table.freeze({ pc = "PotionBar", touch = "PotionBar" }),
+	attackButton = table.freeze({ touch = "AttackButton" }),
+	skillBar = table.freeze({ pc = "Skill1", touch = "MobileSkill1" }),
+} :: { [string]: { pc: string?, touch: string?, drawer: boolean? } })
+Tutorial.DRAWER = "MenuToggle"
+
 -- Number of steps finished by an action (every step but `done`).
 Tutorial.ACTIONS = #Tutorial.STEPS - 1
 
@@ -222,11 +235,21 @@ function Tutorial.clientAllowed(event: string): boolean
 	return index ~= nil and Tutorial.STEPS[index].kind == "client"
 end
 
--- The text key of a step: `.touch` on a phone, `.pc` otherwise; `.travel` while a travel step waits for a hunting
--- ground (`away`).
-function Tutorial.text(s: Step, touch: boolean, away: boolean?): string
+-- The text key of a step: `.touch` on a touch screen, `.pc` otherwise; `.travel` while a travel step waits for a hunting
+-- ground (`away`). UI plan package A: on a phone in landscape (`phone`, UI/PhoneLayout.Compact) `.phone` when that key
+-- exists (`has`), since the phone's HUD differs from a tablet's (the backpack sits in the drawer behind "Menu").
+function Tutorial.text(
+	s: Step,
+	touch: boolean,
+	away: boolean?,
+	phone: boolean?,
+	has: ((key: string) -> boolean)?
+): string
 	if away and s.travel then
 		return `{s.textKey}.travel`
+	end
+	if touch and phone and has and has(`{s.textKey}.phone`) then
+		return `{s.textKey}.phone`
 	end
 	return `{s.textKey}.{if touch then "touch" else "pc"}`
 end

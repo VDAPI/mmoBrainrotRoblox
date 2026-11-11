@@ -6,6 +6,11 @@
 -- Reads narrow state branches only (account.login, the character's level, class and name).
 -- 2026-10-21 (owner: too many detailed descriptions): the chest line and the claiming character are short lines, the
 -- full texts (what the chest holds, the reward follows that character's level) behind their "i".
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the
+-- header, the received reward and the cards scroll in the window (Window.Parts `Scroll`); the window's pinned footer
+-- keeps "Claim" with the claiming character's line beside it, or "Claimed today" with the countdown.
+-- Review 2026-11-11 (UI-ZASADY §1, audit3): the heading is the streak only ("Dzień 3 z 7"); the title bar already says
+-- "Nagroda za logowanie".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,6 +32,7 @@ local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local Types = require(ReplicatedStorage.Shared.Types)
+local Window = require(script.Parent.Parent.Components.Window)
 
 local Children = Fusion.Children
 
@@ -39,8 +45,7 @@ export type Props = {
 
 type Result = { day: number, gold: number, items: { Types.ItemInstance }, mailed: boolean }
 
-local HEADER = 48 -- title 26 + gap 2 + reset note 20; with FOOTER the PC cards fit the 424 px content in one row
-local FOOTER = 132
+local HEADER = 48 -- title 26 + gap 2 + reset note 20; the PC cards fit under it in one row above the footer
 local CARD_HEIGHT = 236
 local CARD_HEIGHT_TOUCH = 150
 local SLOT = 36
@@ -197,7 +202,7 @@ local function card(
 	})
 end
 
-local function LoginRewardWindow(scope: Scope, props: Props): Instance
+local function LoginRewardWindow(scope: Scope, props: Props): Window.Parts
 	local login = State.Value({ "account", "login" })
 	local level = State.Value({ "character", "level" })
 	local classId = State.Value({ "character", "class" })
@@ -270,6 +275,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 
 	local header = scope:New("Frame")({
 		Name = "Header",
+		LayoutOrder = 1,
 		Size = UDim2.new(1, 0, 0, HEADER),
 		BackgroundTransparency = 1,
 		[Children] = {
@@ -278,7 +284,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 				LayoutOrder = 1,
 				Size = UDim2.new(1, 0, 0, 26),
 				Text = scope:Computed(function(use): string
-					return `{Text.get(use, "login.title")} · {Text.get(use, "login.streak", { day = use(status).day })}`
+					return Text.get(use, "login.streak", { day = use(status).day })
 				end),
 				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
@@ -295,16 +301,13 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 		},
 	})
 
-	local cardArea = scope:New("ScrollingFrame")({
+	-- the cards' grid, as tall as its rows (the window's scroll takes a phone's second row)
+	local cardArea = scope:New("Frame")({
 		Name = "Cards",
-		Position = UDim2.fromOffset(0, HEADER),
-		Size = UDim2.new(1, 0, 1, -(HEADER + FOOTER)),
+		LayoutOrder = 4,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 4,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		ScrollingDirection = Enum.ScrollingDirection.Y,
 		[Children] = {
 			scope:New("UIGridLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -382,7 +385,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 		end
 		return s:New("Frame")({
 			Name = "Received",
-			LayoutOrder = 1,
+			LayoutOrder = 2,
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
@@ -406,31 +409,32 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 		return use(status).claimedToday
 	end)
 
-	local footer = scope:New("Frame")({
-		Name = "Footer",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(1, 0, 0, FOOTER),
+	local mailed = label(scope, {
+		LayoutOrder = 3,
+		Text = Text.T(scope, "login.mailed"),
+		TextColor3 = Theme.Paper.Warning,
+		Visible = scope:Computed(function(use): boolean
+			local got = use(result)
+			return got ~= nil and got.mailed == true
+		end),
+	})
+
+	-- The footer's line left of "Claim": who claims (its "i": the reward follows that character's level), or, once
+	-- claimed, tomorrow's day and the countdown (two lines in the 52-px row).
+	local statusLine = scope:New("Frame")({
+		Name = "Status",
+		LayoutOrder = 1,
+		Size = UDim2.fromScale(0, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
+			scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
 			scope:New("UIListLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,
-				VerticalAlignment = Enum.VerticalAlignment.Bottom,
-				Padding = UDim.new(0, 4),
-			}),
-			received :: any,
-			label(scope, {
-				LayoutOrder = 2,
-				Text = Text.T(scope, "login.mailed"),
-				TextColor3 = Theme.Paper.Warning,
-				Visible = scope:Computed(function(use): boolean
-					local got = use(result)
-					return got ~= nil and got.mailed == true
-				end),
+				VerticalAlignment = Enum.VerticalAlignment.Center,
 			}),
 			infoLabel(
 				scope,
-				3,
+				1,
 				{
 					Text = scope:Computed(function(use): string
 						local L = use(level)
@@ -451,7 +455,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 				end)
 			),
 			label(scope, {
-				LayoutOrder = 4,
+				LayoutOrder = 2,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				Text = scope:Computed(function(use): string
@@ -466,9 +470,26 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Paper.Text,
 				Visible = claimed,
 			}),
+		},
+	})
+
+	return {
+		Scroll = true,
+		Content = {
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			header,
+			received :: any,
+			mailed,
+			cardArea,
+		},
+		Footer = {
+			statusLine,
 			Button(scope, {
 				Name = "Claim",
-				LayoutOrder = 5,
+				LayoutOrder = 2,
 				Text = Text.T(scope, "login.claim"),
 				Variant = "primary",
 				Size = UDim2.fromOffset(220, Theme.Size.ButtonHeight),
@@ -477,14 +498,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 				OnClick = claim,
 			}),
 		},
-	})
-
-	return scope:New("Frame")({
-		Name = "LoginReward",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		[Children] = { header, cardArea, footer },
-	})
+	}
 end
 
 return LoginRewardWindow

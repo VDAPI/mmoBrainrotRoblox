@@ -7,6 +7,12 @@
 -- S33: a third line with the hunting ground profile ("⚡ Fast EXP · EXP ×1 · items ×0.6 · gold ×0.7"), "Recommended"
 -- on the best area of every profile. Owner 2026-11-10 ("zbyt szczegółowe opisy"): the selected area's profile
 -- description moved from under the list to the (i) of the header line, so the list keeps that room.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: "Set off"
+-- is the window's pinned footer (Window.Parts `Footer`) and the list fills what the header line and the warnings leave
+-- (UIFlexItem), so no fixed reserve under it can cut a row or leave a gap.
+-- Review 2026-11-11 (a phone under a warning showed 1.7 rows, PC 4): the column and the rows are Logic/WorldLayout's
+-- AREA_PICKER. A phone's rows are compact (the levels beside the name, the tag beside the kinds, no spare padding), and
+-- the portal passes its two dangers as one line (WorldController), so a phone shows 2 rows under the warning.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,14 +22,18 @@ local AreaProfileText = require(script.Parent.Parent.AreaProfileText)
 local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Button = require(script.Parent.Parent.Components.Button)
+local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local Window = require(script.Parent.Parent.Components.Window)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children = Fusion.Children
 
@@ -37,8 +47,7 @@ export type Props = {
 	OnGo: () -> (),
 }
 
-local ROW_HEIGHT = 66
-local PROFILE_ROW_HEIGHT = 88
+local A = WorldLayout.AREA_PICKER
 
 local CONTRACT_HEX = "#" .. Theme.Paper.Heading:ToHex()
 
@@ -68,15 +77,26 @@ local function kindsText(use: Fusion.Use, kinds: { string }): string
 	return table.concat(names, " · ")
 end
 
-local function AreaPicker(scope: Scope, props: Props): Fusion.Child
+local function AreaPicker(scope: Scope, props: Props): Window.Parts
 	local level = State.Value({ "character", "level" })
 	-- S99: the hunting ground of the active hunting contract gets "◈ Contract" (the default choice stays, S22); S134k: of
 	-- every active one
 	local contractState = State.Value({ "character", "quests", "contract" })
 
+	-- a phone's compact rows (Logic/WorldLayout.areaPicker)
+	local compact = scope:Computed(function(use): boolean
+		return WorldLayout.device(use(Device.Touch) == true, use(PhoneLayout.Compact)) == "phone"
+	end)
+
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local mapId = use(props.MapId)
 		local playerLevel = use(level) or 1
+		local small = use(compact)
+		-- the lines' tops: the name (the levels at its right), the kinds (the tag at their right), the profile
+		local nameTop = if small then 4 else 8
+		local nameHeight = if small then 24 else 26
+		local kindsTop = nameTop + nameHeight + (if small then 0 else 2)
+		local profileTop = kindsTop + 20 + (if small then 0 else 4)
 		local list = {}
 		local best = AreaAdvice.bestByProfile(playerLevel, mapId or "")
 		-- S134k: every hunting ground of an active, unfinished contract
@@ -101,7 +121,14 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 				s:New("TextButton")({
 					Name = area.id,
 					LayoutOrder = i,
-					Size = UDim2.new(1, 0, 0, if profile then PROFILE_ROW_HEIGHT else ROW_HEIGHT),
+					Size = UDim2.new(
+						1,
+						0,
+						0,
+						if small
+							then (if profile then A.compactProfileRow else A.compactRow)
+							else (if profile then A.profileRow else A.row)
+					),
 					AutoButtonColor = false,
 					Text = "",
 					BackgroundColor3 = s:Computed(function(use2): Color3
@@ -133,8 +160,8 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 						}),
 						s:New("TextLabel")({
 							Name = "Name",
-							Position = UDim2.fromOffset(20, 8),
-							Size = UDim2.new(1, -150, 0, 26),
+							Position = UDim2.fromOffset(20, nameTop),
+							Size = UDim2.new(1, -150, 0, nameHeight),
 							BackgroundTransparency = 1,
 							Text = (if locked then "🔒 " else "") .. Text.get(use, area.nameKey),
 							TextXAlignment = Enum.TextXAlignment.Left,
@@ -145,7 +172,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 						}),
 						s:New("TextLabel")({
 							Name = "Kinds",
-							Position = UDim2.fromOffset(20, 36),
+							Position = UDim2.fromOffset(20, kindsTop),
 							Size = UDim2.new(1, -150, 0, 20),
 							BackgroundTransparency = 1,
 							Text = kindsText(use, area.kinds),
@@ -158,7 +185,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 						if profile
 							then s:New("TextLabel")({
 								Name = "Profile",
-								Position = UDim2.fromOffset(20, 60),
+								Position = UDim2.fromOffset(20, profileTop),
 								Size = UDim2.new(1, -32, 0, 20),
 								BackgroundTransparency = 1,
 								Text = `{AreaProfileText.tag(use, profile)} · {AreaProfileText.mults(use, profile)}`,
@@ -173,19 +200,19 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 						s:New("TextLabel")({
 							Name = "Levels",
 							AnchorPoint = Vector2.new(1, 0),
-							Position = UDim2.new(1, -12, 0, 6),
-							Size = UDim2.fromOffset(120, 30),
+							Position = UDim2.new(1, -12, 0, if small then nameTop else 6),
+							Size = UDim2.fromOffset(120, if small then nameHeight else 30),
 							BackgroundTransparency = 1,
 							Text = `{area.lv[1]}–{area.lv[2]}`,
 							TextXAlignment = Enum.TextXAlignment.Right,
 							FontFace = Theme.Fonts.Display,
-							TextSize = Theme.TextSize.Title,
+							TextSize = if small then Theme.TextSize.Large else Theme.TextSize.Title,
 							TextColor3 = bandText,
 						}),
 						s:New("TextLabel")({
 							Name = "Tag",
 							AnchorPoint = Vector2.new(1, 0),
-							Position = UDim2.new(1, -12, 0, 38),
+							Position = UDim2.new(1, -12, 0, kindsTop + (if small then 0 else 2)),
 							Size = UDim2.fromOffset(220, 20),
 							BackgroundTransparency = 1,
 							RichText = true,
@@ -221,7 +248,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 		return use(detail) ~= ""
 	end)
 
-	return {
+	local content = {
 		scope:New("Frame")({
 			Name = "AreaPicker",
 			Size = UDim2.fromScale(1, 1),
@@ -229,12 +256,12 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 			[Children] = {
 				scope:New("UIListLayout")({
 					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = UDim.new(0, 8),
+					Padding = UDim.new(0, A.gap),
 				}),
 				scope:New("Frame")({
 					Name = "HeaderRow",
 					LayoutOrder = 1,
-					Size = UDim2.new(1, 0, 0, 24),
+					Size = UDim2.new(1, 0, 0, A.header),
 					BackgroundTransparency = 1,
 					[Children] = {
 						scope:New("TextLabel")({
@@ -281,32 +308,37 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 				scope:New("ScrollingFrame")({
 					Name = "List",
 					LayoutOrder = 3,
-					Size = scope:Computed(function(use): UDim2
-						return UDim2.new(1, 0, 1, if use(hasWarnings) then -160 else -110)
-					end),
+					-- the rest of the body above the footer, whatever the warnings take
+					Size = UDim2.fromScale(1, 0),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					ScrollBarThickness = 6,
 					[Children] = {
-						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 2) }),
+						scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
+						scope:New("UIListLayout")({
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, A.rowGap),
+						}),
+						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, A.pad) }),
 						rows :: any,
 					},
 				}),
-				Button(scope, {
-					Name = "Go",
-					LayoutOrder = 5,
-					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-					Variant = "primary",
-					Disabled = scope:Computed(function(use): boolean
-						return use(props.Busy) or use(props.Selected) == nil
-					end),
-					Text = Text.T(scope, "portal.choose.go"),
-					OnClick = props.OnGo,
-				}),
 			},
+		}),
+	}
+	return {
+		Content = content,
+		Footer = Button(scope, {
+			Name = "Go",
+			Size = UDim2.fromOffset(220, Theme.Size.ButtonHeight),
+			Variant = "primary",
+			Disabled = scope:Computed(function(use): boolean
+				return use(props.Busy) or use(props.Selected) == nil
+			end),
+			Text = Text.T(scope, "portal.choose.go"),
+			OnClick = props.OnGo,
 		}),
 	}
 end

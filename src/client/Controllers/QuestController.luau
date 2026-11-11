@@ -163,7 +163,7 @@ function QuestController.Init(registry)
 	WindowManager.Register({
 		id = "quests",
 		titleKey = "window.quests.title",
-		size = Vector2.new(640, 600),
+		size = Vector2.new(680, 600), -- UI package C: the six tabs fit whole at 1280x720 (QuestJournal)
 		hotkey = Enum.KeyCode.L,
 		build = function(s)
 			return QuestJournal(s, {

@@ -21,6 +21,14 @@
 -- contracts, Daily, Weekly, Achievements) that fold, remembered on the account (Logic/TrackerFold,
 -- account.settings.trackerFold); one line per entry (name, progress on the right), the full text in its tooltip, a
 -- click unfolds an entry's objectives (the story and the tracked side quest start unfolded).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"; UI plan package A): the tracker's
+-- header and every group's header are Hud/PanelHeader lines (the arrow drawn by it, the name, one value; the whole
+-- line folds), the groups keep their own fold (Logic/TrackerFold, defaults unchanged), an objective is one line of at
+-- most 32 characters (QuestRows.short, the whole one in its tooltip), and the column folds the tracker to its header
+-- line or puts it behind the '+N' chip while it has no room (UI/HudSlots.forced, Hud/StackChip).
+-- Package A review (owner 2026-11-10): an objective's count stays whole ("0/12" read "0/1…"): only the name before it
+-- is cut (QuestRows.oneLine), the count stands in a label of its own after it, so a narrow tracker cuts the name in
+-- pixels too, never the count, and the area after the count is in the tooltip with the whole line.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -54,6 +62,7 @@ local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local PanelHeader = require(script.Parent.PanelHeader)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
 local QuestText = require(script.Parent.Parent.Parent.QuestText)
@@ -73,19 +82,22 @@ local Children, OnChange, OnEvent = Fusion.Children, Fusion.OnChange, Fusion.OnE
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local WIDTH = 300
--- S156: the frame of the tracker around its scrolling body
+-- S156: the frame of the tracker around its scrolling body (PC; touch: `header` in the function)
 local HEADER = 28
 local GAP = 3
 local PAD_TOP, PAD_BOTTOM = 6, 8
-local GRIP = 22
+local GRIP, GRIP_TOUCH = 22, 30
+local GUIDE_W, GUIDE_H = 30, 28
+local ARROW = 28
 local ELEMENT = "questTracker"
 -- S29: a finished objective pulses for this long (seconds), then keeps a soft green glow.
 local PULSE_TIME = 1
 local GLOW_TRANSPARENCY = 0.6
 -- Owner 2026-10-21: one line per entry, group headers (PC / touch heights), the indent of an unfolded entry's lines
 local ROW_PC, ROW_TOUCH = 22, 28
-local GROUP_PC, GROUP_TOUCH = 22, 30
 local INDENT = 12
+-- an objective's line (Theme.TextSize.Small and a little room)
+local OBJECTIVE = 20
 local LONG_PRESS = 0.45 -- Components/Tooltip: a touch held this long shows the tooltip
 
 -- World position the arrow points to (nil = hide the arrow).
@@ -291,7 +303,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	)
 
 	-- Owner 2026-10-21: a group header with its arrow, the name and a short summary on the right ("2/5 · 5:12"); a
-	-- click folds or unfolds the group. Returns whether the group is open.
+	-- click folds or unfolds the group. Returns whether the group is open. Package A (owner 2026-11-10): a
+	-- Hud/PanelHeader line.
 	local function groupHeader(
 		s: Scope,
 		out: { Instance },
@@ -299,60 +312,24 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		group: string,
 		label: string,
 		summary: string?,
-		touch: boolean,
+		_touch: boolean,
 		foldNow: any
 	): boolean
 		local isFolded = TrackerFold.isFolded(foldNow, group)
 		table.insert(
 			out,
-			s:New("TextButton")({
+			PanelHeader.new(s, {
 				Name = `Group_{group}`,
 				LayoutOrder = order,
-				Size = UDim2.new(1, 0, 0, if touch then GROUP_TOUCH else GROUP_PC),
-				AutoButtonColor = false,
-				BackgroundTransparency = 1,
-				Text = "",
-				[OnEvent("Activated")] = function()
+				Title = label,
+				Value = summary or "",
+				-- package A review: the group's summary is said nowhere else, so it stays while the group is open
+				KeepValue = true,
+				Open = not isFolded,
+				Color = Theme.Iron.Heading,
+				OnClick = function()
 					toggleFold(group)
 				end,
-				[Children] = {
-					s:New("UIListLayout")({
-						FillDirection = Enum.FillDirection.Horizontal,
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						VerticalAlignment = Enum.VerticalAlignment.Bottom,
-						Padding = UDim.new(0, 6),
-					}),
-					s:New("TextLabel")({
-						Name = "Name",
-						LayoutOrder = 1,
-						Size = UDim2.fromScale(0, 1),
-						BackgroundTransparency = 1,
-						Text = `{if isFolded then "▸" else "▾"} {label}`,
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Iron.Heading,
-						TextStrokeTransparency = 0.5,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextYAlignment = Enum.TextYAlignment.Bottom,
-						TextTruncate = Enum.TextTruncate.AtEnd,
-						[Children] = s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
-					}),
-					if summary and summary ~= ""
-						then s:New("TextLabel")({
-							Name = "Summary",
-							LayoutOrder = 2,
-							Size = UDim2.fromScale(0, 1),
-							AutomaticSize = Enum.AutomaticSize.X,
-							BackgroundTransparency = 1,
-							Text = summary,
-							FontFace = Theme.Fonts.BodyMedium,
-							TextSize = Theme.TextSize.Caption,
-							TextColor3 = Theme.Iron.TextMuted,
-							TextStrokeTransparency = 0.5,
-							TextYAlignment = Enum.TextYAlignment.Bottom,
-						}) :: any
-						else nil,
-				},
 			})
 		)
 		return not isFolded
@@ -478,15 +455,63 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		-- pulse once when finished; a complete quest adds the gold "Return to: <NPC>" line with its own guide button.
 		local function objectives(key: string, rowList: QuestRows.List, guide: QuestTrack.Target?)
 			for _, row in rowList.rows do
-				local label = line(
-					QuestRows.line(row),
-					if row.done then Theme.Iron.Success else Theme.Iron.Text,
-					Theme.TextSize.Small,
-					Theme.Fonts.BodyMedium,
-					INDENT
+				local full = QuestRows.line(row)
+				local head, count = QuestRows.oneLine(full, row.have, row.need)
+				local color = if row.done then Theme.Iron.Success else Theme.Iron.Text
+				local function part(name: string, text: string, fill: boolean): TextLabel
+					return s:New("TextLabel")({
+						Name = name,
+						LayoutOrder = if fill then 1 else 2,
+						Size = UDim2.fromScale(0, 1),
+						AutomaticSize = if fill then Enum.AutomaticSize.None else Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						Text = text,
+						FontFace = Theme.Fonts.BodyMedium,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = color,
+						TextStrokeTransparency = 0.5,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = if fill then Enum.TextTruncate.AtEnd else Enum.TextTruncate.None,
+						[Children] = if fill
+							then s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }) :: any
+							else nil,
+					}) :: TextLabel
+				end
+				local name = part("Name", head, true)
+				local labels = { name }
+				if count then
+					table.insert(labels, part("Count", count, false))
+				end
+				order += 1
+				table.insert(
+					list,
+					s:New("Frame")({
+						Name = "Objective",
+						LayoutOrder = order,
+						Size = UDim2.new(1, 0, 0, OBJECTIVE),
+						BackgroundTransparency = 1,
+						[Children] = {
+							s:New("UIPadding")({ PaddingLeft = UDim.new(0, INDENT) }),
+							s:New("UIListLayout")({
+								FillDirection = Enum.FillDirection.Horizontal,
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								VerticalAlignment = Enum.VerticalAlignment.Center,
+								Padding = UDim.new(0, 4),
+							}),
+							labels :: any,
+						},
+					})
 				)
+				-- package A: a cut objective, and one whose area the line leaves out, keeps its whole text in the
+				-- tooltip (a phone's narrow tracker cuts the name in pixels too)
+				local shown = if count then `{head} {count}` else head
+				if shown ~= full or touch then
+					Tooltip.attach(s, name, full)
+				end
 				if row.done then
-					glow(label, `{key}#{row.index}`)
+					for _, label in labels do
+						glow(label, `{key}#{row.index}`)
+					end
 				end
 			end
 			if rowList.complete then
@@ -954,27 +979,57 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local function widthOf(use: Fusion.Use, e: HudLayout.Entry?): number
 		return if e and e.w then e.w elseif use(PhoneLayout.Compact) then PhoneHud.TRACKER_WIDTH else WIDTH
 	end
-	local handle = HudDrag.new(scope, ELEMENT, widthOf)
+	-- the height of a tracker moved to `at` (set below, once its body's helpers exist)
+	local movedHeight: (use: Fusion.Use, at: Vector2) -> number
+	-- package A review (owner 2026-11-10): a saved place is checked with the height the tracker has there as the player
+	-- folded it, not with the height drawn while the column folds it (UI/HudDrag)
+	local handle = HudDrag.new(scope, ELEMENT, widthOf, function(use: Fusion.Use, _, x: number, y: number): number
+		return movedHeight(use, Vector2.new(x, y))
+	end)
 	local entry = handle.entry
 	local width = scope:Computed(function(use): number
 		return widthOf(use, use(entry))
 	end)
 	local corner = handle.corner
 	local contentHeight = scope:Value(0)
-	local chrome = PAD_TOP + HEADER + GAP + PAD_BOTTOM
+	-- Package A review (owner 2026-11-10): on touch the header line is Hud/PanelHeader's height (44 on a tablet, a
+	-- phone's stack line of 52) with its buttons Theme.Size.MinTouch tall; a phone drops the paddings round it, so the
+	-- folded tracker is exactly one line of the stack (PhoneHud.LINE). It stood 28 high: a 42-px line, 28-px taps.
+	local touch = Device.Touch
+	local header = scope:Computed(function(use): number
+		return if use(touch) then PanelHeader.height(true, use(PhoneLayout.Compact)) else HEADER
+	end)
+	local padTop = scope:Computed(function(use): number
+		return if use(PhoneLayout.Compact) then 0 else PAD_TOP
+	end)
+	local padBottom = scope:Computed(function(use): number
+		return if use(PhoneLayout.Compact) then 0 else PAD_BOTTOM
+	end)
+	-- the folded tracker (its header line and the paddings), and the frame round an open one's body
+	local function lineOf(use: Fusion.Use): number
+		return use(padTop) + use(header) + use(padBottom)
+	end
+	local function chromeOf(use: Fusion.Use): number
+		return lineOf(use) + GAP
+	end
 	-- the body of a tracker at `top` whose list may reach down to `floor` (a sized one keeps its height, the list
 	-- scrolls inside; owner 2026-10-22: never past the floor, HudStack.trackerBody)
 	local function bodyTo(use: Fusion.Use, top: number, floor: number): number
 		local e = use(entry)
-		return HudStack.trackerBody(top, floor, chrome, use(contentHeight), if e then e.h else nil)
+		return HudStack.trackerBody(top, floor, chromeOf(use), use(contentHeight), if e then e.h else nil)
 	end
 	-- the floor of a tracker moved to `at`: the bottom of the screen (a phone: of its stack), at least a few lines
 	-- under its top, but above the corner's buttons in its lane (owner 2026-10-22: a tracker moved near its built-in
 	-- place ran into the PvP toggle; HudStack.floorUnder)
 	local function movedFloor(use: Fusion.Use, at: Vector2): number
 		local screen = use(Scale.HudSize).Y - (if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24)
-		local bottom = math.max(at.Y + 80 + chrome, screen)
+		local bottom = math.max(at.Y + 80 + chromeOf(use), screen)
 		return HudStack.floorUnder(at.X, at.X + use(width), at.Y, bottom, use(HudSlots.Corner))
+	end
+	movedHeight = function(use: Fusion.Use, at: Vector2): number
+		local folded = use(collapsed)
+		local body = if folded then 0 else bodyTo(use, at.Y, movedFloor(use, at))
+		return lineOf(use) + (if folded then 0 else GAP + body)
 	end
 	-- owner 2026-10-21: the built-in place in the HUD column (UI/HudSlots): under the event panels, over the corner's
 	-- buttons (PC) or the sprint row (touch); a moved tracker is in the panels' way instead (they go round it)
@@ -986,15 +1041,21 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			local folded = use(collapsed)
 			local at = use(corner)
 			if at then
-				local body = if folded then 0 else bodyTo(use, at.Y, movedFloor(use, at))
-				local h = PAD_TOP + HEADER + PAD_BOTTOM + (if folded then 0 else GAP + body)
+				local h = movedHeight(use, at)
 				return { shown = true, w = w, h = h, custom = HudSlots.moved(at, w, h, 1) }
 			end
-			return { shown = true, w = w, h = if folded then PAD_TOP + HEADER + PAD_BOTTOM else HudStack.TRACKER_MIN }
+			local line = lineOf(use)
+			return { shown = true, w = w, h = if folded then line else HudStack.TRACKER_MIN, line = line }
 		end)
 	)
+	-- package A: folded by the player or, while it has no room, by the column (its header line); nothing while it waits
+	-- behind the column's '+N' chip
+	local forced = HudSlots.forced(scope, "questTracker")
+	local shut = scope:Computed(function(use): boolean
+		return use(collapsed) or (use(forced) and use(corner) == nil)
+	end)
 	local bodyHeight = scope:Computed(function(use): number
-		if use(collapsed) then
+		if use(shut) then
 			return 0
 		end
 		local at = use(corner)
@@ -1015,7 +1076,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		end),
 		Size = scope:Computed(function(use): UDim2
 			local body = use(bodyHeight)
-			local height = PAD_TOP + HEADER + PAD_BOTTOM + (if use(collapsed) then 0 else GAP + body)
+			local height = lineOf(use) + (if use(shut) then 0 else GAP + body)
 			return UDim2.fromOffset(use(width), height)
 		end),
 		BackgroundColor3 = Theme.Iron.Surface,
@@ -1023,19 +1084,27 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, PAD_TOP),
-				PaddingBottom = UDim.new(0, PAD_BOTTOM),
+				PaddingTop = scope:Computed(function(use): UDim
+					return UDim.new(0, use(padTop))
+				end),
+				PaddingBottom = scope:Computed(function(use): UDim
+					return UDim.new(0, use(padBottom))
+				end),
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10),
 			}),
 			scope:New("Frame")({
 				Name = "Header",
-				Size = UDim2.new(1, 0, 0, HEADER),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 0, use(header))
+				end),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("TextButton")({
 						Name = "MoveGrip",
-						Size = UDim2.fromOffset(GRIP, HEADER),
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.fromOffset(if use(touch) then GRIP_TOUCH else GRIP, use(header))
+						end),
 						BackgroundTransparency = 1,
 						Text = "≡",
 						FontFace = Theme.Fonts.BodyBold,
@@ -1046,26 +1115,46 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 							handle.begin("move", input)
 						end,
 					}),
-					scope:New("TextButton")({
-						Position = UDim2.fromOffset(GRIP, 0),
-						Size = UDim2.new(1, -(74 + GRIP), 1, 0),
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							return `{if use(collapsed) then "▸" else "▾"} {Text.get(use, "tracker.title")}`
+					-- package A: the tracker's header line (Hud/PanelHeader at the header's own height)
+					scope:New("Frame")({
+						Name = "Title",
+						Position = scope:Computed(function(use): UDim2
+							return UDim2.fromOffset(if use(touch) then GRIP_TOUCH else GRIP, 0)
 						end),
-						FontFace = Theme.Fonts.Display,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Iron.Heading,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						[OnEvent("Activated")] = function()
-							toggleFold("all")
-						end,
+						-- what the grip, the guide button and the arrow leave
+						Size = scope:Computed(function(use): UDim2
+							local grip = if use(touch) then GRIP_TOUCH else GRIP
+							local guide = if use(touch) then Theme.Size.MinTouch else GUIDE_W
+							return UDim2.new(1, -(grip + guide + ARROW + 16), 1, 0)
+						end),
+						BackgroundTransparency = 1,
+						[Children] = PanelHeader.new(scope, {
+							Title = Text.T(scope, "tracker.title"),
+							Open = scope:Computed(function(use): boolean
+								return not use(shut)
+							end),
+							Color = Theme.Iron.Heading,
+							Height = header,
+							OnClick = function()
+								if Fusion.peek(forced) and not Fusion.peek(collapsed) then
+									-- the column folded it: it stays open in the column before the others
+									HudSlots.bring("questTracker")
+									return
+								end
+								toggleFold("all")
+							end,
+						}),
 					}),
 					scope:New("TextButton")({
 						Name = "Guide",
 						AnchorPoint = Vector2.new(1, 0.5),
-						Position = UDim2.new(1, -34, 0.5, 0),
-						Size = UDim2.fromOffset(30, 28),
+						Position = UDim2.new(1, -(ARROW + 6), 0.5, 0),
+						Size = scope:Computed(function(use): UDim2
+							local side = Theme.Size.MinTouch
+							return if use(touch)
+								then UDim2.fromOffset(side, side)
+								else UDim2.fromOffset(GUIDE_W, GUIDE_H)
+						end),
 						BackgroundColor3 = Theme.Iron.Raised,
 						BackgroundTransparency = 0.2,
 						Text = "➤",
@@ -1088,7 +1177,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Name = "Arrow",
 						AnchorPoint = Vector2.new(1, 0.5),
 						Position = UDim2.fromScale(1, 0.5),
-						Size = UDim2.fromOffset(28, 28),
+						Size = UDim2.fromOffset(ARROW, ARROW),
 						BackgroundTransparency = 1,
 						Text = "▲", -- W28: the glyph the tutorial hint draws too ("⬆" is not in Builder Sans)
 						TextScaled = true,
@@ -1106,12 +1195,14 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			}),
 			scope:New("ScrollingFrame")({
 				Name = "Body",
-				Position = UDim2.fromOffset(0, HEADER + GAP),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(0, use(header) + GAP)
+				end),
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.new(1, 0, 0, use(bodyHeight))
 				end),
 				Visible = scope:Computed(function(use): boolean
-					return not use(collapsed)
+					return not use(shut)
 				end),
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
@@ -1137,7 +1228,9 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			scope:New("TextButton")({
 				Name = "SizeGrip",
 				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.new(1, 8, 1, PAD_BOTTOM),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 8, 1, use(padBottom))
+				end),
 				Size = UDim2.fromOffset(18, 18),
 				BackgroundTransparency = 1,
 				Text = "◢",
@@ -1146,7 +1239,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 				TextColor3 = Theme.Iron.TextMuted,
 				AutoButtonColor = false,
 				Visible = scope:Computed(function(use): boolean
-					return not use(collapsed)
+					return not use(shut)
 				end),
 				[OnEvent("InputBegan")] = function(input: InputObject)
 					handle.begin("size", input)
@@ -1158,8 +1251,10 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	-- UI plan phase 2 (Studio audit 2026-10-31): out of sight while an open window covers it (UI/HudCover); Studio
 	-- check 2026-10-31: under any open window (the backpack stood beside it), so a window is the one thing to read
 	local over = HudCover.covered(scope, frame)
+	-- package A: and not while it waits behind the column's '+N' chip
+	local placed = HudSlots.visible(scope, slot, true, corner)
 	local covered = scope:Computed(function(use): boolean
-		return use(over) or use(HudCover.Open)
+		return use(over) or use(HudCover.Open) or not use(placed)
 	end)
 	scope:Observer(covered):onBind(function()
 		frame.Visible = not Fusion.peek(covered)

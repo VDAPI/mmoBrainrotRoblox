@@ -1,20 +1,32 @@
 --!strict
 -- The hands-on tutorial (S155, docs/DESIGN.md §20 "Samouczek"): steps and their order, counting ahead, skipping, the
 -- client whitelist, PC / phone texts, key labels from the player's bindings, the onboarding funnel and the level reward
--- (Logic/Tutorial, Data/Tutorial).
+-- (Logic/Tutorial, Data/Tutorial). UI plan package A (owner 2026-11-10, "things covering each other"; the plan's L9):
+-- the frozen anchor names (Tutorial.ANCHOR_NAMES) that Screens/Hud still builds, the tile's place (Logic/TutorialTile)
+-- inside the layer and off its element, the message zone and the phone's skill arc on every screen, and the texts per
+-- device (the phone's own `.phone` text where one exists).
+local fs = require("@lune/fs")
+
 local AdminCommands = require("../src/shared/Data/AdminCommands")
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local CharacterFactory = require("../src/shared/Logic/CharacterFactory")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
+local HudMenu = require("../src/shared/Logic/HudMenu")
+local HudStack = require("../src/shared/Logic/HudStack")
+local HudZones = require("../src/shared/Logic/HudZones")
 local Items = require("../src/shared/Data/Items")
 local Keybinds = require("../src/shared/Data/Keybinds")
 local Npcs = require("../src/shared/Data/Npcs")
+local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local Premium = require("../src/shared/Logic/Premium")
 local Quests = require("../src/shared/Data/Quests")
 local T = require("./Test")
+local TextCaps = require("../src/shared/Logic/TextCaps")
 local Titles = require("../src/shared/Data/Titles")
 local Tutorial = require("../src/shared/Logic/Tutorial")
 local TutorialData = require("../src/shared/Data/Tutorial")
+local TutorialTile = require("../src/shared/Logic/TutorialTile")
+local fixtureA = require("./fixtures/textcaps/A") :: any
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
@@ -347,5 +359,230 @@ T.describe("Tutorial: world guide targets (W28)", function()
 				end
 			end
 		end
+	end)
+end)
+
+-- UI plan package A: the element of `anchor` on a w x h layer as UI/HudAnchors measures it, from the zone map
+-- (Logic/HudZones on PC and a tablet, Logic/PhoneHud on a phone); nil: none on that device.
+local function anchorRect(anchor: string, device: string, w: number, h: number): TutorialTile.Anchor?
+	local function of(r: HudStack.Rect): TutorialTile.Anchor
+		return { x = r.left, y = r.top, w = r.right - r.left, h = r.bottom - r.top }
+	end
+	if anchor == "joystick" then
+		return if device == "pc" then nil else of(HudZones.thumb(w, h))
+	end
+	if device == "phone" then
+		local places = PhoneHud.places(w, h)
+		local name = ({
+			questTracker = "stack",
+			backpackButton = "menuToggle", -- the drawer is closed: its button (Tutorial.DRAWER)
+			potionBar = "potions",
+			attackButton = "attack",
+			skillBar = "skill1",
+		})[anchor]
+		return if name then of(PhoneHud.rect(places[name], w, h)) else nil
+	end
+	local touch = device == "tablet"
+	local zones = HudZones.pc(w, h, { touch = touch, target = "monster", column = { 260 } })
+	local bar = zones.actionBar
+	local b = HudZones.ACTION_BAR
+	if anchor == "questTracker" then
+		local stack = assert(zones.stack, "the column")
+		return of(assert(stack.tracker, "the tracker"))
+	elseif anchor == "backpackButton" then
+		-- the backpack step's bar: the backpack, the skills and the ☰, right-aligned
+		local n = 3
+		local left = zones.menuBar.right - n * HudStack.ICON - (n - 1) * HudStack.GAP
+		return { x = left, y = zones.menuBar.top, w = HudStack.ICON, h = HudStack.ICON }
+	elseif anchor == "potionBar" then
+		local left = bar.left + b.slots * b.slot + (b.slots - 1) * b.gap + 2 * b.gap + HudStack.MARGIN
+		return { x = left, y = bar.top, w = b.slot * b.potions + 12, h = b.slot }
+	elseif anchor == "attackButton" then
+		return if touch then of(zones.corner.attack) else nil
+	elseif anchor == "skillBar" then
+		return if touch then of(zones.corner.skill1) else { x = bar.left, y = bar.top, w = b.slot, h = b.slot }
+	end
+	return nil
+end
+
+-- The menu over the minimap as UI/HudSlots.Menu measures it (PC and a tablet).
+local function menuRect(w: number, h: number, touch: boolean): HudStack.Rect
+	local zones = HudZones.pc(w, h, { touch = touch })
+	return {
+		left = math.min(zones.menuBar.left, zones.minimap.left),
+		top = zones.menuBar.top,
+		right = zones.menuBar.right,
+		bottom = zones.minimap.bottom,
+	}
+end
+
+local function meets(a: HudStack.Rect, b: HudStack.Rect): boolean
+	return a.left < b.right and b.left < a.right and a.top < b.bottom and b.top < a.bottom
+end
+
+-- Every HUD layer of the plan: PC and tablets from Logic/UiScale (top bar 0, 36, 58), the phones of PhoneHud.DEVICES.
+local function layers(): { { name: string, device: string, w: number, h: number } }
+	local out = {}
+	for _, set in
+		{
+			{ device = "pc", touch = false, sizes = { { 1920, 1080 }, { 1366, 768 }, { 1280, 720 }, { 1024, 600 } } },
+			{ device = "tablet", touch = true, sizes = { { 1280, 720 }, { 1024, 768 }, { 1366, 1024 } } },
+		}
+	do
+		for _, size in set.sizes do
+			for _, bar in { 0, 36, 58 } do
+				local w, h = HudZones.layer(size[1], size[2], set.touch, bar)
+				table.insert(
+					out,
+					{ name = `{set.device} {size[1]}x{size[2]} bar {bar}`, device = set.device, w = w, h = h }
+				)
+			end
+		end
+	end
+	for _, phone in PhoneHud.DEVICES do
+		for _, bar in { 0, 36, 58 } do
+			local w, h = PhoneHud.area(phone, bar)
+			table.insert(out, { name = `phone {phone.name} bar {bar}`, device = "phone", w = w, h = h })
+		end
+	end
+	return out
+end
+
+T.describe("Tutorial: pointers (UI plan package A)", function()
+	T.it("the anchors' names are frozen and Screens/Hud builds every one of them", function()
+		T.expect(Tutorial.ANCHOR_NAMES).toEqual({
+			questTracker = { pc = "QuestTracker", touch = "QuestTracker" },
+			backpackButton = { pc = "inventory", touch = "inventory", drawer = true },
+			potionBar = { pc = "PotionBar", touch = "PotionBar" },
+			attackButton = { touch = "AttackButton" },
+			skillBar = { pc = "Skill1", touch = "MobileSkill1" },
+		})
+		T.expect(Tutorial.DRAWER).toBe("MenuToggle")
+		local hud = ""
+		for _, file in fs.readDir("src/client/UI/Screens/Hud") do
+			if string.sub(file, -5) == ".luau" then
+				hud ..= fs.readFile(`src/client/UI/Screens/Hud/{file}`)
+			end
+		end
+		local function built(name: string): boolean
+			if string.find(hud, `Name = "{name}"`, 1, true) then
+				return true
+			end
+			-- a numbered element from its template (Skill{index}, MobileSkill{i}); a menu button from the bar's ids
+			local prefix = string.match(name, "^(%a+)%d+$")
+			if prefix and string.find(hud, `Name = \`{prefix}\{`, 1, true) then
+				return true
+			end
+			return HudMenu.onBar(name) and string.find(hud, "Name = entry.id", 1, true) ~= nil
+		end
+		for _, s in Tutorial.STEPS do
+			local anchor = s.anchor
+			if anchor and anchor ~= "joystick" then
+				local names = Tutorial.ANCHOR_NAMES[anchor]
+				T.expect({ s.id, names ~= nil }).toEqual({ s.id, true })
+				for _, name in { names.pc, names.touch, if names.drawer then Tutorial.DRAWER else nil } do
+					T.expect({ s.id, name, built(name) }).toEqual({ s.id, name, true })
+				end
+			end
+		end
+		-- UI/HudAnchors reads them and points the move step at the thumb zone of the zone map
+		local anchors = fs.readFile("src/client/UI/HudAnchors.luau")
+		T.expect(string.find(anchors, "HudAnchors.NAMES = Tutorial.ANCHOR_NAMES", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(anchors, "HudZones.thumb(size.X, size.Y)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(anchors, "FindFirstChild(Tutorial.DRAWER, true)", 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("the tile stays inside the layer, off its element, the message zone and the skill arc", function()
+		for _, layer in layers() do
+			local touch = layer.device ~= "pc"
+			local compact = layer.device == "phone"
+			local avoid = TutorialTile.avoid(layer.w, layer.h, touch, compact)
+			local menu = if compact then nil else menuRect(layer.w, layer.h, touch)
+			local width = TutorialTile.width(touch, compact)
+			-- a short hint and the longest (80 characters in three or four lines, the skip button under them)
+			for _, tall in { 120, if touch then 210 else 180 } do
+				local tile = { w = width, h = tall, tall = tall }
+				local cases: { { name: string, anchor: TutorialTile.Anchor? } } = { { name = "default" } }
+				for _, s in Tutorial.STEPS do
+					local anchor = s.anchor
+					if anchor then
+						local rect = anchorRect(anchor, layer.device, layer.w, layer.h)
+						if rect then
+							table.insert(cases, { name = s.id, anchor = rect })
+						end
+					end
+				end
+				for _, case in cases do
+					local where = `{layer.name}, {case.name}, {tall} tall`
+					local x, y, arrow =
+						TutorialTile.place(case.anchor, tile, { w = layer.w, h = layer.h }, touch, menu, avoid)
+					local box = { left = x, top = y, right = x + width, bottom = y + tall }
+					local inside = x >= 0 and y >= 0 and box.right <= layer.w + 1e-6 and box.bottom <= layer.h + 1e-6
+					T.expect({ where, "inside", inside }).toEqual({ where, "inside", true })
+					for _, r in avoid do
+						T.expect({ where, "clear", meets(box, r) }).toEqual({ where, "clear", false })
+					end
+					local a = case.anchor
+					if a then
+						local own = { left = a.x, top = a.y, right = a.x + a.w, bottom = a.y + a.h }
+						T.expect({ where, "off its element", meets(box, own) })
+							.toEqual({ where, "off its element", false })
+						-- the arrow points at the element: its centre lies along the element's side
+						if arrow then
+							local along = (arrow.x >= a.x - 1 and arrow.x <= a.x + a.w + 1)
+								or (arrow.y >= a.y - 1 and arrow.y <= a.y + a.h + 1)
+							T.expect({ where, "arrow", along }).toEqual({ where, "arrow", true })
+						end
+					end
+				end
+			end
+		end
+		-- the controller only measures and draws: the place is TutorialTile's
+		local controller = fs.readFile("src/client/Controllers/TutorialController.luau")
+		T.expect(string.find(controller, "TutorialTile.place(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(controller, "TutorialTile.avoid(size.X, size.Y, touch, compact)", 1, true) ~= nil)
+			.toBe(true)
+		T.expect(string.find(controller, "local function place(", 1, true)).toBeNil()
+	end)
+
+	T.it("each device reads its own text, within the tile's cap", function()
+		local cap = TextCaps.SURFACES.tutorialTile.chars
+		local known = fixtureA.known
+		local function has(key: string): boolean
+			return pl[key] ~= nil and en[key] ~= nil
+		end
+		for _, s in Tutorial.STEPS do
+			for _, touch in { false, true } do
+				for _, phone in { false, true } do
+					local key = Tutorial.text(s, touch, false, phone, has)
+					T.expect({ key, has(key) }).toEqual({ key, true })
+					-- a PC never reads the phone's text; a phone reads it where it exists, else the touch one
+					if not touch then
+						T.expect(key).toBe(`{s.textKey}.pc`)
+					elseif phone and has(`{s.textKey}.phone`) then
+						T.expect(key).toBe(`{s.textKey}.phone`)
+					else
+						T.expect(key).toBe(`{s.textKey}.touch`)
+					end
+					-- package A's text part shortens the ones its fixture still lists
+					if not known[key] then
+						for _, lang in { pl, en } do
+							local n = TextCaps.chars(TextCaps.expand(lang[key]))
+							T.expect({ key, n <= cap }).toEqual({ key, true })
+						end
+					end
+				end
+			end
+		end
+		-- the backpack sits in the phone's drawer behind "Menu"; its phone text names no key, like a touch text
+		T.expect(Tutorial.text(Tutorial.STEPS[Tutorial.indexOf.backpack], true, false, true, has))
+			.toBe("tutorial.backpack.phone")
+		for _, lang in { pl, en } do
+			T.expect(string.find(lang["tutorial.backpack.phone"], "{", 1, true)).toBeNil()
+		end
+		-- the controller asks for it on a phone in landscape
+		local controller = fs.readFile("src/client/Controllers/TutorialController.luau")
+		T.expect(string.find(controller, "Tutorial.text(step, touch, away, compact, hasText)", 1, true) ~= nil)
+			.toBe(true)
 	end)
 end)

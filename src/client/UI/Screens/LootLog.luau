@@ -2,6 +2,8 @@
 -- Loot log window (S20, DESIGN §5.9): the last 50 items from character.lootLog, opened from the backpack.
 -- S136: moved out of LootComfortController so the window checklist (Data/UiWindows) sees the file; on parchment,
 -- one ListRow per entry (item name in its rarity colour, time and source as the second line).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's rows: an entry is
+-- ListRow's Tall row (Theme.Size.RowHeightTall, 64; it was 56), the height made for a second line.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -73,7 +75,7 @@ local function LootLog(scope: Scope): Fusion.Child
 						ListRow(s, {
 							LayoutOrder = i,
 							Index = i,
-							Height = Theme.Size.RowHeight + 8,
+							Tall = true,
 							RichText = true,
 							Text = `<font color="{colour}">{name}</font> ({entry.ilvl or 1})`,
 							Sub = Text.get(use, "lootlog.sub", { time = timeAgo(entry.at or 0), source = source }),

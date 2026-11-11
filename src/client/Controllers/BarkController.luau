@@ -9,6 +9,9 @@
 -- setting off (account.settings.barks), outside play and while muted: other controllers call SetQuiet (S102 cutscenes);
 -- comments while muted are dropped. A comment of an NPC whose dialog is open waits until it closes (at most
 -- `holdSeconds`).
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): the box goes
+-- through UI/Notify (a bark: PC at the left edge, a tablet in the band under the target, a phone in its M zone; in
+-- combat it waits up to 30 s, then drops).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,8 +20,10 @@ local Workspace = game:GetService("Workspace")
 local BarkToast = require(script.Parent.Parent.UI.Screens.Hud.BarkToast)
 local Barks = require(ReplicatedStorage.Shared.Logic.Barks)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Notify = require(script.Parent.Parent.UI.Notify)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestText = require(script.Parent.Parent.UI.QuestText)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
@@ -42,7 +47,15 @@ local TOWN = "city"
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 local NpcController: any
-local toast: BarkToast.Api? = nil
+-- the box on the screen or waiting in UI/Notify's queue (nil: none)
+local toast: Notify.Handle? = nil
+
+local function hideToast()
+	if toast then
+		toast.close()
+		toast = nil
+	end
+end
 
 local limiter = Barks.newLimiter()
 local quiet: { [string]: boolean? } = {}
@@ -58,9 +71,7 @@ function BarkController.SetQuiet(reason: string, isQuiet: boolean)
 	if isQuiet then
 		table.clear(queue)
 		held = nil
-		if toast then
-			toast.hide()
-		end
+		hideToast()
 	end
 end
 
@@ -188,8 +199,19 @@ local function display(bark: Bark)
 	if head then
 		bubble(head, line)
 		busyUntil = os.clock() + B.bubbleSeconds
-	elseif toast then
-		toast.show(bark.speaker, line)
+	else
+		hideToast()
+		local size = if Fusion.peek(Device.Touch) then BarkToast.SIZE.touch else BarkToast.SIZE.pc
+		toast = Notify.push({
+			class = "bark",
+			text = line,
+			seconds = B.toastSeconds,
+			w = size.X,
+			height = function(phone: boolean): number
+				return if phone then BarkToast.PHONE_H else size.Y
+			end,
+			build = BarkToast.build(bark.speaker, line),
+		})
 		busyUntil = os.clock() + B.toastSeconds
 	end
 end
@@ -449,9 +471,6 @@ end
 function BarkController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	NpcController = registry.Get("NpcController")
-	local api = BarkToast.new(scope)
-	api.frame.Parent = registry.Get("UIController").GetLayer("Toasts")
-	toast = api
 end
 
 function BarkController.Start()
@@ -463,9 +482,7 @@ function BarkController.Start()
 		if State.Get({ "account", "settings", "barks" }) == false then
 			table.clear(queue)
 			held = nil
-			if toast then
-				toast.hide()
-			end
+			hideToast()
 		end
 	end)
 	onQuests()

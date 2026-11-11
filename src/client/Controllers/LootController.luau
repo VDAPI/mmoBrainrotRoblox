@@ -4,8 +4,10 @@
 -- orange pillar of light, a sound and a screen flash, mythic ones a taller red pillar with embers and a red
 -- flash (S30); picking one up opens the reveal window. S155b: the first valuable drop of a new character (the bag's
 -- `first`, TutorialService) gets the same pillar in its rarity's colour, a toast and the reveal with its own title.
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner question 1):
+-- the pickup shows one of UI/Notify's cards (the title and the item; the PC corner, a phone's M zone) and the reveal
+-- opens from its 'Szczegóły'.
 
-local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -19,6 +21,7 @@ local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local LegendReveal = require(script.Parent.Parent.UI.Screens.LegendReveal)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.UI.Notify)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -42,7 +45,6 @@ type BagView = {
 	items: { ItemInstance },
 }
 
-local UIController: any
 local ItemController: any
 local SfxController: any
 local folder: Folder
@@ -100,19 +102,11 @@ local function pickup(id: string)
 end
 
 local function flashScreen(mythic: boolean)
-	local layer = UIController.GetLayer("Toasts")
-	local flash = Instance.new("Frame")
-	flash.Name = "LegendFlash"
-	flash.Size = UDim2.fromScale(1, 1)
-	flash.BackgroundColor3 = if mythic then Color3.fromHex("#FF6A5E") else Color3.fromHex("#FFE7A0")
-	flash.BackgroundTransparency = if mythic then 0.15 else 0.25
-	flash.ZIndex = 100
-	flash.Parent = layer
-	local seconds = if mythic then 1.3 else 0.7
-	TweenService:Create(flash, TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		BackgroundTransparency = 1,
-	}):Play()
-	Debris:AddItem(flash, seconds + 0.1)
+	Notify.flash(
+		if mythic then Color3.fromHex("#FF6A5E") else Color3.fromHex("#FFE7A0"),
+		if mythic then 0.15 else 0.25,
+		if mythic then 1.3 else 0.7
+	)
 end
 
 -- Pillar of light over a bag with a legendary (orange) or mythic (red: wider, faster pulse, more sparks and a
@@ -313,24 +307,32 @@ local function removeBag(id: string)
 end
 
 local function openReveal(item: ItemInstance, titleKey: string?)
-	local scope = UIController.Scope:innerScope()
-	local function close()
-		Fusion.doCleanup(scope)
-	end
-	LegendReveal(scope, {
-		Item = item,
-		TitleKey = titleKey,
-		OnEquip = function()
-			for key, owned in State.Get({ "character", "inventory" }) or {} do
-				if owned.uid == item.uid then
-					ItemController.Equip(tonumber(key) :: number, nil)
-					return
-				end
+	local function equip()
+		for key, owned in State.Get({ "character", "inventory" }) or {} do
+			if owned.uid == item.uid then
+				ItemController.Equip(tonumber(key) :: number, nil)
+				return
 			end
+		end
+	end
+	local title, line, accent = LegendReveal.summary(item, titleKey)
+	Notify.card({
+		class = "legendary",
+		title = title,
+		line = line,
+		accent = accent,
+		details = function()
+			Notify.details(function(s: Fusion.Scope<typeof(Fusion)>, close: () -> (), sheet: boolean): Instance
+				return LegendReveal.view(s, {
+					Item = item,
+					TitleKey = titleKey,
+					OnEquip = equip,
+					Close = close,
+					Sheet = sheet,
+				})
+			end, nil, LegendReveal.backdrop(item))
 		end,
-		Close = close,
-	}).Parent =
-		UIController.GetLayer("Modals")
+	})
 end
 
 local function onPicked(items: { ItemInstance })
@@ -387,7 +389,6 @@ local function nearestBag(): string?
 end
 
 function LootController.Init(registry)
-	UIController = registry.Get("UIController")
 	SfxController = registry.Get("SfxController")
 	ItemController = registry.Get("ItemController")
 	folder = Instance.new("Folder")

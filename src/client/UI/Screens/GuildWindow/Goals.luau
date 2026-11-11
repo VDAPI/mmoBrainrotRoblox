@@ -4,18 +4,20 @@
 -- guild EXP (this week, today against the daily cap) and how guild EXP is earned.
 -- 2026-10-21 (owner: too many descriptions): one short line each (the end of the week, the rally); the rules of the
 -- goals and the rally behind an "i" (Components/InfoLine), "How to earn guild EXP" folded (Components/Details).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C: "How to earn guild EXP"
+-- is a Section saved on the account (guildSources, folded), the look of a titled part of a window (UI-ZASADY §4).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Common = require(script.Parent.Common)
-local Details = require(script.Parent.Parent.Parent.Components.Details)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GuildProgress = require(ReplicatedStorage.Shared.Logic.GuildProgress)
 local GuildProgressData = require(ReplicatedStorage.Shared.Data.GuildProgress)
 local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -293,15 +295,10 @@ local function Goals(scope: Scope): Instance
 			},
 		}),
 		-- How guild EXP is earned: folded under its own title (the rule and the points of every activity)
-		Details.new(scope, {
-			Key = "guild/sources",
+		Section.new(scope, {
+			Id = "guildSources",
+			Title = Text.T(scope, "guild.source.title"),
 			LayoutOrder = 30,
-			MoreText = scope:Computed(function(use): string
-				return `{Text.get(use, "guild.source.title")} ▸`
-			end),
-			LessText = scope:Computed(function(use): string
-				return `{Text.get(use, "guild.source.title")} ▾`
-			end),
 			Children = {
 				Common.paragraph(
 					scope,

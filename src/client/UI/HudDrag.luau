@@ -5,6 +5,11 @@
 -- with `w` / `h` (the quest tracker) changes its size; a scaled one (the event panels, HudLayout `minS`) its UIScale.
 -- `HudDrag.frame` wraps an event panel: the outer frame takes the saved place (or the built-in one), the scale and two
 -- grips: "≡" on a tab at the side facing the middle of the screen, "◢" on the bottom-right corner.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): a moved element never stands in a reserved place
+-- (Logic/HudLayout.reserved: the target band, the message zone and the card slot on PC and a tablet, the target with
+-- its M zone and the thumb zone on a phone). A saved place there (saved on another screen, or before this rule) falls
+-- back to the built-in place, and a drop there keeps the place the element had (HudLayout.valid() is unchanged: old
+-- saves still read). While a drag runs the element follows the pointer anywhere, so the player sees what they do.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -46,8 +51,17 @@ export type Handle = {
 	bind: (frame: GuiObject) -> (),
 }
 
--- `width(use, entry)`: the element's own width (before its scale) for an entry.
-function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: HudLayout.Entry?) -> number): Handle
+-- `width(use, entry)`: the element's own width (before its scale) for an entry. `height(use, entry, x, y)`: its own
+-- height (before its scale) with its top-left corner at x, y and folded only as the player folded it. Package A
+-- review (owner 2026-11-10, "things covering each other"): the height as drawn shrinks while the column folds the
+-- element, so a saved place could look free only while it stood folded in the column, and the element would flip
+-- between that place and the column; without `height` the drawn height is measured.
+function HudDrag.new(
+	scope: Scope,
+	id: string,
+	width: (use: Fusion.Use, entry: HudLayout.Entry?) -> number,
+	height: ((use: Fusion.Use, entry: HudLayout.Entry, x: number, y: number) -> number)?
+): Handle
 	local def = HudLayout.ELEMENTS[id]
 	local scaled = def.minS ~= nil
 	local saved = State.Value({ "account", "settings", "hud" })
@@ -67,22 +81,37 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 	local scale = scope:Computed(function(use): number
 		return HudLayout.scaleOf(use(entry))
 	end)
-	local corner = scope:Computed(function(use): Vector2?
-		local e = use(entry)
-		if not e then
-			return nil
-		end
+	-- the element's height as drawn (virtual px, with its scale): a sized one keeps its own, a scaled panel is measured
+	local measured = scope:Value(0)
+	-- the corner entry `e` gives on the screen now, and whether the element stands clear of the reserved places there
+	local function placed(use: Fusion.Use, e: HudLayout.Entry): (Vector2, boolean)
 		local screen = use(Scale.HudSize)
-		local w = width(use, e) * HudLayout.scaleOf(e)
+		local s = HudLayout.scaleOf(e)
+		local w = width(use, e) * s
 		local x, y = HudLayout.place(e, w, screen.X, screen.Y)
 		-- Studio check of phase 4: whole on the screen, MARGIN from its edges (a place saved at a larger window ran
 		-- past the right edge of a smaller one)
 		x = HudStack.insideX(x, w, screen.X)
 		-- Studio check 2026-10-31: never under the menu over the minimap (a phone keeps its own stack)
-		if not use(PhoneLayout.Compact) then
+		local compact = use(PhoneLayout.Compact)
+		if not compact then
 			y = HudStack.belowMenu(x, x + w, y, use(HudSlots.Menu))
 		end
-		return Vector2.new(x, y)
+		local h = if e.w and e.h then e.h * s elseif height then height(use, e, x, y) * s else use(measured)
+		local rect = { left = x, top = y, right = x + w, bottom = y + h }
+		return Vector2.new(x, y), HudLayout.usable(rect, screen.X, screen.Y, use(Device.Touch) == true, compact)
+	end
+	local corner = scope:Computed(function(use): Vector2?
+		local e = use(entry)
+		if not e then
+			return nil
+		end
+		local at, free = placed(use, e)
+		-- a saved place in a reserved zone: the built-in place (a drag in progress follows the pointer)
+		if not free and use(live) == nil then
+			return nil
+		end
+		return at
 	end)
 
 	local root: GuiObject? = nil
@@ -164,7 +193,13 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 			drag = nil
 			local now = Fusion.peek(live)
 			if now then
-				Net.Send("SetSetting", "hud", HudLayout.with(Fusion.peek(saved), id, now))
+				local _, free = placed(Fusion.peek, now)
+				if free then
+					Net.Send("SetSetting", "hud", HudLayout.with(Fusion.peek(saved), id, now))
+				else
+					-- dropped on a reserved place: it goes back where it stood
+					live:set(nil)
+				end
 			end
 		end)
 	)
@@ -177,6 +212,14 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 		begin = begin,
 		bind = function(frame: GuiObject)
 			root = frame
+			local function measure()
+				local k = Scale.get()
+				if k > 0 then
+					measured:set(frame.AbsoluteSize.Y / k)
+				end
+			end
+			table.insert(scope, frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(measure))
+			task.defer(measure)
 		end,
 	}
 end

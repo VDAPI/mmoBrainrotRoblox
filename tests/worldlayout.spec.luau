@@ -7,6 +7,11 @@
 -- the fishing panel keep clear of the top bar (and the panel of a phone's HUD), the NPC's line never runs into the
 -- choices, and Party Finder's rows stay in their 290-px cells. The numbers WorldLayout copies from Components/Section
 -- and Theme are read from those files. Every text field's placeholder in E's windows fits 20 characters.
+-- UI package C's parts (same owner note): E's dialog-like windows pin their actions in the window's footer
+-- (Components/Window `Footer`, Logic/WindowFrame.body above it) and show at least 2 rows over it on a phone and 5 on
+-- PC; the quest dialog's page and reward choice share that body; the character card's "Usuń" and "Graj" stand in one
+-- footer row on the screen; the quest journal's six tabs fit its strip whole. Review 2026-11-11: the area picker shows 2
+-- areas under the portal's longest warning on a phone and 5 on PC (WorldLayout.areaPicker).
 
 local fs = require("@lune/fs")
 
@@ -121,6 +126,24 @@ local function contentOf(id: string, screen: Screen): Size
 	return { w = c.right - c.left, h = c.bottom - c.top }
 end
 
+-- The window's frame on a screen (Logic/WindowFrame.rect).
+local function frameOf(id: string, screen: Screen): WindowFrame.Frame
+	return WindowFrame.rect(
+		{ w = screen.w, h = screen.h },
+		windowSize(id),
+		nil,
+		screen.touch,
+		screen.bar,
+		screen.compact
+	)
+end
+
+-- UI package C: the part of the content above the window's pinned footer (Logic/WindowFrame.body).
+local function bodyOf(id: string, screen: Screen): Size
+	local b = WindowFrame.body(frameOf(id, screen), true)
+	return { w = b.right - b.left, h = b.bottom - b.top }
+end
+
 -- The fewest rows a list shows: a phone, a tablet, PC.
 local function wanted(device: Device, phone: number, pc: number): number
 	return if device == "pc" then pc else phone
@@ -178,6 +201,9 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(constant("src/client/UI/Theme.luau", "MinTouch = (%d+)")).toBe(S.summaryTouch)
 		T.expect(constant("src/client/UI/Theme.luau", "Padding = {%s*Tiny = %d+,%s*Small = (%d+)")).toBe(S.gap)
 		T.expect(constant("src/client/UI/Theme.luau", "\n%s*Body = (%d+)")).toBe(WorldLayout.BODY)
+		-- UI package C: ListRow's one-line and two-line rows
+		T.expect(constant("src/client/UI/Theme.luau", "\n%s*RowHeight = (%d+)")).toBe(WorldLayout.ROW)
+		T.expect(constant("src/client/UI/Theme.luau", "\n%s*RowHeightTall = (%d+)")).toBe(WorldLayout.ROW_TALL)
 	end)
 
 	-- Review 2026-11-10: the rows counted under the podium as Data/Folds/World opens it on the device (open on PC and a
@@ -238,6 +264,9 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(string.find(src, "local left = if use(layout).footerLines < 2 then use(endsIn)", 1, true) ~= nil)
 			.toBe(true)
 		T.expect(string.find(src, '"leaderboard.local.short"', 1, true) ~= nil).toBe(true)
+		-- UI package C: a phone's class filter is the window's title bar button, not a button over the tab strip
+		T.expect(string.find(src, "return { Content = content, HeaderAction = filterAction }", 1, true) ~= nil)
+			.toBe(true)
 		local problems: { string } = {}
 		for _, screen in screens() do
 			if screen.device == "phone" then
@@ -362,12 +391,24 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 					table.insert(problems, `{screen.name}: the open regions show {b.regions} px`)
 				end
 			end
-			local default = WorldLayout.bestiary(middle, screen.device, screen.device ~= "phone", regions).list
-			if WorldLayout.rows(default) < 2 then
-				table.insert(problems, `{screen.name}: {WorldLayout.rows(default)} bestiary rows < 2`)
+			-- review 2026-11-11 (PC's two-line entries left 2 under the open regions): one-line entries keep 3 under
+			-- the regions as Data/Folds/World opens them on PC and a tablet, 2 under a phone's folded header, and 5 on
+			-- PC with the regions folded
+			local open = SectionFold.default("bestiaryRegions", screen.compact)
+			local default = WorldLayout.rows(WorldLayout.bestiary(middle, screen.device, open, regions).list)
+			local want = if screen.device == "phone" then 2 else 3
+			if default < want then
+				table.insert(problems, `{screen.name} regions open {open}: {default} bestiary rows < {want}`)
+			end
+			local folded = WorldLayout.rows(WorldLayout.bestiary(middle, screen.device, false, regions).list)
+			if folded < wanted(screen.device, 2, 5) then
+				table.insert(problems, `{screen.name} regions folded: {folded} bestiary rows`)
 			end
 		end
 		T.expect(problems).toEqual({})
+		-- the entries are ListRow's one line on every device: their tiers and points are in the details
+		T.expect(WorldLayout.BESTIARY.entryRow).toBe(WorldLayout.ROW)
+		T.expect(string.find(bestiary, "Tall = ", 1, true)).toBe(nil)
 	end)
 
 	T.it("quest board: 2 cards under the hunting block (folded on a phone); the tabs and the set's line fit", function()
@@ -415,18 +456,21 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 	end)
 
 	T.it("quest dialog: 3 lines of the page over the reward choice and the pinned buttons", function()
+		-- UI package C: the buttons are the window's footer, so the page and the choice share the body above it
+		local src = fs.readFile("src/client/UI/Screens/QuestDialog.luau")
+		T.expect(string.find(src, "return { Content = content, Footer = footer }", 1, true) ~= nil).toBe(true)
 		local problems: { string } = {}
 		for _, screen in screens() do
-			local content = contentOf("questnpc", screen)
+			local content = bodyOf("questnpc", screen)
 			for _, choice in { false, true } do
 				local d = WorldLayout.questDialog(content, screen.device, choice)
 				negatives(`{screen.name} questnpc`, d, problems)
 				if d.bodyLines < 3 then
 					table.insert(problems, `{screen.name} choice {choice}: {d.bodyLines} lines < 3`)
 				end
-				-- the buttons at the bottom, the choice right over them
-				if math.abs(d.bodyTop + d.body + d.choice + d.buttons - content.h) > 1e-6 then
-					table.insert(problems, `{screen.name}: the buttons are not pinned`)
+				-- the choice at the bottom of the body, right over the footer
+				if math.abs(d.bodyTop + d.body + d.choice - content.h) > 1e-6 then
+					table.insert(problems, `{screen.name}: the choice is not over the buttons`)
 				end
 				-- a phone's choice row: the label and four slots in one row
 				if choice and d.choiceLabel > 0 and d.choiceLabel + 4 * (d.slot + 14) > content.w then
@@ -501,13 +545,147 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 			if not inside(c.play, area) or not inside(c.delete, area) then
 				table.insert(problems, `{screen.name}: 'Graj' or 'Usuń' off the screen`)
 			end
-			if c.play.bottom > c.delete.top or c.titleTop < screen.bar then
-				table.insert(problems, `{screen.name}: the buttons or the title overlap`)
+			if c.titleTop < screen.bar then
+				table.insert(problems, `{screen.name}: the title under the top bar`)
+			end
+			-- UI package C: one footer row of WindowFrame.FOOTER, "Usuń" at its left and "Graj" in the rest
+			local C = WorldLayout.CHAR_CARD
+			if
+				c.play.top ~= c.delete.top
+				or c.play.bottom ~= c.delete.bottom
+				or c.play.bottom - c.play.top ~= WindowFrame.FOOTER
+				or c.delete.right + C.gap > c.play.left + 1e-6
+			then
+				table.insert(problems, `{screen.name}: 'Graj' and 'Usuń' are not one footer row`)
+			end
+			-- the labels fit their buttons in one line (Body, the button's padding 14 each side)
+			for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+				local labels = {
+					{ t["charSelect.play"], c.play.right - c.play.left },
+					{ t["charSelect.delete"], c.delete.right - c.delete.left },
+					{ t["charSelect.createButton"], c.play.right - c.delete.left },
+					{ (string.gsub(t["charSelect.unlock"], "{price}", "9999")), c.play.right - c.delete.left },
+				}
+				for _, pair in labels do
+					if TextCaps.width(pair[1], WorldLayout.BODY) + 28 > pair[2] then
+						table.insert(problems, `{screen.name} {lang}: "{pair[1]}" wider than its {pair[2]} button`)
+					end
+				end
 			end
 			-- what stands over the buttons fits its part: the emblem, the name, class and map
 			local text = if screen.compact then 32 + 24 + 20 + 3 * 4 else 40 + 26 + 22 + 3 * 8
 			if c.emblem + text > c.info + 1e-6 then
 				table.insert(problems, `{screen.name}: the card's info {c.emblem + text} > {c.info}`)
+			end
+		end
+		T.expect(problems).toEqual({})
+	end)
+
+	-- UI package C (owner 2026-11-10): E's dialog-like windows and forms pin their actions in the window's footer, on
+	-- the screen under the top bar; the body above it (the window's scroll, or the area picker's list and the quest
+	-- dialog's page) keeps at least 2 rows on a phone and 5 on PC.
+	T.it("footer windows: the actions pinned on the screen, 2 rows over them on a phone, 5 on PC", function()
+		-- the area picker counts its own rows under its header and warning (the next test)
+		local windows = {
+			{ id = "dungeon", file = "DungeonWindow.luau", scroll = true },
+			{ id = "bloodmoon", file = "BloodMoonWindow.luau", scroll = true },
+			{ id = "login", file = "LoginReward.luau", scroll = true },
+			{ id = "whatsnew", file = "WhatsNew.luau", scroll = true },
+			{ id = "areapicker", file = "AreaPicker.luau", scroll = false, ownRows = true },
+			{ id = "questnpc", file = "QuestDialog.luau", scroll = false },
+			{ id = "mailCompose", file = "MailCompose.luau", scroll = true },
+			{ id = "guildfound", file = "GuildFound.luau", scroll = true },
+		}
+		local problems: { string } = {}
+		for _, w in windows do
+			local src = fs.readFile(`src/client/UI/Screens/{w.file}`)
+			if not string.find(src, "): Window.Parts", 1, true) or not string.find(src, "Footer = ", 1, true) then
+				table.insert(problems, `{w.file}: no footer in its Window.Parts`)
+			end
+			if w.scroll ~= (string.find(src, "Scroll = true", 1, true) ~= nil) then
+				table.insert(problems, `{w.file}: the window's scroll should be {w.scroll}`)
+			end
+			for _, screen in screens() do
+				local frame = frameOf(w.id, screen)
+				local area = { left = 0, top = screen.bar, right = screen.w, bottom = screen.h }
+				if not inside(frame.footer, area) or not inside(frame.footer, frame.window) then
+					table.insert(problems, `{screen.name} {w.id}: the footer off the screen`)
+				end
+				local body = bodyOf(w.id, screen)
+				local rows = math.floor(body.h / WorldLayout.ROW + 1e-6)
+				local want = wanted(screen.device, 2, 5)
+				if body.w < 0 or (not w.ownRows and rows < want) then
+					table.insert(problems, `{screen.name} {w.id}: {rows} rows over the footer < {want}`)
+				end
+			end
+		end
+		T.expect(problems).toEqual({})
+	end)
+
+	-- Review 2026-11-11 (the footer test counted 48-px rows; the picker's are 66/88 under its header line and a
+	-- warning, 1.7 of them on a phone): WorldLayout.areaPicker models the column, the spec counts the rows with a
+	-- profile line (the taller ones) under the longest warning a portal passes (pl and en, wrapped at the body's width).
+	T.it("area picker: 2 areas under the portal's longest warning on a phone, 5 on PC", function()
+		local warnings: { string } = {}
+		for _, strings in { pl, en } :: { { [string]: string } } do
+			for _, key in { "portal.warnRed", "portal.warnLevel", "portal.warnBoth" } do
+				table.insert(warnings, TextCaps.expand(strings[key]))
+			end
+		end
+		local problems: { string } = {}
+		for _, screen in screens() do
+			local body = bodyOf("areapicker", screen)
+			local lines = 0
+			for _, text in warnings do
+				lines = math.max(lines, TextCaps.lines(text, WorldLayout.SMALL, body.w))
+			end
+			local picker = WorldLayout.areaPicker(body, screen.device, lines)
+			local want = wanted(screen.device, 2, 5)
+			local rows = WorldLayout.rows(picker.list)
+			if rows < want then
+				table.insert(problems, `{screen.name}: {rows} areas under {lines} warning lines < {want}`)
+			end
+			if picker.compact ~= (screen.device == "phone") or picker.plainRow > picker.list.row then
+				table.insert(problems, `{screen.name}: the rows {picker.plainRow} / {picker.list.row}`)
+			end
+		end
+		T.expect(problems).toEqual({})
+		-- the window reads the column and its rows, and a portal passes its two dangers as one line
+		local src = fs.readFile("src/client/UI/Screens/AreaPicker.luau")
+		T.expect(string.find(src, "local A = WorldLayout.AREA_PICKER", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(src, "ROW_HEIGHT", 1, true)).toBe(nil)
+		for _, field in { "A.compactProfileRow", "A.profileRow", "A.header", "A.gap", "A.rowGap", "A.pad" } do
+			T.expect(`{field} {string.find(src, field, 1, true) ~= nil}`).toBe(`{field} true`)
+		end
+		local controller = fs.readFile("src/client/Controllers/WorldController.luau")
+		local merged = 'if both then { Text.now("portal.warnBoth", { level = target.minLevel }) } else warnings'
+		T.expect(string.find(controller, merged, 1, true) ~= nil).toBe(true)
+		-- the touch rows stay touch targets
+		T.expect(WorldLayout.AREA_PICKER.compactRow >= 44).toBe(true)
+	end)
+
+	-- UI package C's tabs (owner 2026-11-10, "too much text, things covering each other"; the plan found the journal's
+	-- "Tygodniowe" past the strip's end): the journal is wide enough that its six tabs fit their strip whole on every
+	-- screen, 1280x720 too (WindowFrame.tabFit, the strip less the selected tab's frame at both ends), and its list
+	-- starts under the strip.
+	T.it("quest journal: the six tabs fit their strip whole on every screen", function()
+		local src = fs.readFile("src/client/UI/Screens/QuestJournal.luau")
+		T.expect(
+			string.find(src, "local stripBottom = WindowFrame.tabStrip(true).height + WindowFrame.TAB_EDGE", 1, true)
+				~= nil
+		).toBe(true)
+		local problems: { string } = {}
+		for _, screen in screens() do
+			local room = contentOf("quests", screen).w - 2 * WindowFrame.TAB_EDGE
+			for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+				local labels = {}
+				for _, id in { "main", "daily", "side", "contract", "boss", "weekly" } do
+					table.insert(labels, t[`quest.tab.{id}`])
+				end
+				local fit = WindowFrame.tabFit(labels, room)
+				if fit.scroll then
+					table.insert(problems, `{screen.name} {lang}: the tabs need {fit.width} > {room}`)
+				end
 			end
 		end
 		T.expect(problems).toEqual({})
@@ -567,6 +745,139 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(problems).toEqual({})
 	end)
 
+	-- Review 2026-11-11 (party "Lider" 40 and board "Zamień" 30 high in a phone's rows, guild actions 36-38): a Button in
+	-- E's screens is at least Theme.Size.MinTouch (44) high, or its height picks the device (a touch branch, as
+	-- SkillsWindow/PathTab's `if touch then MinTouch else ButtonHeightSmall`); 40 is PC's (UI-ZASADY §7). The height is
+	-- the last argument of the Size's UDim2: a number, a Theme.Size token, or the nearest `local` above the button
+	-- (one step of + or -); a height the spec cannot read (a parameter, WorldLayout's numbers) is not judged.
+	T.it("E's buttons: no height under 44 on touch without a touch branch", function()
+		local theme = fs.readFile("src/client/UI/Theme.luau")
+		-- PC-only buttons (40, ButtonHeightSmall, is PC's own height): the file and the Size's text
+		local PC_ONLY = {
+			-- the hotkey section is hidden on touch (no keyboard)
+			{
+				file = "src/client/UI/Screens/GameMenu.luau",
+				size = "UDim2.fromOffset(160, Theme.Size.ButtonHeightSmall)",
+			},
+		}
+		local function split(args: string): { string }
+			local out, depth, start = {}, 0, 1
+			for i = 1, #args do
+				local c = string.sub(args, i, i)
+				if c == "(" or c == "{" then
+					depth += 1
+				elseif c == ")" or c == "}" then
+					depth -= 1
+				elseif c == "," and depth == 0 then
+					table.insert(out, string.sub(args, start, i - 1))
+					start = i + 1
+				end
+			end
+			table.insert(out, string.sub(args, start))
+			return out
+		end
+		local function trim(text: string): string
+			return (string.gsub(text, "^%s*(.-)%s*$", "%1"))
+		end
+		-- the value of a height expression, nil when the spec cannot read it
+		local function value(expr: string, lines: { string }, at: number, depth: number): number?
+			expr = trim(expr)
+			local n = tonumber(expr)
+			if n then
+				return n
+			end
+			local tokenName = string.match(expr, "^Theme%.Size%.([%w_]+)$")
+			if tokenName then
+				return tonumber(string.match(theme, `\n%s*{tokenName} = (%d+)`))
+			end
+			local a, op, b = string.match(expr, "^([%w_%.]+)%s*([%+%-])%s*(%d+)$")
+			if a and op and b and depth < 3 then
+				local base = value(a, lines, at, depth + 1)
+				if base then
+					return if op == "+" then base + tonumber(b) :: number else base - tonumber(b) :: number
+				end
+				return nil
+			end
+			if string.match(expr, "^[%a_][%w_]*$") and depth < 3 then
+				for i = at, 1, -1 do
+					local found = string.match(lines[i], `^%s*local {expr} = (.+)$`)
+					if found then
+						if string.find(string.lower(found), "touch", 1, true) then
+							return 44
+						end
+						return value(found, lines, i - 1, depth + 1)
+					end
+				end
+			end
+			return nil
+		end
+		local problems: { string } = {}
+		local checked = 0
+		local function check(path: string)
+			local lines = string.split(fs.readFile(path), "\n")
+			for i, line in lines do
+				if not string.find(line, "Button%(%s*[%w_]+%s*,%s*{%s*$") then
+					continue
+				end
+				local indent = #(string.match(line, "^(\t*)") or "")
+				-- the call's Size (its continuation lines are deeper than the Size line)
+				for j = i + 1, math.min(#lines, i + 40) do
+					local own = #(string.match(lines[j], "^(\t*)") or "")
+					if own <= indent then
+						break
+					end
+					local first = string.match(lines[j], "^%s*Size = (.+)$")
+					if first and own == indent + 1 then
+						local expr = first
+						for k = j + 1, #lines do
+							if #(string.match(lines[k], "^(\t*)") or "") <= own then
+								break
+							end
+							expr ..= " " .. trim(lines[k])
+						end
+						checked += 1
+						if string.find(string.lower(expr), "touch", 1, true) then
+							break
+						end
+						local offset = string.match(expr, "UDim2%.fromOffset(%b())")
+						local args = offset or string.match(expr, "UDim2%.new(%b())")
+						if not args then
+							break
+						end
+						local parts = split(string.sub(args, 2, -2))
+						if not offset and tonumber(trim(parts[3] or "")) ~= 0 then
+							break -- a height by the parent's scale: the parent's own height is judged where it is set
+						end
+						local height = value(parts[#parts], lines, j, 0)
+						local allowed = false
+						for _, pc in PC_ONLY do
+							allowed = allowed or (pc.file == path and string.find(expr, pc.size, 1, true) ~= nil)
+						end
+						if height and height < 44 and not allowed then
+							table.insert(problems, `{path}:{j}: {trim(expr)}`)
+						end
+						break
+					end
+				end
+			end
+		end
+		local function walk(dir: string)
+			local names = fs.readDir(dir)
+			table.sort(names)
+			for _, name in names do
+				local path = `{dir}/{name}`
+				if fs.isDir(path) then
+					walk(path)
+				elseif string.sub(name, -5) == ".luau" and TextScan.ownerOfFile(path) == "E" then
+					check(path)
+				end
+			end
+		end
+		walk("src/client/UI/Screens")
+		T.expect(problems).toEqual({})
+		T.expect(checked > 80).toBe(true)
+	end)
+
 	T.it("the sections of E's windows have their defaults in Folds/World or Folds/Menu", function()
 		local mine: { [string]: boolean } = {}
 		for _, area in Folds do
@@ -586,6 +897,8 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 			"src/client/UI/Screens/WorldMap/DetailCard.luau",
 			"src/client/UI/Screens/GuildWindow/Overview.luau",
 			"src/client/UI/Screens/GuildWindow/Settings.luau",
+			"src/client/UI/Screens/GuildWindow/Goals.luau",
+			"src/client/UI/Screens/BloodMoonWindow.luau",
 		}
 		local found = 0
 		for _, path in files do

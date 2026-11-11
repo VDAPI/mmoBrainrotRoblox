@@ -1,6 +1,11 @@
 --!strict
 -- Party member frames (DESIGN §17, left side under the portrait): name, class glyph, level, HP and mana,
 -- leader crown, "far" when on another map or beyond 80 studs. Clicking a frame targets the member (heals).
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): on a phone the party is one line of the stack
+-- ("party", UI/HudSlots, Logic/PhoneHud): at most TILES tiles of 52 px (the class sign over an HP strip; a tap targets
+-- the member, as on PC), then "+N" for the rest; the four rows of 58 px ran into the stack's panels. Package A review
+-- (owner 2026-11-10): the strip is PhoneHud.PARTY_WIDTH wide (tiles 3 px apart), so it stands beside the stack's
+-- '+N' chip; at 218 it met the chip and went behind it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
@@ -25,6 +31,10 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local FAR = 80
 local WIDTH = 260
 local HEIGHT = 58
+-- a phone's strip: tiles of one stack line, PARTY_GAP apart, and the "+N" tile (Logic/PhoneHud)
+local TILES = PhoneHud.PARTY_TILES
+local TILE = PhoneHud.LINE
+local STRIP = PhoneHud.PARTY_WIDTH
 
 local LEADER_ART = UiArt.hud("party_leader") -- S119
 local DEAD_ART = UiArt.hud("dead")
@@ -41,6 +51,75 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 			return list
 		end
 		local myRoot = me.Character and me.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if use(PhoneLayout.Compact) then
+			-- package A: a phone's strip of tiles and "+N"
+			local shown = 0
+			local more = 0
+			for _, member in p.members do
+				if member.id == me.UserId then
+					continue
+				end
+				if shown >= TILES then
+					more += 1
+					continue
+				end
+				shown += 1
+				local class = Classes.get(member.class)
+				local hpRatio = math.clamp(member.hp / math.max(1, member.maxHp), 0, 1)
+				table.insert(
+					list,
+					s:New("TextButton")({
+						Name = member.name,
+						LayoutOrder = shown,
+						Size = UDim2.fromOffset(TILE, TILE),
+						BackgroundColor3 = Theme.Iron.Surface,
+						BackgroundTransparency = Theme.HudAlpha,
+						AutoButtonColor = true,
+						Text = if class then class.icon else "◆",
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = if class then Theme.tint(class.color) else Theme.Iron.Text,
+						[OnEvent("Activated")] = function()
+							onSelect(member.id)
+						end,
+						[Children] = {
+							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+							s:New("UIStroke")({
+								ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+								Color = if member.id == p.leader then Theme.Brass.Bright else Theme.Brass.Line,
+								Thickness = Theme.Stroke.Thin,
+							}),
+							s:New("Frame")({
+								Name = "Hp",
+								AnchorPoint = Vector2.new(0, 1),
+								Position = UDim2.new(0, 4, 1, -4),
+								Size = UDim2.new(hpRatio, -8 * hpRatio, 0, 5),
+								BackgroundColor3 = Theme.Resource.Hp,
+								BorderSizePixel = 0,
+							}),
+						},
+					})
+				)
+			end
+			if more > 0 then
+				table.insert(
+					list,
+					s:New("TextLabel")({
+						Name = "More",
+						LayoutOrder = TILES + 1,
+						Size = UDim2.fromOffset(PhoneHud.PARTY_MORE, TILE),
+						BackgroundColor3 = Theme.Iron.Raised,
+						BackgroundTransparency = Theme.HudAlpha,
+						Text = `+{more}`,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = Theme.Iron.Text,
+						[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					})
+				)
+			end
+			return list
+		end
 		local leaderArt = UiArtState.ready(use, LEADER_ART)
 		local deadArt = UiArtState.ready(use, DEAD_ART)
 		local order = 0
@@ -153,19 +232,35 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 		return list
 	end)
 
+	-- package A: a phone's strip is the first line of the stack
+	local others = PhoneLayout.Others
+	local slot = HudSlots.join(
+		scope,
+		"party",
+		scope:Computed(function(use): HudSlots.Box
+			return { shown = use(PhoneLayout.Compact) and use(others) > 0, w = STRIP, h = TILE, line = TILE }
+		end)
+	)
+	local stripAt = HudSlots.position(scope, slot)
 	return scope:New("Frame")({
 		Name = "PartyFrames",
-		-- W29: at the top of the phone stack in landscape (Logic/PhoneHud)
 		Position = PhoneLayout.Pick(
 			scope,
-			UDim2.fromOffset(PhoneHud.PLACES.stack.x, PhoneHud.STACK_TOP),
+			stripAt,
 			-- UI plan phase 4: where Logic/HudStack's touch column makes room for them, under the portrait's effects
 			UDim2.fromOffset(HudStack.MARGIN, HudStack.PARTY_TOP)
 		),
-		Size = UDim2.fromOffset(WIDTH, 4 * (HEIGHT + 6)),
+		Size = PhoneLayout.Pick(scope, UDim2.fromOffset(STRIP, TILE), UDim2.fromOffset(WIDTH, 4 * (HEIGHT + 6))),
 		BackgroundTransparency = 1,
+		Visible = scope:Computed(function(use): boolean
+			return not use(PhoneLayout.Compact) or use(slot) ~= nil
+		end),
 		[Children] = {
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				FillDirection = PhoneLayout.Pick(scope, Enum.FillDirection.Horizontal, Enum.FillDirection.Vertical),
+				Padding = PhoneLayout.Pick(scope, UDim.new(0, PhoneHud.PARTY_GAP), UDim.new(0, 6)),
+			}),
 			frames :: any,
 		},
 	})

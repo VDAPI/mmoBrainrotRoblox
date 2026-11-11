@@ -13,6 +13,11 @@
 --   player has moved (HudLayout) stays where it is and the others go round it: above it, under it or, when the column
 --   has no room left, in a spare column beside it. The tracker takes the room left down to the floor (its list
 --   scrolls), on a crowded screen down to its header and one line.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"; UI plan package A): nothing of the
+-- stack goes past the column's floor any more. With no room the column first shrinks what may shrink (the tracker to
+-- its header and two lines), then folds the panels to their header line from the lowest up (and the tracker to its
+-- header last), then hides elements from the lowest up behind a '+N' chip at the floor (Hud/StackChip lists them, a
+-- pick brings one back first: `keep`); `place` returns the rectangles, the folded ids and the hidden ids.
 -- All numbers are virtual pixels of UI/Scale; rectangles are measured from the top-left corner of the screen. Pure;
 -- tests/hudlayout.spec checks that nothing overlaps at the common screen sizes.
 
@@ -23,6 +28,7 @@ local HudStack = {}
 export type Rect = { left: number, top: number, right: number, bottom: number }
 -- A button of the corner: its distance from the right and the bottom edge and its size.
 export type Spot = { right: number, bottom: number, w: number, h: number }
+export type Size = { w: number, h: number }
 export type Column = {
 	x: number, -- the column's right edge (`right`) or left edge
 	right: boolean,
@@ -30,20 +36,40 @@ export type Column = {
 	floor: number, -- nothing of the stack goes below this
 	spares: { number }?, -- the edges of the spare columns beside it, nearest first (the same side as `x`)
 	spareTop: number?, -- where the spare columns start (default `top`)
+	width: number?, -- the lane's width: the '+N' chip stands at its far end (default the chip's width)
+	chip: Size?, -- the '+N' chip (default CHIP)
 }
 export type Item = {
 	id: string,
 	w: number,
 	h: number,
 	grow: boolean?, -- takes the room down to the floor or the next element below (the quest tracker)
-	least: number?, -- a `grow` element with no room for `h` anywhere: the least height it shrinks to
+	least: number?, -- the least height it shrinks to before any panel folds (the tracker: its header and two lines)
+	line: number?, -- the height of its folded line (a panel's header, the tracker's header): the column may fold it
+	keep: boolean?, -- the player took it from the '+N' list: folded and hidden after the others
 }
--- What an element of the column tells it (UI/HudSlots): shown, its size (virtual pixels, after its scale) and, once
--- the player moved it (UI/HudDrag), its rectangle.
-export type Box = { shown: boolean, w: number, h: number, custom: Rect? }
+-- What an element of the column tells it (UI/HudSlots): shown, its size (virtual pixels, after its scale), its folded
+-- line, whether the player brought it out of the '+N' list and, once the player moved it (UI/HudDrag), its rectangle.
+export type Box = { shown: boolean, w: number, h: number, custom: Rect?, line: number?, keep: boolean? }
+-- Where `place` put the column: the shown elements' rectangles by id (a folded one its line), the ids it folded to
+-- their line (not the player's choice: the panel shows its line until there is room), the ids behind the '+N' chip
+-- (top down) and the chip while one is hidden.
+export type Placed = { rects: { [string]: Rect }, folded: { string }, hidden: { string }, chip: Rect? }
 
--- The order of the stack, top down; "elite" stacks only on a touch screen (PC: over the corner's buttons).
-HudStack.ORDER = table.freeze({ "arena", "worldBoss", "worldEvent", "bloodMoon", "tourney", "elite", "questTracker" })
+-- The order of the stack, top down. "party" (the phone's party strip) and "guide" (the guide bar of a phone whose M
+-- zone has no room for it) join only on a phone; "elite" stacks only on a touch screen (PC: over the corner's
+-- buttons); "arena" is the arena's queue pill or, during a match, its team list (Hud/ArenaTeams).
+HudStack.ORDER = table.freeze({
+	"party",
+	"arena",
+	"worldBoss",
+	"worldEvent",
+	"bloodMoon",
+	"tourney",
+	"elite",
+	"guide",
+	"questTracker",
+})
 
 -- UI plan phase 4 (one spacing grid, plan §2 rule 7): the HUD stands MARGIN from the screen's edges everywhere
 -- (Theme.Padding.Large: the portrait, the menu over the minimap, the column under them and the corner's buttons; the
@@ -107,10 +133,20 @@ HudStack.EXTRAS = table.freeze({
 	h = 44,
 })
 
--- The tracker's height before it moves to a spare column (its header and two lines) and the least it shrinks to
--- when there is no room for that in any column (its header; the list scrolls in what is left).
+-- The tracker's height before it moves to a spare column (its header and two lines) and its header alone, the line
+-- it folds to once every panel above it is folded (UI plan package A: the tracker keeps at least its header).
 HudStack.TRACKER_LEAST = 6 + 28 + 3 + 8
 HudStack.TRACKER_MIN = HudStack.TRACKER_LEAST + 2 * 22
+
+-- UI plan package A: a panel's folded line (Hud/PanelHeader: Theme.Size.PanelLine on PC, Theme.Size.MinTouch on a
+-- tablet, Theme.Size.HudLine on a phone, Logic/PhoneHud.LINE) and the '+N' chip at the floor of the column (a touch
+-- screen's at least MinTouch; a phone's at the right end of its stack, Logic/PhoneHud.CHIP).
+HudStack.LINE_PC = 32
+HudStack.LINE_TOUCH = 44
+HudStack.CHIP = table.freeze({ w = 72, h = 32 })
+HudStack.CHIP_TOUCH = table.freeze({ w = 72, h = 44 })
+-- The message zone (Logic/HudZones Z8) ends at this share of the layer's height: the spare columns start under it.
+HudStack.MESSAGE_BOTTOM = 0.4
 
 -- The rectangle of a corner button on a w x h screen.
 function HudStack.spot(spot: Spot, w: number, h: number): Rect
@@ -237,7 +273,8 @@ end
 -- `others` = party members besides the player; `guide`: the guide bar shows under the minimap (PC); `waiting`: the
 -- row of "something waits" buttons shows under them (PC). `menuBottom` (PC): where the menu over the minimap really
 -- ends, as measured on screen (UI/HudSlots.MenuBottom): the column never starts above it (Studio check 2026-10-31: the
--- row stood in the tracker).
+-- row stood in the tracker). `band`: the target band's bottom now (Logic/HudZones.targetBand): the message zone runs
+-- from GAP under it, so on a short tablet with the dungeon boss bar it ends lower than its usual share of the height.
 function HudStack.column(
 	touch: boolean,
 	compact: boolean,
@@ -246,12 +283,24 @@ function HudStack.column(
 	others: number,
 	guide: boolean?,
 	waiting: boolean?,
-	menuBottom: number?
+	menuBottom: number?,
+	band: number?
 ): Column
 	if compact then
-		local stack = PhoneHud.PLACES.stack
-		return { x = stack.x, right = false, top = PhoneHud.stackTop(others), floor = h - (stack.bottom or 0) }
+		-- UI plan package A: the party strip is the stack's first line, the stack ends over the thumb zone
+		return {
+			x = 8,
+			right = false,
+			top = PhoneHud.STACK_TOP,
+			floor = PhoneHud.stackBottom(h),
+			width = PhoneHud.STACK_WIDTH,
+			chip = PhoneHud.CHIP,
+		}
 	end
+	-- the spare columns start GAP under the message zone (Logic/HudZones Z8): a panel moved aside never covers it (UI
+	-- package A: nor the band over a zone that has no height left, a tablet's with the dungeon boss bar and an add)
+	local underMessages = math.max(h * HudStack.MESSAGE_BOTTOM, (band or 0) + HudStack.GAP) + HudStack.GAP
+	local width = math.max(HudStack.TRACKER, if touch then HudStack.PANEL_TOUCH else HudStack.PANEL_PC)
 	if touch then
 		local top = if others > 0 then HudStack.PARTY_TOP + others * HudStack.PARTY_ROW else HudStack.TOUCH_TOP
 		return {
@@ -261,23 +310,29 @@ function HudStack.column(
 			floor = h - HudStack.TOUCH_ROW - HudStack.GAP,
 			-- right of the buttons right of the portrait (Cloak of Luring and the auto buttons end above TOUCH_TOP)
 			spares = { HudStack.EXTRAS.x + HudStack.EXTRAS.w + HudStack.GAP },
-			spareTop = HudStack.TOUCH_TOP,
+			spareTop = math.max(HudStack.TOUCH_TOP, underMessages),
+			width = width,
+			chip = HudStack.CHIP_TOUCH,
 		}
 	end
+	local top = math.max(
+		(if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP)
+			+ (if waiting then HudStack.WAITING + HudStack.GAP else 0),
+		if menuBottom and menuBottom > 0 then menuBottom + HudStack.GAP else 0
+	)
 	return {
 		x = w - HudStack.MARGIN,
 		right = true,
-		top = math.max(
-			(if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP)
-				+ (if waiting then HudStack.WAITING + HudStack.GAP else 0),
-			if menuBottom and menuBottom > 0 then menuBottom + HudStack.GAP else 0
-		),
+		top = top,
 		floor = HudStack.cornerTop(false, w, h) - HudStack.GAP,
 		-- two: a short window at the 0.6 floor has little height under the minimap (owner 2026-10-22)
 		spares = {
 			w - HudStack.MARGIN - HudStack.TRACKER - HudStack.GAP,
 			w - HudStack.MARGIN - 2 * (HudStack.TRACKER + HudStack.GAP),
 		},
+		spareTop = math.max(top, underMessages),
+		width = width,
+		chip = HudStack.CHIP,
 	}
 end
 
@@ -340,19 +395,62 @@ function HudStack.chatWidthScale(left: number, width: number, scale: number, bar
 	return math.clamp((barLeft - HudStack.CHAT_GAP - left) / base, HudStack.CHAT_MIN, 1)
 end
 
+-- UI plan package A (owner 2026-11-10: "things covering each other"): on a short PC screen Roblox's chat window, as
+-- tall as Roblox makes it, reached the party rows and the NPC bark's slot over it. It shortens as much as it must to
+-- keep its top CHAT_GAP screen px under `ceiling` (the bark slot's bottom, screen px): the HeightScale for a window
+-- standing from `top`, `height` tall at HeightScale `scale` (bottom-aligned, so its bottom stays); never taller than
+-- Roblox's own height (1) nor shorter than CHAT_MIN_H of it. A hidden window (no height) keeps `scale`.
+HudStack.CHAT_MIN_H = 0.5
+function HudStack.chatHeightScale(top: number, height: number, scale: number, ceiling: number): number
+	if height <= 0 or scale <= 0 then
+		return scale
+	end
+	local base = height / scale
+	return math.clamp((top + height - ceiling - HudStack.CHAT_GAP) / base, HudStack.CHAT_MIN_H, 1)
+end
+
 local function overlaps(a: Rect, b: Rect): boolean
 	return a.left < b.right and b.left < a.right and a.top < b.bottom and b.top < a.bottom
 end
 HudStack.overlaps = overlaps
 
+-- How `place` shows one element: at its height, shrunk to its least, folded to its line or behind the '+N' chip.
+type Mode = "full" | "least" | "line" | "hidden"
+
+-- The '+N' chip of `column`: at the floor, at the far end of the lane, GAP over the `fixed` rectangles in its way
+-- (the PC Elite II timers stand right over the corner's buttons); never above the column's top.
+local function chipOf(column: Column, fixed: { Rect }): Rect
+	local size = column.chip or HudStack.CHIP
+	local width = math.max(column.width or size.w, size.w)
+	local left = if column.right then column.x - size.w else column.x + width - size.w
+	local right = left + size.w
+	local top = column.floor - size.h
+	for _ = 1, #fixed + 1 do
+		local moved = false
+		for _, r in fixed do
+			if r.left < right and left < r.right and r.top < top + size.h and top < r.bottom then
+				top = r.top - HudStack.GAP - size.h
+				moved = true
+			end
+		end
+		if not moved then
+			break
+		end
+	end
+	top = math.max(top, column.top)
+	return { left = left, top = top, right = right, bottom = top + size.h }
+end
+
 -- The places of `items` (in order, top down) in `column`, round the `fixed` rectangles (moved elements, the corner's
--- buttons, the PC Elite II timers), by id. An element goes at the first free place under the one before it; when it
--- would pass the floor, at the first free place of a spare column from its top; with no room in any column a
--- `least` element shrinks, the others stand under the one before (past the floor). A `grow` element reaches down to
--- the floor or to the first rectangle under it.
-function HudStack.place(items: { Item }, column: Column, fixed: { Rect }): { [string]: Rect }
-	local out: { [string]: Rect } = {}
-	local taken: { Rect } = table.clone(fixed)
+-- buttons, the PC Elite II timers). An element goes at the first free place under the one before it. Nothing ever
+-- goes past the floor (UI plan package A): when the elements do not fit, the column shrinks every `least` element (the
+-- tracker to its header and two lines), then folds the `line` elements to their line from the lowest up (the panels
+-- first, a `grow` one, the tracker, last; a `keep` one after the others) and opens again, from the top, what still
+-- fits. Only when even the lines do not fit, an element that finds no room goes to the first free place of a spare
+-- column from its top (owner 2026-10-22: a short window at the 0.6 floor), and after that the lowest elements hide
+-- behind the '+N' chip at the floor (a `keep` one last). A `grow` element reaches down to the floor or to the first
+-- rectangle under it.
+function HudStack.place(items: { Item }, column: Column, fixed: { Rect }): Placed
 	local gap = HudStack.GAP
 	local function span(edge: number, w: number): (number, number)
 		if column.right then
@@ -360,70 +458,223 @@ function HudStack.place(items: { Item }, column: Column, fixed: { Rect }): { [st
 		end
 		return edge, edge + w
 	end
-	-- the first y from `y` down where a w x h box at [left, right] meets nothing taken
-	local function free(left: number, right: number, y: number, h: number): number
-		for _ = 1, #taken + 1 do
-			local box = { left = left, top = y, right = right, bottom = y + h }
-			local hit: Rect? = nil
-			for _, r in taken do
-				if overlaps(box, r) then
-					hit = r
+	local modes: { Mode } = {}
+	for i in items do
+		modes[i] = "full"
+	end
+	local chip = chipOf(column, fixed)
+
+	-- the places with today's modes, or nil when one element finds no room above the floor (`spares`: in a spare
+	-- column too)
+	local function attempt(withChip: boolean, spares: boolean): { [string]: Rect }?
+		local out: { [string]: Rect } = {}
+		local taken: { Rect } = table.clone(fixed)
+		if withChip then
+			-- the elements above the chip stand GAP over it (beside it on a phone, PhoneHud.PANEL_WIDTH keeps clear)
+			table.insert(taken, { left = chip.left, top = chip.top - gap, right = chip.right, bottom = chip.bottom })
+		end
+		-- the first y from `y` down where a w x h box at [left, right] meets nothing taken
+		local function free(left: number, right: number, y: number, h: number): number
+			for _ = 1, #taken + 1 do
+				local box = { left = left, top = y, right = right, bottom = y + h }
+				local hit: Rect? = nil
+				for _, r in taken do
+					if overlaps(box, r) then
+						hit = r
+						break
+					end
+				end
+				if not hit then
+					return y
+				end
+				y = hit.bottom + gap
+			end
+			return y
+		end
+		-- the column, else the first spare one, with room for a w x h box above the floor: its left, right and top,
+		-- and whether it is the main column
+		local function room(w: number, h: number, cursor: number): (boolean, number, number, number, boolean)
+			local left, right = span(column.x, w)
+			local y = free(left, right, cursor, h)
+			if y + h <= column.floor + 1e-6 then
+				return true, left, right, y, true
+			end
+			local edges: { number } = if spares then column.spares or {} else {}
+			for _, spare in edges do
+				local sl, sr = span(spare, w)
+				local sy = free(sl, sr, column.spareTop or column.top, h)
+				if sy + h <= column.floor + 1e-6 then
+					return true, sl, sr, sy, false
+				end
+			end
+			return false, left, right, y, true
+		end
+		local cursor = column.top
+		for i, item in items do
+			local mode = modes[i]
+			if mode == "hidden" then
+				continue
+			end
+			local h = if mode == "line"
+				then item.line or item.h
+				elseif mode == "least" then item.least or item.h
+				else item.h
+			local found, x, right, y, main = room(item.w, h, cursor)
+			if not found then
+				return nil
+			end
+			local bottom = y + h
+			if item.grow and mode ~= "line" then
+				local limit = column.floor
+				for _, r in taken do
+					if r.left < right and x < r.right and r.top >= y and r.top - gap < limit then
+						limit = r.top - gap
+					end
+				end
+				bottom = math.max(bottom, limit)
+			end
+			local rect = { left = x, top = y, right = right, bottom = bottom }
+			out[item.id] = rect
+			table.insert(taken, rect)
+			if main then
+				cursor = bottom + gap
+			end
+		end
+		return out
+	end
+
+	local function result(rects: { [string]: Rect }, withChip: boolean): Placed
+		local folded: { string } = {}
+		local hidden: { string } = {}
+		for i, item in items do
+			if modes[i] == "line" then
+				table.insert(folded, item.id)
+			elseif modes[i] == "hidden" then
+				table.insert(hidden, item.id)
+			end
+		end
+		return { rects = rects, folded = folded, hidden = hidden, chip = if withChip then chip else nil }
+	end
+
+	-- the indices from the lowest up, the kept ones after the others
+	local function lowestFirst(pick: (Item) -> boolean): { number }
+		local out: { number } = {}
+		for _, keep in { false, true } do
+			for i = #items, 1, -1 do
+				local item = items[i]
+				if (item.keep == true) == keep and pick(item) then
+					table.insert(out, i)
+				end
+			end
+		end
+		return out
+	end
+
+	-- opens again, from the top, the folded or shrunk elements that still fit in the main column (a fold leaves room);
+	-- it stops at the first that does not, so a lower panel never stands open while a higher one is folded
+	local function relax(rects: { [string]: Rect }): { [string]: Rect }
+		for i, item in items do
+			local was = modes[i]
+			if was ~= "line" and was ~= "least" then
+				continue
+			end
+			local opened = false
+			for _, better: Mode in (if was == "line" then { "full", "least" } else { "full" }) :: { Mode } do
+				if better == "least" and not (item.least and item.least < item.h) then
+					continue
+				end
+				modes[i] = better
+				local tried = attempt(false, false)
+				if tried then
+					rects = tried
+					opened = better == "full"
 					break
 				end
+				modes[i] = was
 			end
-			if not hit then
-				return y
+			if not opened then
+				break
 			end
-			y = hit.bottom + gap
 		end
-		return y
+		return rects
 	end
-	-- the column, else the first spare one, with room for a w x h box: found, its left, right and top, in the column
-	local function room(w: number, h: number, cursor: number): (boolean, number, number, number, boolean)
-		local left, right = span(column.x, w)
-		local y = free(left, right, cursor, h)
-		if y + h <= column.floor then
-			return true, left, right, y, true
-		end
-		local spares: { number } = column.spares or {}
-		for _, spare in spares do
-			local sl, sr = span(spare, w)
-			local sy = free(sl, sr, column.spareTop or column.top, h)
-			if sy + h <= column.floor then
-				return true, sl, sr, sy, false
-			end
-		end
-		-- no room: under the one before, past the floor
-		return false, left, right, y, true
+
+	local rects = attempt(false, false)
+	if rects then
+		return result(rects, false)
 	end
-	local cursor = column.top
-	for _, item in items do
-		local found, x, right, y, main = room(item.w, item.h, cursor)
-		local least = item.least
-		if not found and least then
-			local fits, lx, lr, ly, lm = room(item.w, least, cursor)
-			if fits then
-				x, right, y, main = lx, lr, ly, lm
-			end
-		end
-		local bottom = y + (if item.grow and least then math.min(item.h, least) else item.h)
-		if item.grow then
-			bottom = math.max(bottom, column.floor)
-			for _, r in taken do
-				if r.left < right and x < r.right and r.top >= y and r.top - gap < bottom then
-					bottom = r.top - gap
-				end
-			end
-			bottom = math.max(bottom, y + math.min(item.h, least or item.h))
-		end
-		local rect = { left = x, top = y, right = right, bottom = bottom }
-		out[item.id] = rect
-		table.insert(taken, rect)
-		if main then
-			cursor = bottom + gap
+	-- 1. the least height of what may shrink
+	for i, item in items do
+		if item.least and item.least < item.h then
+			modes[i] = "least"
 		end
 	end
-	return out
+	rects = attempt(false, false)
+	if rects then
+		return result(rects, false)
+	end
+	-- 2. the panels fold to their line from the lowest up, then the growing ones (the tracker to its header)
+	local folds = lowestFirst(function(item: Item): boolean
+		return item.line ~= nil and item.line < item.h and not item.grow
+	end)
+	for _, i in
+		lowestFirst(function(item: Item): boolean
+			return item.line ~= nil and item.line < item.h and item.grow == true
+		end)
+	do
+		table.insert(folds, i)
+	end
+	for _, i in folds do
+		modes[i] = "line"
+		rects = attempt(false, false)
+		if rects then
+			return result(relax(rects), false)
+		end
+	end
+	-- 3. what still finds no room goes to a spare column (the lines stay folded)
+	rects = attempt(false, true)
+	if rects then
+		return result(rects, false)
+	end
+	-- 4. behind the '+N' chip from the lowest up
+	for _, i in
+		lowestFirst(function(): boolean
+			return true
+		end)
+	do
+		modes[i] = "hidden"
+		rects = attempt(true, true)
+		if rects then
+			return result(rects, true)
+		end
+	end
+	return result({}, true)
+end
+
+-- The '+N' list (Hud/StackChip) of `count` rows `row` high, LIST_PAD apart and inside its edge, for the chip `chip`:
+-- on PC and a tablet left of the chip, bottom-aligned with it, LIST_PC wide; on a phone over the stack's lane
+-- (PhoneHud.STACK_WIDTH from the stack's left edge), its bottom LIST_PAD over the chip: the left column above the
+-- stack, where the portrait and its row stand, never the centre's or the thumbs' controls. Package A review (owner
+-- 2026-11-10): it never reaches above LIST_MARGIN from the layer's top (four rows over a phone's chip started 79 px
+-- above the layer, under Roblox's top bar); a list taller than its room scrolls (the second result).
+HudStack.LIST_PC = 220
+HudStack.LIST_PAD = 4
+HudStack.LIST_MARGIN = 8
+function HudStack.chipList(chip: Rect, count: number, row: number, compact: boolean): (Rect, boolean)
+	local pad = HudStack.LIST_PAD
+	local content = count * row + math.max(0, count - 1) * pad + 2 * pad
+	local left, right, bottom
+	if compact then
+		right = chip.right
+		left = right - PhoneHud.STACK_WIDTH
+		bottom = chip.top - pad
+	else
+		right = chip.left - pad
+		left = right - HudStack.LIST_PC
+		bottom = chip.bottom
+	end
+	local top = math.max(HudStack.LIST_MARGIN, bottom - content)
+	return { left = left, top = top, right = right, bottom = bottom }, bottom - top < content
 end
 
 -- The built-in place of every shown element of `boxes` (by id, HudStack.ORDER) that the player has not moved, on a
@@ -432,8 +683,9 @@ end
 -- Logic/PhoneHud keeps the stack clear of them) and the PC Elite II timers are obstacles the others go round.
 -- `measured`: the corner's buttons as they really stand (`fromScreen`; not on a phone): obstacles too, and the column's
 -- floor stays above them (`floorAbove`) when the computed one is lower (owner 2026-10-22). `guide`: the guide bar shows
--- under the minimap (PC: the column starts under it); `waiting` and `menuBottom`: HudStack.column.
-function HudStack.layout(
+-- under the minimap (PC: the column starts under it); `waiting`, `menuBottom` and `band`: HudStack.column. The whole
+-- result of `place`: the rectangles, the folded and the hidden ids and the '+N' chip.
+function HudStack.arrange(
 	touch: boolean,
 	compact: boolean,
 	w: number,
@@ -443,9 +695,10 @@ function HudStack.layout(
 	measured: { Rect }?,
 	guide: boolean?,
 	waiting: boolean?,
-	menuBottom: number?
-): { [string]: Rect }
-	local column = HudStack.column(touch, compact, w, h, others, guide, waiting, menuBottom)
+	menuBottom: number?,
+	band: number?
+): Placed
+	local column = HudStack.column(touch, compact, w, h, others, guide, waiting, menuBottom, band)
 	local under: { Rect } = if compact then {} else measured or {}
 	if #under > 0 then
 		column.floor = HudStack.floorAbove(column, math.max(HudStack.TRACKER, HudStack.PANEL_PC), under)
@@ -475,12 +728,31 @@ function HudStack.layout(
 				w = box.w,
 				h = box.h,
 				grow = tracker,
-				least = if tracker then math.min(box.h, HudStack.TRACKER_LEAST) else nil,
+				-- the tracker keeps its header and two lines while a panel can still fold
+				least = if tracker then math.min(box.h, HudStack.TRACKER_MIN) else nil,
+				line = box.line,
+				keep = box.keep,
 			}
 			table.insert(items, item)
 		end
 	end
 	return HudStack.place(items, column, fixed)
+end
+
+-- The rectangles of `arrange` (the folded elements' lines; nothing for the hidden ones).
+function HudStack.layout(
+	touch: boolean,
+	compact: boolean,
+	w: number,
+	h: number,
+	others: number,
+	boxes: { [string]: Box },
+	measured: { Rect }?,
+	guide: boolean?,
+	waiting: boolean?,
+	menuBottom: number?
+): { [string]: Rect }
+	return HudStack.arrange(touch, compact, w, h, others, boxes, measured, guide, waiting, menuBottom).rects
 end
 
 return HudStack

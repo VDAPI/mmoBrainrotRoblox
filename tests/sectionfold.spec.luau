@@ -324,6 +324,29 @@ T.describe("SectionFold", function()
 		T.expect(found >= 2).toBe(true)
 	end)
 
+	T.it("UI plan package A: every section of the HUD's files has its default in Data/Folds/Hud", function()
+		local hud = require("../src/shared/Data/Folds/Hud") :: { [string]: any }
+		local TextScan = require("./TextScan")
+		local found = 0
+		for _, path in luauFiles("src/client") do
+			if TextScan.ownerOfFile(path) ~= "A" then
+				continue
+			end
+			local src = fs.readFile(path)
+			for _, pattern in ID_PATTERNS do
+				for id in string.gmatch(src, pattern) do
+					found += 1
+					T.expect(`{path} {id} {hud[id] ~= nil}`).toBe(`{path} {id} true`)
+				end
+			end
+		end
+		-- the five event panels (the arena's two files share hudArena)
+		T.expect(found >= 5).toBe(true)
+		for _, id in { "hudWorldBoss", "hudWorldEvent", "hudBloodMoon", "hudTourney", "hudArena" } do
+			T.expect({ id, hud[id] }).toEqual({ id, { pc = true, phone = false } })
+		end
+	end)
+
 	T.it("Folds/Gear: the backpack and skills windows read every id there, and name no other", function()
 		-- UI plan package D (owner 2026-11-10, "nothing folds"): the derived statistics in four sections (their ids
 		-- in DerivedList's table, so the patterns above miss them) and the skill details' cost and breakpoints

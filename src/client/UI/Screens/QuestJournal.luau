@@ -18,6 +18,11 @@
 -- Owner 2026-10-21 (too many detailed descriptions): a quest card shows its title, objectives and rewards; the story
 -- text (and "Recall the conversation") or the progress paragraph of a side / boss quest sit under "More" (Details),
 -- rules behind an "i" (InfoTip).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's tabs: the six tabs
+-- are one scrolling Tabs row (WindowFrame.tabFit: less padding, then smaller text, then ◂ / ▸), and the window is 680
+-- wide (QuestController) so the Polish row fits whole at 1280x720; the list starts under the strip's own height.
+-- Review 2026-11-11 ("Track", "Abandon", the pages and the givers' buttons 28-40 high on touch): every button of the
+-- journal is a whole touch target on touch (Theme.Size.MinTouch) and ButtonHeightSmall on PC (`small`), its row too.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -33,6 +38,7 @@ local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Dailies = require(ReplicatedStorage.Shared.Logic.Dailies)
 local Cutscenes = require(ReplicatedStorage.Shared.Logic.Cutscenes)
 local Details = require(script.Parent.Parent.Components.Details)
+local Device = require(script.Parent.Parent.Device)
 local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
@@ -56,6 +62,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 
 local Children = Fusion.Children
 
@@ -64,6 +71,11 @@ local Children = Fusion.Children
 local REPLAY_WIDTH = 44
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+-- A small button's height: a whole touch target on touch, ButtonHeightSmall on PC (review 2026-11-11).
+local function small(use: Fusion.Use): number
+	return if use(Device.Touch) == true then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
+end
 
 export type Props = {
 	Tracked: Fusion.Value<boolean>,
@@ -194,7 +206,7 @@ local function contractRows(
 							Button(s, {
 								AnchorPoint = Vector2.new(1, 0),
 								Position = UDim2.fromScale(1, 0),
-								Size = UDim2.fromOffset(120, 32),
+								Size = UDim2.fromOffset(120, small(use)),
 								Variant = "ghost",
 								TextSize = Theme.TextSize.Small,
 								Text = `⟳ {Text.get(use, "quest.reroll")}`,
@@ -274,9 +286,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 	)
 
 	-- Track and Abandon for an active side (or boss) quest.
-	local function sideButtons(s: Scope, id: string): Instance
+	local function sideButtons(s: Scope, id: string, height: number): Instance
 		return s:New("Frame")({
-			Size = UDim2.new(1, 0, 0, 40),
+			Size = UDim2.new(1, 0, 0, height),
 			BackgroundTransparency = 1,
 			[Children] = {
 				s:New("UIListLayout")({
@@ -284,7 +296,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					Padding = UDim.new(0, 8),
 				}),
 				Button(s, {
-					Size = UDim2.fromOffset(150, 40),
+					Size = UDim2.fromOffset(150, height),
 					Variant = "secondary",
 					Text = s:Computed(function(use2): string
 						local focus = use2(props.Focus)
@@ -301,7 +313,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					end,
 				}),
 				Button(s, {
-					Size = UDim2.fromOffset(150, 40),
+					Size = UDim2.fromOffset(150, height),
 					Variant = "ghost",
 					Text = Text.T(s, "quest.abandon"),
 					OnClick = function()
@@ -385,7 +397,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						story,
 						Button(s, {
 							LayoutOrder = 2,
-							Size = UDim2.fromOffset(220, 40),
+							Size = UDim2.fromOffset(220, small(use)),
 							Variant = "ghost",
 							Text = Text.T(s, "quest.journal.pages"),
 							OnClick = function()
@@ -530,7 +542,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				local button = if #watched > 0 and replay
 					then Button(s, {
 						Name = "Replay",
-						Size = UDim2.fromOffset(REPLAY_WIDTH, 28),
+						Size = UDim2.fromOffset(REPLAY_WIDTH, small(use)),
 						Position = UDim2.fromScale(1, 0),
 						AnchorPoint = Vector2.new(1, 0),
 						Variant = "ghost",
@@ -551,7 +563,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					history,
 					s:New("Frame")({
 						LayoutOrder = 1 + i * 2,
-						Size = UDim2.new(1, 0, 0, 28),
+						-- the line, or the button's height when it has "▶"
+						Size = UDim2.new(1, 0, 0, if button then small(use) else 28),
 						BackgroundTransparency = 1,
 						[Children] = {
 							s:New("TextLabel")({
@@ -660,7 +673,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						shown,
 						QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, SlotSize = 36 })
 					)
-					table.insert(shown, sideButtons(s, quest.id))
+					table.insert(shown, sideButtons(s, quest.id, small(use)))
 				end
 				-- On offer now: where to get them.
 				for _, quest in arcQuests do
@@ -792,7 +805,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						add(questItems)
 					end
 					add(QuestRewards(s, { Id = quest.id, Reward = quest.reward, ShowTitle = true, SlotSize = 36 }))
-					add(sideButtons(s, quest.id))
+					add(sideButtons(s, quest.id, small(use)))
 				else
 					-- to take from the scout of the boss's region (giver = "scout_<region>")
 					local map = Maps.get(string.sub(quest.giver, 7))
@@ -962,7 +975,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						Wraps = true,
 					}),
 					Button(s, {
-						Size = UDim2.fromOffset(190, 40),
+						Size = UDim2.fromOffset(190, small(use)),
 						Variant = "primary",
 						Disabled = canTake == 0,
 						Text = Text.get(use, "contract.acceptAll", { n = canTake }),
@@ -971,7 +984,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						end,
 					}),
 					Button(s, {
-						Size = UDim2.fromOffset(190, 40),
+						Size = UDim2.fromOffset(190, small(use)),
 						Variant = "primary",
 						Disabled = canHand == 0,
 						Text = Text.get(use, "contract.turnInAll", { n = canHand }),
@@ -985,7 +998,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					table.insert(
 						buttons,
 						Button(s, {
-							Size = UDim2.fromOffset(190, 40),
+							Size = UDim2.fromOffset(190, small(use)),
 							Variant = "secondary",
 							Text = Text.get(use, "huntshop.title"),
 							OnClick = function()
@@ -1093,7 +1106,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							),
 							s:New("Frame")({
 								LayoutOrder = 3,
-								Size = UDim2.new(1, 0, 0, 34),
+								Size = UDim2.new(1, 0, 0, small(use)),
 								BackgroundTransparency = 1,
 								[Children] = {
 									s:New("UIListLayout")({
@@ -1101,7 +1114,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 										Padding = UDim.new(0, 8),
 									}),
 									Button(s, {
-										Size = UDim2.fromOffset(130, 34),
+										Size = UDim2.fromOffset(130, small(use)),
 										Variant = "secondary",
 										Text = Text.get(use, if tracked then "quest.untrack" else "quest.track"),
 										OnClick = function()
@@ -1116,7 +1129,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 											if done
 												then nil
 												else Button(s, {
-													Size = UDim2.fromOffset(130, 34),
+													Size = UDim2.fromOffset(130, small(use)),
 													Variant = "ghost",
 													Text = Text.get(use, "contract.abandon"),
 													OnClick = function()
@@ -1154,7 +1167,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			if #eligible > 0 then
 				local open = use(availableOpen)
 				add(Button(s, {
-					Size = UDim2.new(1, 0, 0, 36),
+					Size = UDim2.new(1, 0, 0, small(use)),
 					Variant = "ghost",
 					Text = `{if open then "▾" else "▸"} {Text.get(use, "contract.available", { n = #eligible })}`,
 					OnClick = function()
@@ -1166,7 +1179,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						local here = atGiver and npcId ~= nil and Contracts.isGiver(npcId, contract)
 						local giver = npcId
 						add(s:New("Frame")({
-							Size = UDim2.new(1, 0, 0, 36),
+							Size = UDim2.new(1, 0, 0, small(use) + 4),
 							BackgroundTransparency = 1,
 							[Children] = {
 								s:New("TextLabel")({
@@ -1184,7 +1197,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 									then Button(s, {
 										AnchorPoint = Vector2.new(1, 0.5),
 										Position = UDim2.fromScale(1, 0.5),
-										Size = UDim2.fromOffset(110, 32),
+										Size = UDim2.fromOffset(110, small(use)),
 										Variant = "secondary",
 										Text = Text.get(use, "contract.accept"),
 										OnClick = function()
@@ -1287,6 +1300,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 		table.insert(tabList, { id = id, label = Text.T(scope, `quest.tab.{id}`) })
 	end
 
+	-- the list under the strip (its scroll bar's room) and the selected tab's frame
+	local stripBottom = WindowFrame.tabStrip(true).height + WindowFrame.TAB_EDGE
 	return {
 		Tabs(scope, {
 			Selected = tab,
@@ -1294,8 +1309,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			Scroll = true,
 		}),
 		scope:New("ScrollingFrame")({
-			Position = UDim2.fromOffset(0, 52),
-			Size = UDim2.new(1, 0, 1, -52),
+			Position = UDim2.fromOffset(0, stripBottom),
+			Size = UDim2.new(1, 0, 1, -stripBottom),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,

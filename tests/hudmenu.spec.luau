@@ -12,6 +12,7 @@ local fs = require("@lune/fs")
 local HudMenu = require("../src/shared/Logic/HudMenu")
 local KeybindData = require("../src/shared/Data/Keybinds")
 local T = require("./Test")
+local Tutorial = require("../src/shared/Logic/Tutorial")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
@@ -41,12 +42,28 @@ end
 describe("HUD bar and game menu tiles (UI plan phase 1)", function()
 	it("the bar holds six buttons: the backpack first, the menu last", function()
 		expect(HudMenu.BAR).toEqual({ "inventory", "skills", "map", "quests", "premium", "menu" })
-		-- S155: the tutorial's "backpack" step points at the bar's backpack button (UI/HudAnchors)
+		-- S155: the tutorial's "backpack" step points at the bar's backpack button (UI/HudAnchors; UI plan package A:
+		-- the names live in Logic/Tutorial.ANCHOR_NAMES, and in the phone's closed drawer it points at the drawer's button)
+		local backpack = Tutorial.ANCHOR_NAMES.backpackButton
+		expect({ backpack.pc, backpack.touch, backpack.drawer }).toEqual({ "inventory", "inventory", true })
 		local anchors = fs.readFile("src/client/UI/HudAnchors.luau")
-		expect(string.find(anchors, 'backpackButton = { pc = "inventory", touch = "inventory"', 1, true) ~= nil).toBe(
-			true
-		)
+		expect(string.find(anchors, "HudAnchors.NAMES = Tutorial.ANCHOR_NAMES", 1, true) ~= nil).toBe(true)
 		expect(HudMenu.onBar("inventory")).toBe(true)
+	end)
+
+	it("UI plan package A: the bar keeps 6 buttons, the ☰ 15 tiles, the phone's drawer the bar's six", function()
+		expect(#HudMenu.BAR).toBe(6)
+		expect(#HudMenu.TILES).toBe(15)
+		-- the drawer builds the same buttons as the bar (Hud/init menuButtons from the one MENU list), plus the login
+		-- reward and the season pass while a reward waits
+		local hud = fs.readFile("src/client/UI/Screens/Hud/init.luau")
+		expect(string.find(hud, "local buttons = menuButtons(scope, props)", 1, true) ~= nil).toBe(true)
+		local start = assert(string.find(hud, "local function drawer(", 1, true))
+		local stop = assert(string.find(hud, "\nend\n", start, true))
+		local body = string.sub(hud, start, stop)
+		expect(string.find(body, "menuButtons(scope, props, close)", 1, true) ~= nil).toBe(true)
+		expect(string.find(body, 'Name = "MenuToggle"', 1, true) ~= nil).toBe(true)
+		expect(Tutorial.DRAWER).toBe("MenuToggle")
 	end)
 
 	it("no window is on the bar and a tile at once, and none twice", function()

@@ -11,9 +11,11 @@
 -- Numbers come from today's code, through Logic/HudStack where it already holds them (never copied here); the few
 -- that only client files hold are kept below with their file named. The plan's [proposed] places (the Auto popover,
 -- the effects cap, the bark slot, the add frame under the boss bar, the arena panel under the target, the card slot)
--- are marked so. A phone's HUD is Logic/PhoneHud's. Nothing reads this module yet: UI package A moves Screens/Hud
--- onto it, package B the message band. All numbers are virtual pixels of the HUD's layer (Screens, which starts under
--- Roblox's top bar), measured from its top-left corner; w x h is that layer's size (`layer`).
+-- are marked so. A phone's HUD is Logic/PhoneHud's. UI package A moved Screens/Hud onto it (the elements of ELEMENTS
+-- read their places here through UI/HudSlots.Zones; the column's panels go through Logic/HudStack.place, which folds
+-- and hides instead of passing the floor), package B the message band. All numbers are virtual pixels of the HUD's
+-- layer (Screens, which starts under Roblox's top bar), measured from its top-left corner; w x h is that layer's size
+-- (`layer`).
 
 local HudMenu = require("./HudMenu")
 local HudStack = require("./HudStack")
@@ -39,7 +41,8 @@ export type State = {
 	party: number?, -- party members besides the player, 0..4
 	guide: boolean?, -- the guide bar under the minimap (Hud/NavBar)
 	waiting: number?, -- buttons in the "something waits" row (Hud/WaitingRow), 0..4
-	column: { number }?, -- heights of the column's shown elements, top down (Logic/HudStack.place lays them out)
+	column: { number }?, -- heights of the column's shown elements, top down (Logic/HudStack.place lays them out; the
+	-- last one is the tracker, which grows)
 	effects: number?, -- the player's own effect icons
 	autoPopover: boolean?, -- the Auto popover is open
 	scale: number?, -- the screen's UI scale (`layer`): Roblox sizes its chat window in real pixels; default 1
@@ -64,6 +67,8 @@ export type Zones = {
 	guide: Rect?,
 	waiting: Rect?,
 	column: Rect?,
+	stack: { [string]: Rect }?, -- the column's elements of `State.column` ("panel1".., "tracker") as HudStack placed them
+	chip: Rect?, -- their '+N' chip while one is hidden
 	card: Rect?,
 	corner: { [string]: Rect },
 	castLine: Rect,
@@ -113,8 +118,9 @@ HudZones.TARGET = table.freeze({
 -- (the plan's 22..134, package B moves the bar there; today it stands at 16). [proposed] An add or player target goes
 -- GAP under the bar (today the target frame lies under it).
 HudZones.BOSS_BAR = table.freeze({ w = 720, h = 112 })
--- Hud/ArenaPanel's PANEL_WIDTH. [proposed] 68 tall, GAP under the target's effects: today the match panel stands at
--- 70 and the return panel at 160, over the target frame.
+-- Hud/ArenaPanel's match and return panels on PC and a tablet take this size (UI/HudSlots.sizeOf) and hold their rows
+-- in it (tests/hudzones.spec). [proposed] 68 tall, GAP under the target's effects (they stood at 70 and 160, over the
+-- target frame).
 HudZones.ARENA_PANEL = table.freeze({ w = 420, h = 68 })
 
 -- Z4. Hud/Minimap's frame (SIZE 220 + 44; its height is counted in HudStack.RIGHT_TOP) and Hud/NavBar's WIDTH (the
@@ -140,17 +146,20 @@ HudZones.EXP_BAR = table.freeze({ inset = 4, h = 10, bottom = 2 })
 -- [inferred] Roblox's chat window, which Hud/ChatDock moves to the lower left on PC: about this many real pixels
 -- tall, give or take `spread`; its bottom GAP over the EXP bar (Hud/init: in Studio 2026-10-31 they touched while the
 -- bar's top stood 20 over the bottom). A touch screen keeps Roblox's own top-left place, opened from the top bar.
+-- UI plan package A: Hud/ChatDock shortens it so its top stays HudStack.CHAT_GAP screen px under the bark slot
+-- (HudStack.chatHeightScale), down to HudStack.CHAT_MIN_H of its height.
 HudZones.CHAT = table.freeze({ height = 250, spread = 0.2 })
 
 -- Z8. The message zone: at most this wide, centred where the screen has room (`messageZone` cuts it short of Z1 and
 -- the right column on a narrow one), from GAP under the target band down to this share of the layer's height. The
 -- alert line (`alert` tall) is the one message that always shows, so the zone must hold it: hudzones.spec checks that,
 -- and its THIN list names today's tablet states where the zone is shorter.
-HudZones.MESSAGE = table.freeze({ width = 980, bottom = 0.4, alert = 44 })
+HudZones.MESSAGE = table.freeze({ width = 980, bottom = HudStack.MESSAGE_BOTTOM, alert = 44 })
 
--- The thumbstick zone of a touch screen as shares of the layer (left, top, width, height): UI/HudAnchors' JOYSTICK
--- model of Roblox's dynamic thumbstick [inferred]. Kept here as data; package A makes HudAnchors read it.
-HudZones.THUMB = table.freeze({ x = 0.04, y = 0.58, w = 0.26, h = 0.34 })
+-- The thumbstick zone of a touch screen as shares of the layer (left, top, width, height): the model of Roblox's
+-- dynamic thumbstick [inferred]. Logic/PhoneHud holds it (its stack ends over it); UI/HudAnchors points the tutorial's
+-- move step at it (`thumb`).
+HudZones.THUMB = PhoneHud.THUMB
 
 -- The elements of src/client/UI/Screens/Hud that package A moves onto a HudZones place, by their Name: the place and
 -- the file under Screens/Hud that builds them (a Name can repeat in another file: the bark's NPC portrait). Only A's
@@ -169,8 +178,10 @@ local elements: { [string]: Element } = {
 	ArenaReturn = { place = "arenaPanel", file = "ArenaPanel" },
 	Menu = { place = "menuBar", file = "init" },
 	CastBar = { place = "castLine", file = "CastBar" },
+	PoolLabel = { place = "castLine", file = "PoolLabel" },
 	ActionBar = { place = "actionBar", file = "init" },
 	Exp = { place = "expBar", file = "init" },
+	StackChip = { place = "chip", file = "StackChip" },
 }
 for _, element in elements do
 	table.freeze(element)
@@ -359,16 +370,51 @@ local function expBar(w: number, h: number): Rect
 end
 
 -- The estimated chat window on a w x h PC layer at UI scale `scale`, its height grown by `grow` (-0.2 .. 0.2 covers
--- the estimate's spread): from MARGIN to HudStack.CHAT_GAP screen pixels left of the action bar (Hud/ChatDock).
-function HudZones.chat(w: number, h: number, scale: number, grow: number?): Rect
+-- the estimate's spread): from MARGIN to HudStack.CHAT_GAP screen pixels left of the action bar, its top
+-- HudStack.CHAT_GAP screen pixels under the bark slot of `state` (Hud/ChatDock: HudStack.chatHeightScale).
+function HudZones.chat(w: number, h: number, scale: number, grow: number?, state: State?): Rect
 	local bottom = expBar(w, h).top - GAP
 	local height = HudZones.CHAT.height * (1 + (grow or 0)) / scale
+	local slot = HudZones.barkSlot(state or {})
+	if slot then
+		local room = bottom - slot.bottom - HudStack.CHAT_GAP / scale
+		height = math.min(height, math.max(room, height * HudStack.CHAT_MIN_H))
+	end
 	return {
 		left = MARGIN,
 		top = bottom - height,
 		right = actionBar(w, h, false).left - HudStack.CHAT_GAP / scale,
 		bottom = bottom,
 	}
+end
+
+-- The column's elements of `heights` (top down; the last one the tracker, which grows) placed by HudStack in the column
+-- of a w x h layer: by name ("panel1".., "tracker"), with the '+N' chip while one is hidden.
+function HudZones.stack(w: number, h: number, state: State, heights: { number }): ({ [string]: Rect }, Rect?)
+	local touch = state.touch == true
+	local n = others(state)
+	local waiting = math.clamp(state.waiting or 0, 0, HudZones.WAITING_MAX)
+	local panel = if touch then HudStack.PANEL_TOUCH else HudStack.PANEL_PC
+	local line = if touch then HudStack.LINE_TOUCH else HudStack.LINE_PC
+	local boxes: { [string]: HudStack.Box } = {}
+	local names: { [string]: string } = {}
+	local ids = { "arena", "worldBoss", "worldEvent", "bloodMoon", "tourney" }
+	for i, height in heights do
+		if i == #heights then
+			boxes.questTracker = { shown = true, w = HudStack.TRACKER, h = height, line = HudStack.TRACKER_LEAST }
+			names.questTracker = "tracker"
+		elseif ids[i] then
+			boxes[ids[i]] = { shown = true, w = panel, h = height, line = math.min(line, height) }
+			names[ids[i]] = `panel{i}`
+		end
+	end
+	local placed =
+		HudStack.arrange(touch, false, w, h, n, boxes, nil, state.guide, waiting > 0, nil, band(w, state).rect.bottom)
+	local out: { [string]: Rect } = {}
+	for id, rect in placed.rects do
+		out[names[id]] = rect
+	end
+	return out, placed.chip
 end
 
 -- Every place of `state` on a w x h layer (PC, or a tablet with `state.touch`).
@@ -404,12 +450,18 @@ function HudZones.pc(w: number, h: number, state: State): Zones
 	end
 
 	-- Z5: the column's whole lane, as wide as its widest element (the tracker), from its top down to its floor
-	local col = HudStack.column(touch, false, w, h, n, state.guide, waiting > 0)
+	local col = HudStack.column(touch, false, w, h, n, state.guide, waiting > 0, nil, parts.rect.bottom)
 	local laneW = math.max(HudStack.TRACKER, if touch then HudStack.PANEL_TOUCH else HudStack.PANEL_PC)
 	local laneLeft = if col.right then col.x - laneW else col.x
 	local column = if col.floor > col.top
 		then { left = laneLeft, top = col.top, right = laneLeft + laneW, bottom = col.floor }
 		else nil
+
+	local stack: { [string]: Rect }? = nil
+	local chip: Rect? = nil
+	if state.column and #state.column > 0 then
+		stack, chip = HudZones.stack(w, h, state, state.column)
+	end
 
 	local portrait = HudStack.PORTRAIT
 	local effectsTop = MARGIN + portrait.h + GAP
@@ -433,6 +485,8 @@ function HudZones.pc(w: number, h: number, state: State): Zones
 		guide = guide,
 		waiting = waitingRect,
 		column = column,
+		stack = stack,
+		chip = chip,
 		card = if touch then nil else HudZones.cardSlot(w, h, nil),
 		corner = if touch then HudStack.fixed(true, w, h) else {},
 		castLine = centred(
@@ -443,7 +497,7 @@ function HudZones.pc(w: number, h: number, state: State): Zones
 		),
 		actionBar = actionBar(w, h, touch),
 		expBar = expBar(w, h),
-		chatEstimate = if touch then nil else HudZones.chat(w, h, state.scale or 1),
+		chatEstimate = if touch then nil else HudZones.chat(w, h, state.scale or 1, nil, state),
 	}
 end
 
@@ -465,6 +519,7 @@ local ZONE = table.freeze({
 	guide = "Z4",
 	waiting = "Z4",
 	column = "Z5",
+	chip = "Z5",
 	card = "Z6",
 	castLine = "Z7",
 	actionBar = "Z7",
@@ -489,6 +544,7 @@ local ORDER = table.freeze({
 	"guide",
 	"waiting",
 	"column",
+	"chip",
 	"card",
 	"castLine",
 	"actionBar",
@@ -514,6 +570,17 @@ function HudZones.list(zones: Zones): { Named }
 	end
 	for i, rect in zones.party do
 		table.insert(out, { name = `party{i}`, zone = "Z2", rect = rect, overlay = false })
+	end
+	local stack = zones.stack
+	if stack then
+		local placed: { string } = {}
+		for name in stack do
+			table.insert(placed, name)
+		end
+		table.sort(placed)
+		for _, name in placed do
+			table.insert(out, { name = `stack.{name}`, zone = "Z5", rect = stack[name], overlay = false })
+		end
 	end
 	local corner: { string } = {}
 	for name in zones.corner do

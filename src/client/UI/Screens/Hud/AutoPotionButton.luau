@@ -5,6 +5,9 @@
 -- it: the switch and the two thresholds (HP and the class resource) with -/+ buttons every Config.AutoPotion.step %
 -- (touch friendly, no slider). Every change is one AutoPotionSet(on, hp, res); the server clamps the values
 -- (Logic/AutoPotion.clampThreshold) and answers on the state branch.
+-- Package A review (owner 2026-11-10, "too much text"): paused, the tooltip says "paused" and the block's sentence is
+-- its details (it named the service twice in up to 107 characters); a press held for the tooltip does not open the
+-- panel on its release.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -17,6 +20,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PotionPress = require(ReplicatedStorage.Shared.Logic.PotionPress)
 local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
@@ -218,6 +222,9 @@ local function AutoPotionButton(scope: Scope, position: Fusion.UsedAs<UDim2>): I
 		},
 	})
 
+	-- package A review (owner 2026-11-10, Logic/PotionPress): a touch held for the tooltip was reading it, so its release
+	-- does not open the panel
+	local pressedAt: number? = nil
 	local button = scope:New("TextButton")({
 		Name = "AutoPotionButton",
 		Size = UDim2.fromOffset(SIZE, SIZE),
@@ -233,7 +240,15 @@ local function AutoPotionButton(scope: Scope, position: Fusion.UsedAs<UDim2>): I
 		TextTransparency = scope:Computed(function(use): number
 			return if use(blocked) ~= nil then 0.45 else 0
 		end),
+		[OnEvent("InputBegan")] = function(input: InputObject)
+			pressedAt = if input.UserInputType == Enum.UserInputType.Touch then os.clock() else nil
+		end,
 		[OnEvent("Activated")] = function()
+			local heldFor = if pressedAt then os.clock() - pressedAt else 0
+			pressedAt = nil
+			if heldFor >= PotionPress.TIP_HOLD then
+				return
+			end
 			open:set(not Fusion.peek(open))
 		end,
 		[Children] = {
@@ -269,12 +284,15 @@ local function AutoPotionButton(scope: Scope, position: Fusion.UsedAs<UDim2>): I
 		scope,
 		button :: GuiObject,
 		scope:Computed(function(use): string
-			local reason = use(blocked)
-			local status = if reason
-				then Text.get(use, "hud.autoPotion.paused", { reason = Text.get(use, reason) })
+			local status = if use(blocked) ~= nil
+				then Text.get(use, "hud.autoPotion.paused")
 				elseif use(on) then Text.get(use, "hud.autoPotion.on")
 				else Text.get(use, "hud.autoPotion.off")
 			return Text.get(use, "hud.autoPotion", { state = status, time = use(timeText) })
+		end),
+		scope:Computed(function(use): string?
+			local reason = use(blocked)
+			return if reason then Text.get(use, reason) else nil
 		end)
 	)
 

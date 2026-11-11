@@ -15,6 +15,7 @@ local Workspace = game:GetService("Workspace")
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -389,12 +390,19 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 	local filter = scope:Value("all")
 	local filters = { "all", "boss", "elite2", "invasion", "ground" }
 	local filterButtons = {}
+	-- review 2026-11-11 (the filters 40 high on touch): whole touch targets on touch, 40 on PC (the strip is 48)
+	local filterSize = scope:Computed(function(use): UDim2
+		return UDim2.fromOffset(
+			110,
+			if use(Device.Touch) == true then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
+		)
+	end)
 	for i, id in filters do
 		table.insert(
 			filterButtons,
 			Button(scope, {
 				LayoutOrder = i,
-				Size = UDim2.fromOffset(110, 40),
+				Size = filterSize,
 				TextSize = Theme.TextSize.Small,
 				Text = Text.T(scope, if id == "all" then "finder.all" else `finder.kind.{id}`),
 				Variant = scope:Computed(function(use): any

@@ -12,13 +12,15 @@
 -- rating and the level in the columns; the own rank and rating; the end of the season in the footer).
 -- 2026-10-21 (owner: too many descriptions): the week's rewards are one short line; the full rewards (This week) and
 -- the rule of the Hall of Fame sit behind an "i" next to the board's title (Components/InfoLine, built once).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: a phone's
+-- class filter is the window's title bar button (Window.Parts `HeaderAction`, the shown value and "▸"), so the tab
+-- strip keeps the screen's whole width.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Arena = require(ReplicatedStorage.Shared.Data.Arena)
 local ArenaRules = require(ReplicatedStorage.Shared.Logic.ArenaRules)
-local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -39,6 +41,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Window = require(script.Parent.Parent.Components.Window)
 local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children = Fusion.Children
@@ -47,9 +50,9 @@ local peek = Fusion.peek
 type Scope = Fusion.Scope<typeof(Fusion)>
 type Use = Fusion.Use
 
--- The touch tab strip and the filter strip are Tabs with Scroll: their buttons are the strip - 6 (scroll bar 4 + 2) =
--- MinTouch tall (WorldLayout.rankings: strip and filter 50). INFO: a footer line (the week's countdown, the player's
--- line, the update time).
+-- The touch tab strip and the filter strip are Tabs with Scroll: WindowFrame.tabStrip(true) high (WorldLayout.rankings:
+-- strip and filter), the buttons Theme.Size.TabHeight. INFO: a footer line (the week's countdown, the player's line,
+-- the update time).
 local INFO = 22
 local ALL = "all" -- the filter value of the board without a class
 
@@ -567,7 +570,7 @@ local function meText(use: Use, snap: Leaderboard.Snapshot): string
 	return ""
 end
 
-local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
+local function RankingsWindow(scope: Scope, _props: {}?): Window.Parts
 	local touch = Device.Touch
 	local compact = PhoneLayout.Compact
 	local tabs = sortedTabs()
@@ -809,30 +812,26 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		end
 		return Tabs(s, { Tabs = list, Selected = filter, Scroll = true, Size = UDim2.fromScale(1, 1) })
 	end)
-	-- A phone: one button beside the tabs steps through the filter (the shown value and "▸").
-	local filterButton = scope:Computed(function(use, s: Scope): any
-		local tab = tabById(use(selected))
-		local width = use(layout).filterButton
-		if not tab or width <= 0 then
-			return nil
-		end
-		local values = filterValues(tab)
-		return Button(s, {
-			Name = "FilterButton",
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.fromScale(1, 0),
-			Size = UDim2.fromOffset(width, Theme.Size.MinTouch),
-			Variant = "secondary",
-			TextSize = Theme.TextSize.Small,
-			Text = s:Computed(function(use2): string
-				return `{filterLabel(use2, tab, use2(filter))} ▸`
-			end),
-			OnClick = function()
+	-- A phone (WorldLayout gives the filter no strip there): the window's title bar button steps through the filter
+	-- (the shown value and "▸"), so the tab strip keeps the screen's width and no button covers its last tab.
+	local filterAction: Window.HeaderAction = {
+		Name = "Filter",
+		Text = scope:Computed(function(use): string
+			local tab = tabById(use(selected))
+			return if tab then `{filterLabel(use, tab, use(filter))} ▸` else ""
+		end),
+		Visible = scope:Computed(function(use): boolean
+			return use(hasFilter) and use(layout).filter == 0
+		end),
+		OnClick = function()
+			local tab = tabById(peek(selected))
+			local values = if tab then filterValues(tab) else {}
+			if #values > 1 then
 				local i = table.find(values, peek(filter)) or 0
 				filter:set(values[i % #values + 1])
-			end,
-		})
-	end)
+			end
+		end,
+	}
 
 	local table_ = scope:Computed(function(use, s: Scope): { any }
 		local snap = use(snapshot)
@@ -940,7 +939,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		return use(layout).footer
 	end)
 
-	return {
+	local content = {
 		-- PC: the tab column on the left.
 		scope:New("Frame")({
 			Name = "SideTabsHolder",
@@ -955,25 +954,17 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				SideTabs(scope, { Tabs = tabList, Selected = selected, Size = UDim2.fromScale(1, 1) }),
 			},
 		}),
-		-- Phone: the tabs as a strip at the top (a phone's filter button at its right).
+		-- Touch: the tabs as a strip at the top, the screen's whole width.
 		scope:New("Frame")({
 			Name = "TabStripHolder",
 			Size = scope:Computed(function(use): UDim2
-				local l = use(layout)
-				return UDim2.new(1, if l.filterButton > 0 then -(l.filterButton + 8) else 0, 0, l.strip)
+				return UDim2.new(1, 0, 0, use(layout).strip)
 			end),
 			BackgroundTransparency = 1,
 			Visible = touch,
 			[Children] = {
 				Tabs(scope, { Tabs = tabList, Selected = selected, Scroll = true, Size = UDim2.fromScale(1, 1) }),
 			},
-		}),
-		scope:New("Frame")({
-			Name = "FilterButtonHolder",
-			Size = UDim2.fromScale(1, 0),
-			BackgroundTransparency = 1,
-			Visible = touch,
-			[Children] = filterButton :: any,
 		}),
 		scope:New("Frame")({
 			Name = "Board",
@@ -1122,6 +1113,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			},
 		}),
 	}
+	return { Content = content, HeaderAction = filterAction }
 end
 
 return RankingsWindow

@@ -3,16 +3,25 @@
 -- (UI/NavTarget, NavController keeps the distance), "via: <map>" when the target is on another map, a walking
 -- arrow while the character walks there by itself. A click on the bar opens the world map on the target and
 -- its card; ✕ ends the guide. Under it the /navdebug line for admins.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): on a phone the bar left the minimap's column (it
+-- reached the skill arc): a second bar (`Phone`) stands in the M zone under the cast line while the zone reaches down
+-- far enough (Logic/PhoneHud `navBar`), else it takes a line of the stack ("guide", UI/HudSlots); the bar in the menu
+-- under the minimap is PC's and a tablet's.
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): the bar says the target
+-- and the distance only; the map the way goes through sits in the bar's tooltip ("Dorgan, via Meadows"), which also
+-- shows a name the bar cut.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -21,56 +30,87 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	ShowWindow: (id: string) -> (),
 	StopGuide: () -> (),
+	Phone: boolean?, -- the phone's bar (M zone or the stack); else the menu's (PC and a tablet)
 }
 
 local WIDTH = 264
 
--- W29: narrower on a phone in landscape (Logic/PhoneHud: under the scaled minimap, clear of the skill arc)
-local function width(scope: Scope): Fusion.Computed<UDim2>
-	return PhoneLayout.Pick(scope, UDim2.fromOffset(PhoneHud.NAVBAR_WIDTH, 0), UDim2.fromOffset(WIDTH, 0))
-end
-
 local function NavBar(scope: Scope, props: Props): Instance
 	local target = NavTarget.Target
+	local phone = props.Phone == true
+	local compact = PhoneLayout.Compact
+	local inM = PhoneLayout.Has(scope, "navBar")
+	-- a phone whose M zone is too short: one line of the stack
+	local slot = if phone
+		then HudSlots.join(
+			scope,
+			"guide",
+			scope:Computed(function(use): HudSlots.Box
+				local line = Theme.Size.MinTouch
+				return {
+					shown = use(compact) and use(target) ~= nil and not use(inM),
+					w = PhoneHud.PANEL_WIDTH,
+					h = line,
+					line = line,
+				}
+			end)
+		)
+		else nil
+	local barWidth = scope:Computed(function(use): number
+		if not phone then
+			return WIDTH
+		end
+		local place = use(PhoneLayout.Places).navBar
+		return if place then place.w else PhoneHud.PANEL_WIDTH
+	end)
+	local function targetName(use: Fusion.Use, t: NavTarget.Target): string
+		return if t.label then t.label elseif t.labelKey then Text.get(use, t.labelKey) else ""
+	end
 	local text = scope:Computed(function(use): string
 		local t = use(target)
 		if not t then
 			return ""
 		end
-		local name = if t.label then t.label elseif t.labelKey then Text.get(use, t.labelKey) else ""
 		local distance = math.floor(use(NavTarget.Distance) or 0)
-		local via = use(NavTarget.Via)
-		local map = if via then Maps.get(via) else nil
 		local arrow = if use(NavTarget.Walking) then "⇶" else "➤"
-		if map then
-			return `{arrow} {Text.get(use, "nav.barVia", {
-				name = name,
-				map = Text.get(use, map.nameKey),
-				n = distance,
-			})}`
-		end
-		return `{arrow} {Text.get(use, "nav.bar", { name = name, n = distance })}`
+		return `{arrow} {Text.get(use, "nav.bar", { name = targetName(use, t), n = distance })}`
 	end)
 
-	return scope:New("Frame")({
+	local stackAt = if slot then HudSlots.position(scope, slot) else nil
+	local frame = scope:New("Frame")({
 		Name = "NavBar",
 		LayoutOrder = 3,
-		Size = width(scope),
+		Position = if phone
+			then scope:Computed(function(use): UDim2
+				local place = use(PhoneLayout.Places).navBar
+				if place then
+					return UDim2.fromOffset(place.x, place.y)
+				end
+				return if stackAt then use(stackAt) else UDim2.new()
+			end)
+			else nil,
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.fromOffset(use(barWidth), 0)
+		end),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
-			return use(target) ~= nil or use(NavTarget.Debug) ~= nil
+			if not (use(target) ~= nil or use(NavTarget.Debug) ~= nil) then
+				return false
+			end
+			if not phone then
+				return not use(compact)
+			end
+			return use(compact) and (use(inM) or (slot ~= nil and use(slot) ~= nil))
 		end),
 		[Children] = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
 			scope:New("Frame")({
 				Name = "Bar",
 				LayoutOrder = 1,
-				Size = PhoneLayout.Pick(
-					scope,
-					UDim2.fromOffset(PhoneHud.NAVBAR_WIDTH, Theme.Size.MinTouch),
-					UDim2.fromOffset(WIDTH, Theme.Size.MinTouch)
-				),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(use(barWidth), Theme.Size.MinTouch)
+				end),
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
 				Visible = scope:Computed(function(use): boolean
@@ -129,7 +169,9 @@ local function NavBar(scope: Scope, props: Props): Instance
 			scope:New("TextLabel")({
 				Name = "Debug",
 				LayoutOrder = 2,
-				Size = width(scope),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(use(barWidth), 0)
+				end),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundColor3 = Theme.Iron.Sunken,
 				BackgroundTransparency = Theme.HudAlpha,
@@ -147,6 +189,27 @@ local function NavBar(scope: Scope, props: Props): Instance
 			}),
 		},
 	})
+	local bar = frame:FindFirstChild("Bar")
+	local open = bar and bar:FindFirstChild("Open")
+	if open and open:IsA("GuiObject") then
+		Tooltip.attach(
+			scope,
+			open,
+			scope:Computed(function(use): string
+				local t = use(target)
+				if not t then
+					return ""
+				end
+				local via = use(NavTarget.Via)
+				local map = if via then Maps.get(via) else nil
+				if map then
+					return Text.get(use, "nav.barVia", { name = targetName(use, t), map = Text.get(use, map.nameKey) })
+				end
+				return targetName(use, t)
+			end)
+		)
+	end
+	return frame
 end
 
 return NavBar

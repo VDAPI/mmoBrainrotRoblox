@@ -3,6 +3,9 @@
 -- with the time left), every party member with ✓ / ✗ and why (level, daily lockout with the time to reset,
 -- too far), the own grind progress (S30: "Dziś: 1/3" and the current personal Legendary / Mythic chances) and
 -- "Enter" for the leader. S60: the Legendary chance with the group's Fortune (UI/GroupLuck) and its line.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the lines
+-- and the party scroll in the window (Window.Parts `Scroll`; a phone's short window cut the member list) and "Enter"
+-- stands in the window's pinned footer.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -25,6 +28,7 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
+local Window = require(script.Parent.Parent.Components.Window)
 
 local Children = Fusion.Children
 
@@ -49,7 +53,7 @@ local function asks(data: any): boolean
 	return able >= 2
 end
 
-local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
+local function DungeonWindow(scope: Scope, props: Props): Window.Parts
 	local info = scope:Value(nil :: any)
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	local alive = true
@@ -126,7 +130,7 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 					BackgroundTransparency = 1,
 					Text = `{if member.ok then "✓" else "✗"}  {member.name} · {Text.get(use, "hud.level", {
 						level = member.level,
-					})}{if reason ~= "" then `  —  {reason}` else ""}`,
+					})}{if reason ~= "" then ` · {reason}` else ""}`,
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Body,
 					TextColor3 = if member.ok then Theme.Paper.Success else Theme.Paper.Danger,
@@ -160,7 +164,42 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 		return if use(bannerShown) then 0.4 else 1
 	end)
 
-	return {
+	local enter = Button(scope, {
+		Name = "Enter",
+		Size = UDim2.fromOffset(260, Theme.Size.ButtonHeight),
+		Variant = "primary",
+		Text = scope:Computed(function(use): string
+			local data = use(info)
+			if data and not data.isLeader then
+				return Text.get(use, "dungeon.leaderOnly")
+			end
+			-- S134f: a leader with a member able to come along asks "Ready?" first (DungeonService ready check)
+			return Text.get(use, if asks(data) then "dungeon.ready.ask" else "dungeon.enter")
+		end),
+		Disabled = scope:Computed(function(use): boolean
+			local data = use(info)
+			return not data or data.busy or not data.isLeader or not data.built
+		end),
+		OnClick = function()
+			local region = Fusion.peek(props.Region)
+			if not region then
+				return
+			end
+			task.spawn(function()
+				local asking = asks(Fusion.peek(info))
+				local ok, err = Net.Invoke("EnterDungeon", region)
+				if ok then
+					Sounds.play(if asking then "click" else "levelUp")
+					props.Close()
+				else
+					Sounds.play("error")
+					Toast.push(Text.now(err or "error.internal"), "error")
+				end
+			end)
+		end,
+	})
+
+	local content = {
 		ArtIcon.Image(scope, {
 			Name = "Banner",
 			Key = banner,
@@ -255,51 +294,20 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 			TextColor3 = Rarities.get(Rarities.LEGENDARY).textColor,
 			TextWrapped = true,
 		}),
+		-- the party under the lines: as tall as its rows, the window's scroll takes the rest
 		scope:New("Frame")({
+			Name = "Members",
 			Position = UDim2.fromOffset(0, 180),
-			Size = UDim2.new(1, 0, 1, -250),
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			[Children] = {
 				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 4) }),
 				members :: any,
 			},
 		}),
-		Button(scope, {
-			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.fromScale(0.5, 1),
-			Size = UDim2.fromOffset(260, 56),
-			Variant = "primary",
-			Text = scope:Computed(function(use): string
-				local data = use(info)
-				if data and not data.isLeader then
-					return Text.get(use, "dungeon.leaderOnly")
-				end
-				-- S134f: a leader with a member able to come along asks "Ready?" first (DungeonService ready check)
-				return Text.get(use, if asks(data) then "dungeon.ready.ask" else "dungeon.enter")
-			end),
-			Disabled = scope:Computed(function(use): boolean
-				local data = use(info)
-				return not data or data.busy or not data.isLeader or not data.built
-			end),
-			OnClick = function()
-				local region = Fusion.peek(props.Region)
-				if not region then
-					return
-				end
-				task.spawn(function()
-					local asking = asks(Fusion.peek(info))
-					local ok, err = Net.Invoke("EnterDungeon", region)
-					if ok then
-						Sounds.play(if asking then "click" else "levelUp")
-						props.Close()
-					else
-						Sounds.play("error")
-						Toast.push(Text.now(err or "error.internal"), "error")
-					end
-				end)
-			end,
-		}),
 	}
+	return { Content = content, Footer = enter, Scroll = true }
 end
 
 return DungeonWindow

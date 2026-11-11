@@ -76,6 +76,45 @@ function QuestRows.line(row: Row): string
 	return `{if row.done then QuestRows.DONE_MARK else QuestRows.OPEN_MARK} {row.text}`
 end
 
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the tracker shows an objective on one line of at most this
+-- many characters (Logic/TextCaps hudLine), cut with "…"; the whole line goes into its tooltip.
+QuestRows.LINE_MAX = 32
+function QuestRows.short(text: string, max: number?): string
+	local limit = max or QuestRows.LINE_MAX
+	local n = utf8.len(text)
+	if n == nil or n <= limit then
+		return text
+	end
+	-- limit - 1 characters and the ellipsis, without a space before it
+	local cut = utf8.offset(text, limit) or (#text + 1)
+	local head = string.gsub(string.sub(text, 1, cut - 1), "%s+$", "")
+	return head .. "…"
+end
+
+-- Package A review (owner 2026-11-10): an objective's line on the tracker's one line keeps its count whole and last.
+-- `text` is the objective's whole line ("• Defeat: Fire Imp 0/12 (Burnt Ruins)"); the result is the part before the
+-- count, cut with "…" so that it, a space and the count fit `max` characters, and the count ("0/12"). The area after
+-- the count is left out (the tracker shows the whole line in the tooltip): cut by `short`, "0/12" read "0/1…". An
+-- objective without its count in the line ("Talk to ...") comes back cut by `short`, with no count.
+function QuestRows.oneLine(text: string, have: number, need: number, max: number?): (string, string?)
+	local limit = max or QuestRows.LINE_MAX
+	local count = `{math.min(have, need)}/{need}`
+	local at: number? = nil
+	local from = 1
+	while true do
+		local found = string.find(text, ` {count}`, from, true)
+		if not found then
+			break
+		end
+		at = found
+		from = found + 1
+	end
+	if not at then
+		return QuestRows.short(text, limit), nil
+	end
+	return QuestRows.short(string.sub(text, 1, at - 1), limit - #count - 1), count
+end
+
 -- Owner 2026-10-21 (the tracker too tall): the progress of a quest on one tracker line: the mark when complete, the
 -- count of a single counted objective ("3/8"), else the finished objectives of all ("1/3"); "" for one uncounted
 -- objective that is still open ("Talk to ...").

@@ -1,15 +1,22 @@
 --!strict
 -- Server notifications: "Toast" (key, args?, kind?) -> toast stack; "SystemMessage" (key, args?) -> the
 -- chat's system channel (admin replies); "Announce" (key, args?) -> golden banner + system chat.
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): every one of them
+-- goes through UI/Notify's one queue (Components/Toast, Components/Announcement); another server's announcement
+-- (a key ending in "Global", AnnounceService.Global) waits up to 30 s in combat, then drops (owner question 5). It also
+-- hands UI/Notify the player's attack (TargetController, read only) for its combat signal.
+-- UI plan package B, texts: a toast is one short line; when its key has a ".info" text (contract.ready.info), that
+-- text, with the same arguments, waits behind the toast's "i" (Components/Toast).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 
 local ItemText = require(script.Parent.Parent.UI.ItemText)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Text = require(script.Parent.Parent.UI.Text)
 local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
-local WORLD_BOSS_SECONDS = 15 -- owner 2026-10-20: the world boss banner stays this long (an ordinary one 5 s)
+local Notify = require(script.Parent.Parent.UI.Notify)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local NotificationController = {
@@ -75,28 +82,40 @@ function NotificationController.System(text: string)
 	end
 end
 
+local Registry: any
+
+function NotificationController.Init(registry)
+	Registry = registry
+end
+
 function NotificationController.Start()
+	-- the combat signal's second half: the player strikes a target (TargetController requires the toasts, so the UI
+	-- reads it through this check)
+	Notify.SetAttackCheck(function(): boolean
+		local target = Registry and Registry.Get("TargetController")
+		return target ~= nil and target.IsAttacking() == true
+	end)
 	Net.On("Toast", function(key: string, args: any, kind: any)
 		local safeKind: Toast.Kind = if type(kind) == "string" and KINDS[kind] then kind :: Toast.Kind else "info"
-		Toast.push(Text.now(key, escapeArgs(args)), safeKind)
+		local resolved = escapeArgs(args)
+		local info = if type(key) == "string" and Locale.has(key .. ".info")
+			then Text.now(key .. ".info", resolved)
+			else nil
+		Toast.push(Text.now(key, resolved), safeKind, nil, info)
 	end)
 	Net.On("SystemMessage", function(key: string, args: any)
 		NotificationController.System(Text.now(key, escapeArgs(args)))
 	end)
 	-- Server-wide announcements (legendary drops, +7..+9 upgrades): golden banner + system chat; a mythic drop
-	-- (loot.announceMythic*, S30) gets the stronger red banner; S129: so do the Blood Moon announcements (bloodmoon.*).
+	-- (loot.announceMythic*, S30) gets the stronger red banner; S129: so do the Blood Moon announcements (bloodmoon.*);
+	-- owner 2026-10-20: the world boss's (worldboss.*) are red and stay 15 s (Logic/NoticeQueue.bannerTone, SECONDS).
 	Net.On("Announce", function(key: string, args: any)
+		if type(key) ~= "string" then
+			return
+		end
 		local text = Text.now(key, escapeArgs(args))
-		local mythic = type(key) == "string"
-			and (string.find(key, "announceMythic", 1, true) ~= nil or string.sub(key, 1, 10) == "bloodmoon.")
-		-- owner 2026-10-20: the world boss's announcements (worldboss.*) are red and stay WORLD_BOSS_SECONDS
-		local worldBoss = type(key) == "string" and string.sub(key, 1, 10) == "worldboss."
-		Announcement.push(
-			text,
-			if mythic or worldBoss then "mythic" else nil,
-			if worldBoss then WORLD_BOSS_SECONDS else nil
-		)
 		-- UI plan phase 2 (Studio 2026-10-31: the same announcement in the banner and in the chat): the banner only
+		Announcement.push(text, nil, nil, { key = key, crossServer = string.sub(key, -6) == "Global" })
 	end)
 end
 

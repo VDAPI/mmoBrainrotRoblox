@@ -5,12 +5,15 @@
 -- "Bank" tab in S159g.
 -- Owner 2026-11-10 (UI plan E): the guild log (every entry) is a Section folded by default (guildLog, saved on the
 -- account), so the overview ends with its title.
+-- Review 2026-11-11 ("Edytuj" 36 high on touch): the button is a whole touch target on touch and 40 on PC, and the
+-- message starts under it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Common = require(script.Parent.Common)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Guild = require(ReplicatedStorage.Shared.Logic.Guild)
@@ -110,6 +113,13 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 	local canMotd = scope:Computed(function(use): boolean
 		local g = use(guild)
 		return type(g) == "table" and Guild.can(g.myRank, "motd", g)
+	end)
+	-- "Edytuj": a whole touch target on touch, 40 on PC; the message starts under it (under the title without it)
+	local editHeight = scope:Computed(function(use): number
+		return if use(Device.Touch) == true then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
+	end)
+	local motdTop = scope:Computed(function(use): number
+		return if use(canMotd) then 6 + use(editHeight) + 4 else 34
 	end)
 
 	local emblem = scope:Computed(function(use): string
@@ -289,7 +299,9 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 		-- Message of the day on parchment.
 		scope:New("Frame")({
 			LayoutOrder = 7,
-			Size = UDim2.new(1, 0, 0, 110),
+			Size = scope:Computed(function(use): UDim2
+				return UDim2.new(1, 0, 0, use(motdTop) + 76)
+			end),
 			BackgroundColor3 = Theme.Paper.Raised,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -305,8 +317,12 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				scope:New("TextLabel")({
-					Position = UDim2.fromOffset(12, 34),
-					Size = UDim2.new(1, -24, 1, -42),
+					Position = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(12, use(motdTop))
+					end),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, -24, 1, -(use(motdTop) + 8))
+					end),
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						local motd = use(motd)
@@ -322,7 +338,9 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 				Button(scope, {
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, -8, 0, 6),
-					Size = UDim2.fromOffset(130, 36),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(130, use(editHeight))
+					end),
 					TextSize = Theme.TextSize.Small,
 					Text = Text.T(scope, "guild.motd.editButton"),
 					Visible = canMotd,

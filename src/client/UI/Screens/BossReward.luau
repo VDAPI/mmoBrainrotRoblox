@@ -14,6 +14,10 @@
 -- the fight table stays on the small after-fight card (FightCard, with the place in the contribution).
 -- 2026-10-21 (owner: too many detailed descriptions): short lines; the world boss share line names the factor, what it
 -- multiplies is behind its "i".
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner question 1):
+-- DungeonController shows one of UI/Notify's cards first (BossReward.summary: the boss and the result in one line, in
+-- the PC corner's card slot, a phone's M zone); this full card opens from its 'Szczegóły' over a dimmed screen (a
+-- phone's full-screen sheet) and closes with OK or a tap beside it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -79,6 +83,7 @@ export type Props = {
 	Reward: Reward,
 	Close: () -> (),
 	OpenDetails: (() -> ())?, -- S134f: the fight log window ("Details")
+	Sheet: boolean?, -- a phone's full-screen sheet: the card fills its width from the top
 }
 
 local function percent(value: number?): number
@@ -155,7 +160,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 		elseif reward.gotLeg then legendary.textColor
 		else Theme.Paper.TextMuted
 
-	local compact = Fusion.peek(Scale.VirtualSize).Y < 600
+	local compact = props.Sheet == true or Fusion.peek(Scale.VirtualSize).Y < 600
 	local luckMul = tonumber(reward.luckMul) or 1
 	local extras: { Instance } = {}
 	if luckMul > 1 then
@@ -317,9 +322,10 @@ local function BossReward(scope: Scope, props: Props): Instance
 			label(3, Text.T(scope, resultKey), resultColor, Theme.TextSize.Body, Theme.Fonts.BodyBold),
 			label(
 				4,
-				Text.T(scope, "worldmap.card.runsToday", {
+				-- UI plan package B: the card's own line (at most 40 characters); the dungeon window keeps worldmap.card.*
+				Text.T(scope, "dungeon.reward.runs", {
 					n = reward.runs or 0,
-					limit = reward.dailyRuns or 0,
+					max = reward.dailyRuns or 0,
 					time = Time.format(BossScaling.untilReset(Clock.now())),
 				}),
 				if (reward.runs or 0) >= (reward.dailyRuns or 1) then Theme.Paper.Warning else Theme.Paper.Success,
@@ -328,7 +334,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 			),
 			label(
 				5,
-				Text.T(scope, "dungeon.reward.next", { leg = percent(reward.leg), myth = percent(reward.myth) }),
+				Text.T(scope, "dungeon.reward.next", { legPct = percent(reward.leg), mythPct = percent(reward.myth) }),
 				legendary.color,
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
@@ -413,11 +419,13 @@ local function BossReward(scope: Scope, props: Props): Instance
 		)
 	end
 
+	local sheet = props.Sheet == true
 	return scope:New("Frame")({
 		Name = "BossReward",
-		AnchorPoint = if compact then Vector2.new(0.5, 0.5) else Vector2.new(0.5, 0),
-		Position = if compact then UDim2.fromScale(0.5, 0.5) else UDim2.fromScale(0.5, 0.38),
-		Size = UDim2.fromOffset(if compact then 540 else 660, 0), -- S134f: wider for the meter columns
+		AnchorPoint = if sheet then Vector2.zero else Vector2.new(0.5, 0.5),
+		Position = if sheet then UDim2.new() else UDim2.fromScale(0.5, 0.5),
+		-- S134f: wider for the meter columns
+		Size = if sheet then UDim2.fromScale(1, 0) else UDim2.fromOffset(if compact then 540 else 660, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
 		Active = true,
@@ -467,4 +475,23 @@ local function BossReward(scope: Scope, props: Props): Instance
 	})
 end
 
-return BossReward
+-- The card's summary (UI/Notify.card): the title ("Defeated: <boss>"), one line (the item's rarity, the reward or why
+-- there is none) and the accent colour.
+local function summary(reward: Reward): (string, string, Color3)
+	local boss = if reward.boss then Bosses.get(reward.boss) else nil
+	local title = Text.now("dungeon.reward.title", { boss = if boss then Text.now(boss.nameKey) else "" })
+	if reward.world and reward.reason then
+		return title, Text.now("worldboss.rewardCard.none"), Theme.Iron.Danger
+	elseif reward.gotMyth then
+		local mythic = Rarities.get(Rarities.MYTHIC)
+		return title, Text.now("dungeon.reward.mythic"), mythic.color
+	elseif reward.gotLeg then
+		local legendary = Rarities.get(Rarities.LEGENDARY)
+		return title, Text.now("dungeon.reward.legendary"), legendary.color
+	end
+	return title,
+		Text.now("combat.reward", { exp = Format.number(reward.exp or 0), gold = Format.number(reward.gold or 0) }),
+		Theme.Brass.Bright
+end
+
+return { view = BossReward, summary = summary }

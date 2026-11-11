@@ -1,7 +1,7 @@
 --!strict
 -- The bestiary tab of the achievements window (S151c, docs/DESIGN.md §20c). The middle: the four regions with their
 -- progress bars (tiers reached / all, ✔ when complete: the region's title achievement) and the entries of the chosen
--- region (the name or "???" before the first kill, the tier, kills / the next goal, a bar). The details (PC a panel on
+-- region (the name or "???" before the first kill, kills / the next goal, a bar). The details (PC a panel on
 -- the right, phone a sheet): the model preview once the first tier reveals it (WorldMap/Preview, the map cards'
 -- builder), the tiers with their points, then what the tiers reveal: levels, where and how it attacks (I), the drops
 -- seen and the defence (II), the weaknesses (III), and the character's bonus against the family. Everything from
@@ -14,6 +14,9 @@
 -- Review 2026-11-10 (a phone with the regions open had room for no entry): on a phone the regions are a picker, a tap on
 -- one folds them again (back to the phone's default, so nothing open stays saved), and its entries show under the
 -- header that names it.
+-- UI package C's rows (same owner note): a region row is ListRow's one-line height (48), and so is an entry (the name,
+-- kills and the bar; the tiers and points are in the details: PC's panel, the sheet a tap opens). Review 2026-11-11: a
+-- second line on PC and a tablet left two entries under the open regions, one line leaves three.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -43,7 +46,6 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local BestiaryTab = {}
 
 local GAP = WorldLayout.BESTIARY.gap
-local REGION_ROW = WorldLayout.BESTIARY.regionRow
 local REGIONS_ID = "bestiaryRegions"
 local COUNT = 96
 local PREVIEW = 150
@@ -55,22 +57,6 @@ end
 
 local function regionName(use: Fusion.Use, region: string): string
 	return Text.get(use, `map.{region}.name`)
-end
-
--- "I✓ II [III]" of an entry row (the next tier in brackets).
-local function tiersText(row: Bestiary.Row): string
-	local parts: { string } = {}
-	for i = 1, row.tiers do
-		local numeral = Context.ROMAN[i] or tostring(i)
-		if i <= row.tier then
-			table.insert(parts, `{numeral}✓`)
-		elseif i == row.tier + 1 then
-			table.insert(parts, `[{numeral}]`)
-		else
-			table.insert(parts, numeral)
-		end
-	end
-	return table.concat(parts, " ")
 end
 
 local function bar(s: Scope, value: Fusion.UsedAs<number>, done: boolean, layout: { [any]: any }): Instance
@@ -102,7 +88,6 @@ local function regionRows(scope: Scope, ctx: Context.Ctx, height: Fusion.Compute
 				Name = region,
 				LayoutOrder = i,
 				Index = i,
-				Height = REGION_ROW,
 				Dense = true,
 				RightInset = COUNT,
 				Text = scope:Computed(function(use): string
@@ -162,8 +147,8 @@ local function shapeOf(region: string, rows: { Bestiary.Row }): string
 	return table.concat(parts, ",")
 end
 
--- The entries of the chosen region.
-local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: number): Instance
+-- The entries of the chosen region: one line each (Logic/WorldLayout.BESTIARY.entryRow).
+local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 	local rows = scope:Computed(function(use): { Bestiary.Row }
 		return Bestiary.rows(chr(use, ctx), use(ctx.region))
 	end)
@@ -189,23 +174,14 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeig
 			if row.boss then
 				name = `☠ {name}`
 			end
-			local sub = if row.known
-				then `{tiersText(row)} · {Text.get(
-					use,
-					"best.points",
-					{ n = Bestiary.pointsOf(BestiaryData.get(id) :: any, row.tier) }
-				)}`
-				else Text.get(use, if row.boss then "best.unknownBoss" else "best.unknownSub")
 			table.insert(
 				out,
 				ListRow(s, {
 					Name = id,
 					LayoutOrder = i,
 					Index = i,
-					Height = rowHeight,
 					RightInset = COUNT + 8,
 					Text = name,
-					Sub = sub,
 					Muted = not row.known,
 					Selected = s:Computed(function(use2): boolean
 						return use2(ctx.entry) == id
@@ -219,8 +195,9 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeig
 					[Children] = {
 						s:New("TextLabel")({
 							Name = "Count",
-							AnchorPoint = Vector2.new(1, 0),
-							Position = UDim2.new(1, -8, 0, 4),
+							-- beside the name
+							AnchorPoint = Vector2.new(1, 0.5),
+							Position = UDim2.new(1, -8, 0.5, 0),
 							Size = UDim2.fromOffset(COUNT, 20),
 							BackgroundTransparency = 1,
 							Text = s:Computed(function(use2): string
@@ -242,8 +219,8 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeig
 							{
 								Name = "Progress",
 								AnchorPoint = Vector2.new(0, 1),
-								Position = UDim2.new(0, Theme.Padding.Small + 4, 1, -5),
-								Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 12), 0, 5),
+								Position = UDim2.new(0, Theme.Padding.Small + 4, 1, -3),
+								Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 12), 0, 3),
 							}
 						),
 					},
@@ -317,12 +294,7 @@ function BestiaryTab.list(scope: Scope, ctx: Context.Ctx, device: WorldLayout.De
 					return UDim2.new(1, 0, 0, use(layout).list.height)
 				end),
 				BackgroundTransparency = 1,
-				[Children] = entryRows(
-					scope,
-					ctx,
-					touch,
-					WorldLayout.bestiary(WorldLayout.CHROME, device, false, 0).list.row
-				),
+				[Children] = entryRows(scope, ctx, touch),
 			}),
 		},
 	})

@@ -3,6 +3,10 @@
 -- only while the account has cloak time (never a dead button); the time left under the icon. States: on (gold
 -- frame), off (grey), paused (on, but the state branch `lure.blocked` names a block: amber frame, dimmed glyph and
 -- the reason in the tooltip). Click / tap switches it (LureToggle; the server answers with a toast).
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the tooltip is "Cloak of Luring: on · 2 h" (the time left
+-- without its word, it is the countdown under the icon too).
+-- Package A review (owner 2026-11-10): paused, the line says "paused" and the block's sentence is its details (it named
+-- the cloak twice in up to 90 characters); a press held for the tooltip does not switch the cloak on its release.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -11,6 +15,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PotionPress = require(ReplicatedStorage.Shared.Logic.PotionPress)
 local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
@@ -64,6 +69,9 @@ local function LureButton(scope: Scope, position: Fusion.UsedAs<UDim2>): Instanc
 		return Text.get(use, key, args)
 	end)
 
+	-- package A review (owner 2026-11-10, Logic/PotionPress): a touch held for the tooltip was reading it, so its release
+	-- does not switch the cloak
+	local pressedAt: number? = nil
 	local button = scope:New("TextButton")({
 		Name = "LureButton",
 		Size = UDim2.fromOffset(SIZE, SIZE),
@@ -79,7 +87,15 @@ local function LureButton(scope: Scope, position: Fusion.UsedAs<UDim2>): Instanc
 		TextTransparency = scope:Computed(function(use): number
 			return if use(blocked) ~= nil then 0.45 else 0
 		end),
+		[OnEvent("InputBegan")] = function(input: InputObject)
+			pressedAt = if input.UserInputType == Enum.UserInputType.Touch then os.clock() else nil
+		end,
 		[OnEvent("Activated")] = function()
+			local heldFor = if pressedAt then os.clock() - pressedAt else 0
+			pressedAt = nil
+			if heldFor >= PotionPress.TIP_HOLD then
+				return
+			end
 			local wanted = not Fusion.peek(on)
 			task.spawn(function()
 				local ok, err = Net.Invoke("LureToggle", wanted)
@@ -116,12 +132,15 @@ local function LureButton(scope: Scope, position: Fusion.UsedAs<UDim2>): Instanc
 		scope,
 		button :: GuiObject,
 		scope:Computed(function(use): string
-			local reason = use(blocked)
-			local state = if reason
-				then Text.get(use, "hud.lure.paused", { reason = Text.get(use, reason) })
+			local state = if use(blocked) ~= nil
+				then Text.get(use, "hud.lure.paused")
 				elseif use(on) then Text.get(use, "hud.lure.on")
 				else Text.get(use, "hud.lure.off")
 			return Text.get(use, "hud.lure", { state = state, time = use(timeText) })
+		end),
+		scope:Computed(function(use): string?
+			local reason = use(blocked)
+			return if reason then Text.get(use, reason) else nil
 		end)
 	)
 

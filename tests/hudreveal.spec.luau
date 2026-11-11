@@ -3,7 +3,8 @@
 -- character sees the ☰ and the story quests; owner 2026-11-10 (the window hubs are gone): the backpack and the skills
 -- come with the tutorial's "backpack" step, the world map, the quests, the Dragon Shop and the tracker's other groups
 -- at its end (or skip). Characters without a tutorial save see everything, the ☰ never waits and every key still opens
--- its window.
+-- its window. UI plan package A (the plan's L9): the element each tutorial step points at shows at that step on PC
+-- and on a touch screen.
 local fs = require("@lune/fs")
 
 local T = require("./Test")
@@ -87,6 +88,26 @@ describe("HudReveal: the bar's buttons and the tracker", function()
 		expect(string.find(hamburger, "visible", 1, true)).toBeNil()
 		local tracker = fs.readFile("src/client/UI/Screens/Hud/QuestTracker.luau")
 		expect(string.find(tracker, "HudReveal.trackerGroup(id, stage)", 1, true) ~= nil).toBe(true)
+	end)
+
+	it("the element a tutorial step points at shows at that step, on PC and on a touch screen", function()
+		for _, s in Tutorial.STEPS do
+			local anchor = s.anchor
+			if not anchor or anchor == "joystick" then
+				continue
+			end
+			local stage = HudReveal.stage(at(s.id))
+			local names = Tutorial.ANCHOR_NAMES[anchor]
+			for _, name in { names.pc, names.touch } do
+				-- a button of the bar waits for its stage (the phone's drawer holds the same buttons); the tracker
+				-- shows the story quests from the start; the potions, the attack button and the skills never wait
+				if HudMenu.onBar(name) then
+					expect({ s.id, name, HudReveal.button(name, stage) }).toEqual({ s.id, name, true })
+				elseif name == "QuestTracker" then
+					expect({ s.id, HudReveal.trackerGroup("quests", stage) }).toEqual({ s.id, true })
+				end
+			end
+		end
 	end)
 
 	it("the unlock toasts of tiles name the ☰ in both languages", function()

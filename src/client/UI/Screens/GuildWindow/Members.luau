@@ -3,6 +3,7 @@
 -- class, level, rank, online here / on another server / offline, contribution, and the actions the own
 -- rank allows: promote/demote and hand over leadership (leader), kick (higher rank only). S159g: four ranks (a step up
 -- or down, only below the own rank; officers when the leader allows it), the guild EXP of the week per member.
+-- Review 2026-11-11 (the actions 38 high on touch): the actions are whole touch targets on touch, 40 on PC.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -10,6 +11,7 @@ local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Common = require(script.Parent.Common)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Guild = require(ReplicatedStorage.Shared.Logic.Guild)
@@ -59,10 +61,17 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 		})
 	end
 
-	local function actionButton(s: Scope, order: number, key: string, variant: string?, onClick: () -> ()): Instance
+	local function actionButton(
+		s: Scope,
+		height: number,
+		order: number,
+		key: string,
+		variant: string?,
+		onClick: () -> ()
+	): Instance
 		return Button(s, {
 			LayoutOrder = order,
-			Size = UDim2.fromOffset(96, 38),
+			Size = UDim2.fromOffset(96, height),
 			TextSize = Theme.TextSize.Small,
 			Variant = variant :: any,
 			Text = Text.T(s, key),
@@ -76,6 +85,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 		if type(g) ~= "table" then
 			return list
 		end
+		local action = if use(Device.Touch) == true then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
 		local ordered: { any } = table.clone(g.members)
 		local index: { [any]: number } = {}
 		for i, member in g.members do
@@ -97,7 +107,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 				if canRank and up and Guild.outranks(g.myRank, up) then
 					table.insert(
 						actions,
-						actionButton(s, 1, "guild.promote", nil, function()
+						actionButton(s, action, 1, "guild.promote", nil, function()
 							task.spawn(Common.invoke, "GuildSetRank", member.key, up)
 						end)
 					)
@@ -105,7 +115,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 				if canRank and down then
 					table.insert(
 						actions,
-						actionButton(s, 1, "guild.demote", nil, function()
+						actionButton(s, action, 1, "guild.demote", nil, function()
 							task.spawn(Common.invoke, "GuildSetRank", member.key, down)
 						end)
 					)
@@ -113,7 +123,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 				if g.myRank == "leader" then
 					table.insert(
 						actions,
-						actionButton(s, 2, "guild.transfer", nil, function()
+						actionButton(s, action, 2, "guild.transfer", nil, function()
 							confirm("guild.transfer.title", "guild.transfer.confirm", member.name, "primary", function()
 								return Common.modalInvoke("GuildTransfer", member.key)
 							end)
@@ -123,7 +133,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 				if Guild.can(g.myRank, "kick", g) and Guild.outranks(g.myRank, member.rank) then
 					table.insert(
 						actions,
-						actionButton(s, 3, "guild.kick", "danger", function()
+						actionButton(s, action, 3, "guild.kick", "danger", function()
 							confirm("guild.kick.title", "guild.kick.confirm", member.name, "danger", function()
 								return Common.modalInvoke("GuildKick", member.key)
 							end)
@@ -215,7 +225,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 						s:New("Frame")({
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -8, 0.5, 0),
-							Size = UDim2.fromOffset(410, 40),
+							Size = UDim2.fromOffset(410, action),
 							BackgroundTransparency = 1,
 							[Children] = {
 								s:New("UIListLayout")({
