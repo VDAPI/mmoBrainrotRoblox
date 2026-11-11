@@ -8,6 +8,10 @@
 -- comes close to the face on the Face and Paint tabs; CreateCharacter sends every field of the look.
 -- Owner 2026-10-21 (too many detailed descriptions): a class card shows one short line (class.<id>.short), the full
 -- description behind the "i" in its corner.
+-- Review 2026-11-11 (the name and "Utwórz" waited at the end of one long list, 4-5 swipes down on a phone): only the
+-- classes and the look scroll; a footer pinned under a rule (Logic/WorldLayout.characterSelect `creator`) keeps the
+-- name field, "Wróć" and "Utwórz" in one row on the screen, with the field's name and its status (checking, available,
+-- the error) on the line over it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -31,6 +35,7 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -40,6 +45,8 @@ export type Props = {
 	Slot: number,
 	-- Called after a successful creation with the new name, or with nil when the player goes back.
 	OnDone: (name: string?) -> (),
+	-- the screen's layout (its `creator` part: the pinned footer and the scroll over it)
+	Layout: Fusion.UsedAs<WorldLayout.CharacterSelect>,
 }
 
 local CHECK_DELAY = 0.45
@@ -276,9 +283,11 @@ local function Creator(scope: Scope, props: Props): Instance
 		end
 	end
 
-	return scope:New("ScrollingFrame")({
-		Name = "Creator",
-		Size = UDim2.fromScale(1, 1),
+	local scroll = scope:New("ScrollingFrame")({
+		Name = "Scroll",
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 0, use(props.Layout).creator.scroll)
+		end),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		CanvasSize = UDim2.new(),
@@ -404,80 +413,143 @@ local function Creator(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
-			scope:New("TextLabel")({
-				Name = "NameLabel",
-				LayoutOrder = 5,
-				BackgroundTransparency = 1,
-				Size = UDim2.fromOffset(460, 26),
-				Text = Text.T(scope, "charSelect.create.name"),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Paper.Text,
-				TextXAlignment = Enum.TextXAlignment.Left,
-			}),
-			TextInput(scope, {
-				Name = "NameInput",
-				LayoutOrder = 6,
-				Size = UDim2.fromOffset(460, Theme.Size.InputHeight + 22),
-				Text = name,
-				MaxLength = Config.CharacterName.MaxLength,
-				Placeholder = Text.T(scope, "charSelect.create.namePlaceholder", NAME_ARGS),
-				Error = scope:Computed(function(use): string?
-					local key = use(errorKey)
-					return if key then Text.get(use, key, NAME_ARGS) else nil
-				end),
-				OnSubmit = function()
-					create()
-				end,
-			}),
-			scope:New("TextLabel")({
-				Name = "Status",
-				LayoutOrder = 7,
-				BackgroundTransparency = 1,
-				Size = UDim2.fromOffset(460, 20),
-				Text = scope:Computed(function(use): string
-					if use(checking) then
-						return Text.get(use, "charSelect.create.checking")
-					end
-					if use(localValid) and use(errorKey) == nil then
-						return Text.get(use, "charSelect.create.available")
-					end
-					return ""
-				end),
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = scope:Computed(function(use): Color3
-					return if use(checking) then Theme.Paper.TextMuted else Theme.Paper.Success
-				end),
-				TextXAlignment = Enum.TextXAlignment.Left,
-			}),
+		},
+	})
+
+	-- the status of the name: the error, "checking" while the server looks, "available" once it answered
+	local statusText = scope:Computed(function(use): string
+		local key = use(errorKey)
+		if key then
+			return Text.get(use, key, NAME_ARGS)
+		elseif use(checking) then
+			return Text.get(use, "charSelect.create.checking")
+		elseif use(localValid) then
+			return Text.get(use, "charSelect.create.available")
+		end
+		return ""
+	end)
+
+	local footer = scope:New("Frame")({
+		Name = "Footer",
+		AnchorPoint = Vector2.new(0.5, 1),
+		Position = UDim2.fromScale(0.5, 1),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 0, use(props.Layout).creator.footer)
+		end),
+		BackgroundTransparency = 1,
+		[Children] = {
 			scope:New("Frame")({
-				Name = "Buttons",
-				LayoutOrder = 8,
+				Name = "Rule",
+				Size = UDim2.new(1, 0, 0, 1),
+				BackgroundColor3 = Theme.Paper.Rule,
+				BorderSizePixel = 0,
+			}),
+			-- the field's name on the left, its status on the right
+			scope:New("Frame")({
+				Name = "StatusLine",
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0, use(props.Layout).creator.statusTop)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					local c = use(props.Layout).creator
+					return UDim2.fromOffset(c.width, c.status)
+				end),
 				BackgroundTransparency = 1,
-				Size = UDim2.fromOffset(460, Theme.Size.ButtonHeight),
+				[Children] = {
+					scope:New("TextLabel")({
+						Name = "NameLabel",
+						Size = UDim2.fromScale(0, 1),
+						AutomaticSize = Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, "charSelect.create.name"),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+					scope:New("TextLabel")({
+						Name = "Status",
+						Size = UDim2.fromScale(1, 1),
+						BackgroundTransparency = 1,
+						Text = statusText,
+						FontFace = Theme.Fonts.BodyMedium,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = scope:Computed(function(use): Color3
+							if use(errorKey) then
+								return Theme.Paper.Danger
+							end
+							return if use(checking) then Theme.Paper.TextMuted else Theme.Paper.Success
+						end),
+						TextXAlignment = Enum.TextXAlignment.Right,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+				},
+			}),
+			-- the name field, "Wróć" and "Utwórz" in one row
+			scope:New("Frame")({
+				Name = "Row",
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0, use(props.Layout).creator.rowTop)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					local c = use(props.Layout).creator
+					return UDim2.fromOffset(c.width, c.row)
+				end),
+				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({
 						FillDirection = Enum.FillDirection.Horizontal,
-						HorizontalAlignment = Enum.HorizontalAlignment.Center,
 						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, Theme.Padding.Medium),
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						Padding = scope:Computed(function(use): UDim
+							return UDim.new(0, use(props.Layout).creator.gap)
+						end),
+					}),
+					TextInput(scope, {
+						Name = "NameInput",
+						LayoutOrder = 1,
+						Size = scope:Computed(function(use): UDim2
+							local c = use(props.Layout).creator
+							return UDim2.fromOffset(c.input, c.row)
+						end),
+						Text = name,
+						MaxLength = Config.CharacterName.MaxLength,
+						Placeholder = Text.T(scope, "charSelect.create.namePlaceholder", NAME_ARGS),
+						-- the error shows on the status line over the row; the box's stroke turns red
+						Error = scope:Computed(function(use): string?
+							local key = use(errorKey)
+							return if key then Text.get(use, key, NAME_ARGS) else nil
+						end),
+						ErrorLine = false,
+						OnSubmit = function()
+							create()
+						end,
 					}),
 					Button(scope, {
-						LayoutOrder = 1,
+						Name = "Back",
+						LayoutOrder = 2,
 						Text = Text.T(scope, "charSelect.create.back"),
 						Variant = "ghost",
-						Size = UDim2.new(0.4, -Theme.Padding.Medium / 2, 1, 0),
+						Size = scope:Computed(function(use): UDim2
+							local c = use(props.Layout).creator
+							return UDim2.fromOffset(c.back, c.row)
+						end),
 						Disabled = busy,
 						OnClick = function()
 							props.OnDone(nil)
 						end,
 					}),
 					Button(scope, {
-						LayoutOrder = 2,
+						Name = "Create",
+						LayoutOrder = 3,
 						Text = Text.T(scope, "charSelect.create.submit"),
 						Variant = "primary",
-						Size = UDim2.new(0.6, -Theme.Padding.Medium / 2, 1, 0),
+						Size = scope:Computed(function(use): UDim2
+							local c = use(props.Layout).creator
+							return UDim2.fromOffset(c.submit, c.row)
+						end),
 						Disabled = scope:Computed(function(use): boolean
 							return not use(canCreate)
 						end),
@@ -486,6 +558,13 @@ local function Creator(scope: Scope, props: Props): Instance
 				},
 			}),
 		},
+	})
+
+	return scope:New("Frame")({
+		Name = "Creator",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		[Children] = { scroll, footer },
 	})
 end
 

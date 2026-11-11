@@ -506,6 +506,24 @@ end
 -- buttons in a footer pinned to its bottom, as a window's (UI package C: one WindowFrame.FOOTER row under a rule in the
 -- FOOTER_GAP): "Usuń" (CHAR_CARD.delete wide) and "Graj" (the rest) side by side, or "Utwórz postać" / "Odblokuj"
 -- alone; what is above them (emblem, name, class, map) shrinks on a short screen.
+-- The creator (Screens/CharacterSelect/Creator) fills the same body: the classes and the look scroll, and a footer
+-- pinned under a rule keeps the name field, "Wróć" and "Utwórz" in one centred row on the screen, with the field's
+-- name and its status (checking, available, the error) on a line over the row (review 2026-11-11: the name and
+-- "Utwórz" waited at the end of one long list, 4-5 swipes down on a phone, 300 px under the fold on PC).
+export type Creator = {
+	footer: number, -- the pinned footer's height, at the body's bottom
+	scroll: number, -- the scroll's height over it
+	width: number, -- the centred row's width
+	statusTop: number, -- the status line, from the footer's top
+	status: number,
+	rowTop: number, -- the row, from the footer's top
+	row: number,
+	input: number, -- the row's widths: the name field, "Wróć", "Utwórz", `gap` apart
+	back: number,
+	submit: number,
+	gap: number,
+}
+
 export type CharacterSelect = {
 	header: number,
 	titleTop: number,
@@ -522,9 +540,14 @@ export type CharacterSelect = {
 	actions: number,
 	play: Rect,
 	delete: Rect,
+	creator: Creator,
 }
 
 WorldLayout.CHAR_CARD = table.freeze({ width = 300, maxHeight = 440, delete = 100, gap = 8 })
+-- The creator's footer row: at most `width` wide, `margin` from the layer's sides; its rows are Theme.Size.MinTouch
+-- (44) high on a phone and Theme.Size.ButtonHeight (52, the name field's InputHeight too) elsewhere.
+WorldLayout.CREATOR =
+	table.freeze({ width = 720, back = 140, submit = 180, gap = 10, margin = 12, row = 52, rowPhone = 44 })
 
 function WorldLayout.characterSelect(layer: Size, compact: boolean, topBar: number): CharacterSelect
 	local C = WorldLayout.CHAR_CARD
@@ -544,6 +567,13 @@ function WorldLayout.characterSelect(layer: Size, compact: boolean, topBar: numb
 	local width = if compact then 260 else C.width
 	local left = (layer.w - width) / 2 + padding
 	local right = left + width - 2 * padding
+	local K = WorldLayout.CREATOR
+	local edge = if compact then 4 else 8
+	local status = if compact then 18 else 20
+	local rowTop = edge + status + (if compact then 2 else 4)
+	local row = if compact then K.rowPhone else K.row
+	local creatorFooter = rowTop + row + edge
+	local rowWidth = math.max(0, math.min(layer.w - 2 * K.margin, K.width))
 	return {
 		header = header,
 		titleTop = titleTop,
@@ -562,6 +592,19 @@ function WorldLayout.characterSelect(layer: Size, compact: boolean, topBar: numb
 		-- the footer row: "Usuń" at its left, "Graj" in the rest, C.gap apart
 		play = { left = left + C.delete + C.gap, top = cardBottom - actions, right = right, bottom = cardBottom },
 		delete = { left = left, top = cardBottom - actions, right = left + C.delete, bottom = cardBottom },
+		creator = {
+			footer = creatorFooter,
+			scroll = math.max(0, body.bottom - body.top - creatorFooter),
+			width = rowWidth,
+			statusTop = edge,
+			status = status,
+			rowTop = rowTop,
+			row = row,
+			input = math.max(0, rowWidth - K.back - K.submit - 2 * K.gap),
+			back = K.back,
+			submit = K.submit,
+			gap = K.gap,
+		},
 	}
 end
 

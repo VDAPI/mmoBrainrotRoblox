@@ -18,6 +18,9 @@ export type Props = {
 	Placeholder: UsedAs<string>?, -- at most 20 characters
 	MaxLength: number?, -- in characters (UTF-8 aware)
 	Error: UsedAs<string?>?, -- shown under the box in red when non-empty
+	-- false: no error line under the box, the caller shows the error on a line of its own (the character creator's
+	-- pinned footer, review 2026-11-11); the box's stroke still turns red
+	ErrorLine: boolean?,
 	Size: UsedAs<UDim2>?,
 	Position: UsedAs<UDim2>?,
 	AnchorPoint: UsedAs<Vector2>?,
@@ -49,12 +52,34 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 		local err = use(props.Error)
 		return type(err) == "string" and err ~= ""
 	end)
-	local frameSize = props.Size or UDim2.new(1, 0, 0, Theme.Size.InputHeight + ERROR_LINE)
+	local errorLine = props.ErrorLine ~= false
+	local frameSize = props.Size or UDim2.new(1, 0, 0, Theme.Size.InputHeight + (if errorLine then ERROR_LINE else 0))
 	-- a frame given in pixels, too low for the box and the error line: the box fills it
 	local fill = scope:Computed(function(use): boolean
 		local size: UDim2 = use(frameSize)
-		return size.Y.Scale == 0 and size.Y.Offset < Theme.Size.InputHeight + ERROR_LINE
+		return size.Y.Scale == 0 and size.Y.Offset < Theme.Size.InputHeight + (if errorLine then ERROR_LINE else 0)
 	end)
+
+	-- the error line under the box (none with ErrorLine = false)
+	local errorLabel = if errorLine
+		then scope:New("TextLabel")({
+			Name = "Error",
+			Position = scope:Computed(function(use): UDim2
+				return if use(fill) then UDim2.new(0, 2, 1, 2) else UDim2.fromOffset(2, Theme.Size.InputHeight + 2)
+			end),
+			Size = UDim2.new(1, -4, 0, 20),
+			BackgroundTransparency = 1,
+			Text = scope:Computed(function(use): string
+				local err = use(props.Error)
+				return if type(err) == "string" then err else ""
+			end),
+			FontFace = Theme.Fonts.BodyMedium,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = roles.Danger,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+		})
+		else nil
 
 	return scope:New("Frame")({
 		Name = props.Name or "TextInput",
@@ -115,23 +140,7 @@ local function TextInput(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Ins
 					}),
 				},
 			}),
-			scope:New("TextLabel")({
-				Name = "Error",
-				Position = scope:Computed(function(use): UDim2
-					return if use(fill) then UDim2.new(0, 2, 1, 2) else UDim2.fromOffset(2, Theme.Size.InputHeight + 2)
-				end),
-				Size = UDim2.new(1, -4, 0, 20),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					local err = use(props.Error)
-					return if type(err) == "string" then err else ""
-				end),
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = roles.Danger,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
+			errorLabel :: any,
 		},
 	})
 end

@@ -289,6 +289,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 					if slot then
 						return Creator(innerScope, {
 							Slot = slot,
+							Layout = layout,
 							OnDone = function(name: string?)
 								creating:set(nil)
 								if name then

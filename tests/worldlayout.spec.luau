@@ -11,7 +11,8 @@
 -- (Components/Window `Footer`, Logic/WindowFrame.body above it) and show at least 2 rows over it on a phone and 5 on
 -- PC; the quest dialog's page and reward choice share that body; the character card's "Usuń" and "Graj" stand in one
 -- footer row on the screen; the quest journal's six tabs fit its strip whole. Review 2026-11-11: the area picker shows 2
--- areas under the portal's longest warning on a phone and 5 on PC (WorldLayout.areaPicker).
+-- areas under the portal's longest warning on a phone and 5 on PC (WorldLayout.areaPicker); the character creator keeps
+-- the name field, "Wróć" and "Utwórz" in a footer pinned on the screen, the classes and the look scrolling over it.
 
 local fs = require("@lune/fs")
 
@@ -580,6 +581,95 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		end
 		T.expect(problems).toEqual({})
 	end)
+
+	-- Review 2026-11-11: the creator's name field and "Utwórz" waited at the end of one long list (4-5 swipes down on a
+	-- phone, 300 px under the fold on PC). They stand in a footer pinned at the body's bottom, on the screen under the
+	-- top bar, with the classes and the look scrolling over it in at least 150 px; the row's labels, the field's name
+	-- and the longest status (an error with its real limits) fit their widths.
+	T.it(
+		"character creator: the name field, 'Wróć' and 'Utwórz' pinned on the screen, the classes scroll over them",
+		function()
+			T.expect(constant("src/client/UI/Theme.luau", "ButtonHeight = (%d+)")).toBe(WorldLayout.CREATOR.row)
+			T.expect(constant("src/client/UI/Theme.luau", "InputHeight = (%d+)")).toBe(WorldLayout.CREATOR.row)
+			T.expect(constant("src/client/UI/Theme.luau", "MinTouch = (%d+)")).toBe(WorldLayout.CREATOR.rowPhone)
+			local creator = fs.readFile("src/client/UI/Screens/CharacterSelect/Creator.luau")
+			local needles =
+				{ "creator.scroll", "creator.footer", "creator.rowTop", "(c.input, c.row)", "(c.back, c.row)" }
+			table.insert(needles, "(c.submit, c.row)")
+			for _, needle in needles do
+				T.expect(`{needle} {string.find(creator, needle, 1, true) ~= nil}`).toBe(`{needle} true`)
+			end
+			T.expect(string.find(creator, "ErrorLine = false", 1, true) ~= nil).toBe(true)
+			local args = { min = Config.CharacterName.MinLength, max = Config.CharacterName.MaxLength }
+			local function fill(text: string): string
+				return (
+					string.gsub(text, "{(%w+)}", function(arg: string): string?
+						local value = (args :: { [string]: number })[arg]
+						return if value then tostring(value) else nil
+					end)
+				)
+			end
+			local problems: { string } = {}
+			for _, screen in screens() do
+				local c = WorldLayout.characterSelect({ w = screen.w, h = screen.h }, screen.compact, screen.bar)
+				local k = c.creator
+				local left = (screen.w - k.width) / 2
+				local footer =
+					{ left = left, top = c.body.bottom - k.footer, right = left + k.width, bottom = c.body.bottom }
+				local area = { left = 0, top = screen.bar, right = screen.w, bottom = screen.h }
+				if not inside(footer, area) or footer.top < c.body.top then
+					table.insert(problems, `{screen.name}: the creator's footer off the screen`)
+				end
+				if k.scroll < 150 or math.abs(k.scroll + k.footer - (c.body.bottom - c.body.top)) > 1e-6 then
+					table.insert(problems, `{screen.name}: the classes scroll in {k.scroll} px`)
+				end
+				if k.rowTop < k.statusTop + k.status or k.rowTop + k.row > k.footer then
+					table.insert(problems, `{screen.name}: the status line and the row overlap or leave the footer`)
+				end
+				if k.input + k.back + k.submit + 2 * k.gap > k.width + 1e-6 then
+					table.insert(problems, `{screen.name}: the row is wider than {k.width}`)
+				end
+				for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+					-- the name typed in full and the placeholder fit the field (Large, its padding 14 each side)
+					local typed = string.rep("x", Config.CharacterName.MaxLength)
+					local placeholder = fill(t["charSelect.create.namePlaceholder"])
+					for _, text in { typed, placeholder } do
+						if TextCaps.width(text, 24) + 28 > k.input then
+							table.insert(problems, `{screen.name} {lang}: "{text}" wider than the {k.input}-px field`)
+						end
+					end
+					for _, pair in
+						{ { t["charSelect.create.back"], k.back }, { t["charSelect.create.submit"], k.submit } }
+					do
+						if TextCaps.width(pair[1], WorldLayout.BODY) + 28 > pair[2] then
+							table.insert(problems, `{screen.name} {lang}: "{pair[1]}" wider than its {pair[2]} button`)
+						end
+					end
+					-- the field's name on the left and the longest status on the right share the line
+					local longest = 0
+					for key, text in t do
+						if
+							string.sub(key, 1, 11) == "error.name."
+							or key == "charSelect.create.checking"
+							or key == "charSelect.create.available"
+							or key == "error.internal"
+							or key == "error.rateLimited"
+						then
+							longest = math.max(longest, TextCaps.width(fill(text), WorldLayout.SMALL))
+						end
+					end
+					local name = TextCaps.width(t["charSelect.create.name"], WorldLayout.SMALL)
+					if name + 16 + longest > k.width then
+						table.insert(
+							problems,
+							`{screen.name} {lang}: the status line {name + 16 + longest} > {k.width}`
+						)
+					end
+				end
+			end
+			T.expect(problems).toEqual({})
+		end
+	)
 
 	-- UI package C (owner 2026-11-10): E's dialog-like windows and forms pin their actions in the window's footer, on
 	-- the screen under the top bar; the body above it (the window's scroll, or the area picker's list and the quest
