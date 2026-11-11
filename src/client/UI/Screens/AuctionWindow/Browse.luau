@@ -7,7 +7,8 @@
 -- was the last of eight filters, under the window's edge. Review 2026-11-10: the size comes without the window's
 -- opening motion (UI/ViewSize), so the pinned parts no longer slide while the window opens. Adoption stage (UI package
 -- D after C, 2026-11-10): "Szukaj" and the pager stand in the window's Footer (one row: the button under the filters,
--- the pager under the results), and the filters and the results take the body's whole height.
+-- the pager under the results), and the filters and the results take the body's whole height. Review 2026-11-11: the
+-- pager's line wraps (two lines of Small 17 in the row) and no longer runs under ◀ / ▶ on a 667x375 phone.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -471,6 +472,7 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): { View: Insta
 							Position = UDim2.fromScale(0.5, 0),
 							Size = UDim2.new(1, -2 * (GearLayout.BROWSE.pageButton + 10), 1, 0),
 							BackgroundTransparency = 1,
+							TextWrapped = true,
 							Text = scope:Computed(function(use): string
 								local data = use(result)
 								if use(loading) then

@@ -634,9 +634,26 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			T.expect({ case.name, browse.pager.left >= browse.results.left - 0.001 }).toEqual({ case.name, true })
 			local line = browse.pager.right - browse.pager.left - 2 * (GearLayout.BROWSE.pageButton + 10)
 			T.expect({ case.name, line >= 200 }).toEqual({ case.name, true })
+			-- review 2026-11-11: the page line wraps between ◀ and ▶ (it ran under them on a 667x375 phone), two lines
+			-- of Small 17 at most in the row
+			for _, lang in { "pl", "en" } do
+				local texts = {
+					Locale.T("auction.hint", nil, lang),
+					Locale.T("auction.loading", nil, lang),
+					Locale.T("auction.page", { page = 999, pages = 999, total = Format.number(99999) }, lang),
+				}
+				for _, text in texts do
+					T.expect({ case.name, lang, text, TextCaps.lines(text, 17, line) <= 2 })
+						.toEqual({ case.name, lang, text, true })
+				end
+			end
 			T.expect({ case.name, browse.filters.bottom - browse.filters.top >= 2 * GearLayout.TOUCH })
 				.toEqual({ case.name, true })
 		end
+		-- the page line between the page buttons wraps
+		local source = fs.readFile("src/client/UI/Screens/AuctionWindow/Browse.luau")
+		local pager = assert(string.match(source, "%(GearLayout%.BROWSE%.pageButton %+ 10%), 1, 0%),(.-)Text = "))
+		T.expect(string.find(pager, "TextWrapped = true,", 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it(
