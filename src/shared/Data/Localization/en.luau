@@ -4912,7 +4912,7 @@ return {
 	["mount.toGet"] = "To obtain",
 	["mount.source.boss"] = "Rare loot: {boss}",
 	["mount.source.quest"] = "The stablemaster's quest",
-	["mount.empty"] = "No mount yet: the city stablemaster has a task for you.",
+	["mount.empty"] = "No mount yet: the city stablemaster has a quest for you.",
 	["mount.upgrade"] = "Upgrade",
 	["mount.upgrade.title"] = "Upgrade to level {lvl}",
 	["mount.upgrade.speed"] = "Speed: ×{from} → ×{to}",

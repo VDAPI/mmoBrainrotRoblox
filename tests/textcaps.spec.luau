@@ -301,6 +301,32 @@ describe("textcaps T2: universal rules", function()
 		expect(en["stat.armor"]).toBe("Armor")
 	end)
 
+	-- Final UI review 2026-11-11: the windows say "quest" too (UI 3's default): a quest item's tooltip said "• zadania:",
+	-- the wardrobe "Nagroda za zadanie", the mount window "Zadanie stajennego", and the journal kept the neuter of
+	-- "zadanie" ("aby je rozpocząć", "Dostępne od poziomu"). The admin commands' texts and the map's search words (a
+	-- player may still type "zadanie") keep it.
+	it("C, D and E texts call a quest a quest", function()
+		local OTHER = { "zadani", "zadań" }
+		local problems = {}
+		for key, text in pl :: { [string]: string } do
+			local owner = TextScan.owner(key)
+			local kept = string.sub(key, 1, 6) == "admin." or string.sub(key, 1, 16) == "worldmap.search."
+			if (owner == "C" or owner == "D" or owner == "E") and not kept then
+				local lower = string.lower(text)
+				for _, word in OTHER do
+					if string.find(lower, word, 1, true) then
+						table.insert(problems, `{key} ({owner}): {word}`)
+					end
+				end
+			end
+		end
+		fail(problems, "a word the glossary replaced")
+		-- a quest is masculine
+		expect(string.find(pl["quest.getFrom"], "aby go rozpocząć", 1, true) ~= nil).toBe(true)
+		expect(string.find(pl["quest.nextAt"], "^Dostępny od poziomu") ~= nil).toBe(true)
+		expect(string.find(en["mount.empty"], "task", 1, true)).toBeNil()
+	end)
+
 	-- Final UI review 2026-11-11: the ☰ tile, the ✧ tooltip and the toast say "Nagroda dnia", the window they open said
 	-- "Nagroda za logowanie" and so did the reward's mail with a full backpack.
 	it("the daily reward has one name from the tile to its window and its mail", function()
