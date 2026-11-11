@@ -9,6 +9,8 @@
 -- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the
 -- header, the received reward and the cards scroll in the window (Window.Parts `Scroll`); the window's pinned footer
 -- keeps "Claim" with the claiming character's line beside it, or "Claimed today" with the countdown.
+-- Review 2026-11-11 (UI-ZASADY §1, audit3): the heading is the streak only ("Dzień 3 z 7"); the title bar already says
+-- "Nagroda za logowanie".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -282,7 +284,7 @@ local function LoginRewardWindow(scope: Scope, props: Props): Window.Parts
 				LayoutOrder = 1,
 				Size = UDim2.new(1, 0, 0, 26),
 				Text = scope:Computed(function(use): string
-					return `{Text.get(use, "login.title")} · {Text.get(use, "login.streak", { day = use(status).day })}`
+					return Text.get(use, "login.streak", { day = use(status).day })
 				end),
 				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,

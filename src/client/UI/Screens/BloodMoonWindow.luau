@@ -12,6 +12,8 @@
 -- window's own scroll holds the column (Window.Parts `Scroll`), the player's own line stays in the pinned footer while
 -- the top 10 scroll, and the rules and rewards are a Section saved on the account (bloodMoonRules, folded), the look
 -- of a titled part of a window (docs/UI-ZASADY.md §4); the region tabs are Components/Tabs' own height.
+-- Review 2026-11-11 (UI-ZASADY §1): no "☾ Krwawy Księżyc" line under the title bar of the same name; the column starts
+-- with the state line (hidden while the next start is unknown) and the short description, whose "i" holds the full one.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -48,10 +50,12 @@ local function line(
 	text: Fusion.UsedAs<string>,
 	color: Fusion.UsedAs<Color3>?,
 	size: number?,
-	font: Font?
+	font: Font?,
+	visible: Fusion.UsedAs<boolean>?
 ): Instance
 	return scope:New("TextLabel")({
 		LayoutOrder = order,
+		Visible = visible,
 		BackgroundTransparency = 1,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
@@ -121,7 +125,7 @@ local function BloodMoonWindow(scope: Scope): Window.Parts
 		end
 		local starts = tonumber(use(BloodMoonView.Next)) or 0
 		if starts <= 0 then
-			return Text.get(use, "bloodmoon.desc.short")
+			return "" -- the short description stands under it already
 		end
 		local weekday, clock = BloodMoon.when(starts)
 		local d, h, m = Time.split(starts - t)
@@ -295,18 +299,23 @@ local function BloodMoonWindow(scope: Scope): Window.Parts
 		Footer = own,
 		Content = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+			line(
+				scope,
+				2,
+				header,
+				Theme.Paper.Heading,
+				Theme.TextSize.Body,
+				Theme.Fonts.BodyBold,
+				scope:Computed(function(use): boolean
+					return use(header) ~= ""
+				end)
+			),
 			InfoLine.new(scope, {
-				LayoutOrder = 1,
-				Text = scope:Computed(function(use): string
-					return `☾ {Text.get(use, "bloodmoon.name")}`
-				end),
+				LayoutOrder = 3,
+				Text = Text.T(scope, "bloodmoon.desc.short"),
 				Info = Text.T(scope, "bloodmoon.desc"),
-				Font = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Large,
-				Color = BLOOD,
+				Color = Theme.Paper.TextMuted,
 			}),
-			line(scope, 2, header, Theme.Paper.Heading, Theme.TextSize.Body, Theme.Fonts.BodyBold),
-			line(scope, 3, Text.T(scope, "bloodmoon.desc.short"), Theme.Paper.TextMuted),
 			Tabs(scope, {
 				Tabs = tabs,
 				Selected = selected,
