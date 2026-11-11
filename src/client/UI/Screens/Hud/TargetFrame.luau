@@ -6,6 +6,9 @@
 -- map's target place, and while the dungeon's boss bar shows, an add or a player as the target stands under the bar
 -- (Logic/HudZones `addFrame`; it lay under the bar); a phone's player menu is a 44 px "⋯" right of the frame
 -- (Logic/PhoneHud `targetActions`; "Actions" under the cast bar reached into the M zone).
+-- Final UI review 2026-11-10: a phone's effect icons stand in their own place (Logic/PhoneHud `targetEffects`, its
+-- TARGET_ICONS), 4 px over the cast line (they reached 6 px into it); while the dungeon's boss strip stands at M's top
+-- they go into the frame in place of the level line (they lay under the strip).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -30,6 +33,10 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local PHONE_TARGET = assert(PhoneHud.place("target"))
 local PHONE_ACTIONS = assert(PhoneHud.place("targetActions"))
+local PHONE_EFFECTS = assert(PhoneHud.place("targetEffects"))
+local ICONS = PhoneHud.TARGET_ICONS
+
+local boss = State.Value({ "boss" }) -- DungeonController's boss bar (a phone: the strip at M's top)
 
 export type Props = {
 	Target: Fusion.Value<Model?>,
@@ -132,6 +139,10 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 	local maxHp = scope:Computed(function(use): number
 		local i = use(info)
 		return if i then i.maxHp else 1
+	end)
+	-- a phone under the dungeon's boss strip: the effect icons in the frame, in place of the level line
+	local strip = scope:Computed(function(use): boolean
+		return use(PhoneLayout.Compact) == true and type(use(boss)) == "table"
 	end)
 
 	return scope:New("Frame")({
@@ -263,9 +274,12 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 			}),
 			scope:New("TextLabel")({
 				Name = "Level",
-				Position = UDim2.fromOffset(0, 28),
+				Position = UDim2.fromOffset(0, ICONS.inside.y),
 				Size = UDim2.new(1, 0, 0, 20),
 				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return not use(strip)
+				end),
 				Text = scope:Computed(function(use): string
 					local i = use(info)
 					if not i then
@@ -291,10 +305,35 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
+			-- PC and a tablet: under the frame
 			EffectIcons(scope, {
 				Model = props.Target,
 				Position = UDim2.new(0, 0, 1, 10),
 				Size = 26,
+				Visible = scope:Computed(function(use): boolean
+					return not use(PhoneLayout.Compact)
+				end),
+			}),
+			-- a phone: in its own place (measured from the frame's padded corner, as the "⋯"), or in the frame
+			EffectIcons(scope, {
+				Model = props.Target,
+				Position = UDim2.fromOffset(
+					PHONE_EFFECTS.x - PHONE_TARGET.x - Theme.Padding.Medium,
+					PHONE_EFFECTS.y - PHONE_TARGET.y - 8
+				),
+				Size = ICONS.size,
+				Max = ICONS.max,
+				Visible = scope:Computed(function(use): boolean
+					return use(PhoneLayout.Compact) == true and not use(strip)
+				end),
+			}),
+			EffectIcons(scope, {
+				Model = props.Target,
+				Position = UDim2.fromOffset(0, ICONS.inside.y),
+				Size = ICONS.inside.size,
+				Max = ICONS.inside.max,
+				Caption = false,
+				Visible = strip,
 			}),
 			Bar(scope, {
 				Name = "Hp",

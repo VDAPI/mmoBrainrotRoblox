@@ -495,7 +495,10 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		has(hud .. "TargetFrame.luau", "UDim2.fromOffset(120, Theme.Size.MinTouch + 8)")
 		has(hud .. "TargetFrame.luau", "UDim2.new(1, Theme.Padding.Medium + 8, 0, 0)")
 		has(hud .. "TargetFrame.luau", "PaddingTop = UDim.new(0, 8)")
-		has(hud .. "EffectIcons.luau", "UDim2.fromOffset(size * 8 + 28, size + 14)")
+		-- the seconds' line under the icons (14; final UI review 2026-11-10: none with Caption = false, which only a
+		-- phone's frame under the boss strip passes)
+		has(hud .. "EffectIcons.luau", "UDim2.fromOffset(size * 8 + 28, size + below)")
+		has(hud .. "EffectIcons.luau", "local below = if caption then 14 else 0")
 		T.expect(t.effectsW).toBe(26 * 8 + 28)
 		T.expect(t.effectsH).toBe(26 + 14)
 		-- the minimap's frame (its height is in HudStack.RIGHT_TOP), the guide bar, the arena panel, the party rows

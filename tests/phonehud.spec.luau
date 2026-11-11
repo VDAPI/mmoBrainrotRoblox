@@ -5,12 +5,20 @@
 -- thumb zone, the right thumb's controls at least 52, the stack's lines as the zone map counts them, and the grid's
 -- parts (one Auto button, the '⋯' by the target, the minimap at 0.5 under 420, the drawer clear of PvP). Package A
 -- review (owner 2026-11-10): the '+N' list (Logic/HudStack.chipList) at its longest stays in the layer and in the left
--- column over the stack, clear of every control of the centre and the thumbs.
+-- column over the stack, clear of every control of the centre and the thumbs. Final UI review 2026-11-10: a target's
+-- effect icons hold their place over the cast line and go into the frame under the dungeon's boss strip.
 local fs = require("@lune/fs")
 
 local HudStack = require("../src/shared/Logic/HudStack")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
+local TopBand = require("../src/shared/Logic/TopBand")
+
+type Rect = { left: number, top: number, right: number, bottom: number }
+
+local function within(r: Rect, outer: Rect): boolean
+	return r.left >= outer.left and r.top >= outer.top and r.right <= outer.right and r.bottom <= outer.bottom
+end
 
 T.describe("Phone HUD (W29)", function()
 	T.it("phones in landscape are compact, tablets and PC are not", function()
@@ -185,6 +193,79 @@ T.describe("Phone HUD grid (UI plan package A)", function()
 			T.expect(string.find(death, "Position = UDim2.fromScale(0.5, 0.5)", 1, true) ~= nil).toBe(true)
 		end
 	)
+	T.it(
+		"a target's effect icons hold their place over the cast line, and go into the frame under the boss strip",
+		function()
+			-- final UI review 2026-11-10: 26-px icons under the frame (y 110..150) reached 6 px into the cast line and lay
+			-- under the dungeon's boss strip (Logic/TopBand.bossBar), and no spec saw the row
+			local icons = PhoneHud.TARGET_ICONS
+			local inside = icons.inside
+			local theme = fs.readFile("src/client/UI/Theme.luau")
+			local pad = tonumber(
+				string.match(theme, "Medium = (%d+)", assert(string.find(theme, "Theme.Padding = {", 1, true)))
+			)
+			local frame = fs.readFile("src/client/UI/Screens/Hud/TargetFrame.luau")
+			for _, literal in
+				{
+					"PHONE_EFFECTS.x - PHONE_TARGET.x - Theme.Padding.Medium",
+					"PHONE_EFFECTS.y - PHONE_TARGET.y - 8",
+					"Size = ICONS.size,",
+					"Max = ICONS.max,",
+					"Position = UDim2.fromOffset(0, ICONS.inside.y),",
+					"Size = ICONS.inside.size,",
+					"Max = ICONS.inside.max,",
+					"Caption = false,",
+					"Visible = strip,",
+					"PaddingTop = UDim.new(0, 8),",
+					"PaddingLeft = UDim.new(0, Theme.Padding.Medium),",
+					"PaddingRight = UDim.new(0, Theme.Padding.Medium),",
+				}
+			do
+				if not string.find(frame, literal, 1, true) then
+					error(`Hud/TargetFrame no longer has '{literal}'`)
+				end
+			end
+			local hpTop = tonumber(string.match(frame, 'Name = "Hp",%s*Position = UDim2%.fromOffset%(0, (%d+)%)'))
+			assert(pad and hpTop, "the frame's padding and its HP bar")
+			for _, d in PhoneHud.DEVICES do
+				for _, bar in { 0, 36, 58 } do
+					local w, h = PhoneHud.area(d, bar)
+					local where = `{d.name} bar {bar}`
+					local places = PhoneHud.places(w, h)
+					local place = PhoneHud.rect(places.targetEffects, w, h)
+					local cast = PhoneHud.rect(places.castBar, w, h)
+					local target = PhoneHud.rect(places.target, w, h)
+					-- the row: its icons and the '+N' chip 4 apart, the seconds (14) under them
+					local row = {
+						left = place.left,
+						top = place.top,
+						right = place.left + (icons.max + 1) * (icons.size + 4),
+						bottom = place.top + icons.size + 14,
+					}
+					T.expect({ where, within(row, place), row.bottom + 4 <= cast.top }).toEqual({ where, true, true })
+					-- the strip lies on that place, so under it the icons stand in the frame between the name and the HP
+					-- bar, in place of the level line, clear of the strip
+					local strip = TopBand.bossBar("phone", w, h)
+					T.expect({ where, PhoneHud.overlaps(place, strip) }).toEqual({ where, true })
+					local content = {
+						left = target.left + pad,
+						top = target.top + 8,
+						right = target.right - pad,
+						bottom = target.top + 8 + hpTop,
+					}
+					local into = {
+						left = content.left,
+						top = content.top + inside.y,
+						right = content.left + (inside.max + 1) * (inside.size + 4),
+						bottom = content.top + inside.y + inside.size,
+					}
+					T.expect({ where, within(into, content), PhoneHud.overlaps(into, strip) })
+						.toEqual({ where, true, false })
+				end
+			end
+		end
+	)
+
 	T.it("the '+N' list at its longest stays in the layer, over the left column, clear of the controls", function()
 		local line = PhoneHud.LINE
 		local panel = PhoneHud.PANEL_WIDTH

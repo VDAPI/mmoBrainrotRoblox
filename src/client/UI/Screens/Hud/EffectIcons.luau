@@ -9,6 +9,8 @@
 -- Owner 2026-11-10 ("things covering each other"; UI plan package A): with `Max` (the effects row under the portrait:
 -- Logic/HudZones.EFFECTS_CAP, fewer on a phone) the row shows that many icons, then a '+N' chip whose tooltip lists the
 -- rest one per line (the row ran past its frame into the party rows).
+-- Final UI review 2026-11-10: `Caption = false` drops the seconds under the icons (a phone's target frame while the
+-- dungeon's boss strip shows, Logic/PhoneHud.TARGET_ICONS); a hidden row (`Visible`) reads nothing.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -32,6 +34,8 @@ export type Props = {
 	AnchorPoint: Vector2?,
 	Size: number?,
 	Max: Fusion.UsedAs<number>?, -- at most this many icons, then '+N' (nil: all, in the frame of 8)
+	Caption: boolean?, -- false: no seconds under the icons (the row is as tall as an icon)
+	Visible: Fusion.UsedAs<boolean>?,
 }
 
 -- lasting (S65): no seconds counter (markers that live until something breaks them).
@@ -117,6 +121,8 @@ end
 
 local function EffectIcons(scope: Scope, props: Props): Instance
 	local size = props.Size or 30
+	local caption = props.Caption ~= false
+	local below = if caption then 14 else 0 -- the seconds' line
 	local all = scope:Value({} :: { Entry })
 	local maxProp = props.Max
 	-- the icons shown and the ones behind '+N'
@@ -176,6 +182,12 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				return
 			end
 			accumulator = 0
+			if props.Visible ~= nil and not Fusion.peek(props.Visible) then
+				if #Fusion.peek(all) > 0 then
+					all:set({})
+				end
+				return
+			end
 			all:set(read(Fusion.peek(props.Model)))
 		end)
 	)
@@ -188,11 +200,12 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 			if maxProp then
 				-- the capped row: its icons and the chip, 4 apart
 				local cap: number = use(maxProp)
-				return UDim2.fromOffset((cap + 1) * (size + 4), size + 14)
+				return UDim2.fromOffset((cap + 1) * (size + 4), size + below)
 			end
-			return UDim2.fromOffset(size * 8 + 28, size + 14)
+			return UDim2.fromOffset(size * 8 + 28, size + below)
 		end),
 		BackgroundTransparency = 1,
+		Visible = props.Visible,
 		[Children] = {
 			scope:New("UIListLayout")({
 				FillDirection = Enum.FillDirection.Horizontal,
@@ -203,7 +216,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				local info = GLYPHS[entry.kind] or UNKNOWN
 				local count = entry.count
 				local full = entry.full == true
-				local caption = if count
+				local seconds = if count
 					then (if entry.max then `{count}/{entry.max}` else tostring(count))
 					elseif info.lasting then ""
 					elseif entry.left >= 10 then tostring(math.floor(entry.left))
@@ -213,7 +226,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				local artShown = ArtIcon.Shown(s, artKey)
 				local icon = s:New("Frame")({
 					Name = entry.kind,
-					Size = UDim2.fromOffset(size, size + 14),
+					Size = UDim2.fromOffset(size, size + below),
 					BackgroundTransparency = 1,
 					[Children] = {
 						s:New("TextLabel")({
@@ -256,9 +269,10 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 						}),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(0, size),
-							Size = UDim2.fromOffset(size, 14),
+							Size = UDim2.fromOffset(size, below),
 							BackgroundTransparency = 1,
-							Text = caption,
+							Visible = caption,
+							Text = seconds,
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Caption,
 							TextColor3 = if full then Theme.Brass.Bright else Theme.Iron.Text,

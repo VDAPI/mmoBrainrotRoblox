@@ -90,6 +90,16 @@ PhoneHud.M_RIGHT = 74 -- past the minimap's width: the drawer button (52), its g
 
 -- Widths of the elements that change on a phone.
 PhoneHud.TARGET_WIDTH = 220
+-- Final UI review 2026-11-10: the target's effect icons (Hud/TargetFrame, Hud/EffectIcons). In their place
+-- (`targetEffects`, 36 tall): `size`-px icons with their seconds under them (14), at most `max` and the '+N' chip, so
+-- the row ends 4 px over the cast line (26-px icons from the frame reached 6 px into it). While the dungeon's boss
+-- strip stands at M's top (Logic/TopBand.bossBar) they go into the frame in place of the level line (`inside`: `y`
+-- under the padded top, no seconds; the tooltip keeps the names), so nothing lies under the strip.
+PhoneHud.TARGET_ICONS = table.freeze({
+	size = 22,
+	max = 8,
+	inside = table.freeze({ y = 28, size = 20, max = 7 }),
+})
 PhoneHud.CASTBAR_WIDTH = 220
 PhoneHud.NAVBAR_WIDTH = 236
 -- Every item of the stack ends 6 px left of the '+N' chip, so it can stand beside the chip in the stack's last line:
