@@ -583,7 +583,8 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			hotkeyRows,
 			scope:New("Frame")({
 				LayoutOrder = order,
-				Size = UDim2.new(1, 0, 0, 38),
+				-- review 2026-11-11: PC's button height (the section is hidden on touch, UI-ZASADY §7)
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall + 4),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("TextLabel")({
@@ -599,7 +600,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 					Button(scope, {
 						AnchorPoint = Vector2.new(1, 0),
 						Position = UDim2.new(1, 0, 0, 2),
-						Size = UDim2.fromOffset(160, 34),
+						Size = UDim2.fromOffset(160, Theme.Size.ButtonHeightSmall),
 						TextSize = Theme.TextSize.Small,
 						Variant = scope:Computed(function(use): any
 							return if use(capturing) then "primary" else "secondary"

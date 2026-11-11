@@ -29,7 +29,9 @@ local Children = Fusion.Children
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local CELL = 120 -- width of a rank column in the rights table
-local ROW = 40
+-- review 2026-11-11 (the switches 36 high on touch): a list row's height, so a cell's button (ROW - 4) is a whole touch
+-- target
+local ROW = Theme.Size.RowHeight
 
 -- A horizontal row of square picker buttons (emblems or colours).
 local function pickerRow(scope: Scope, order: number, children: { Instance }, visible: Fusion.UsedAs<boolean>): Instance

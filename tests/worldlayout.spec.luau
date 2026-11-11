@@ -745,6 +745,139 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(problems).toEqual({})
 	end)
 
+	-- Review 2026-11-11 (party "Lider" 40 and board "Zamień" 30 high in a phone's rows, guild actions 36-38): a Button in
+	-- E's screens is at least Theme.Size.MinTouch (44) high, or its height picks the device (a touch branch, as
+	-- SkillsWindow/PathTab's `if touch then MinTouch else ButtonHeightSmall`); 40 is PC's (UI-ZASADY §7). The height is
+	-- the last argument of the Size's UDim2: a number, a Theme.Size token, or the nearest `local` above the button
+	-- (one step of + or -); a height the spec cannot read (a parameter, WorldLayout's numbers) is not judged.
+	T.it("E's buttons: no height under 44 on touch without a touch branch", function()
+		local theme = fs.readFile("src/client/UI/Theme.luau")
+		-- PC-only buttons (40, ButtonHeightSmall, is PC's own height): the file and the Size's text
+		local PC_ONLY = {
+			-- the hotkey section is hidden on touch (no keyboard)
+			{
+				file = "src/client/UI/Screens/GameMenu.luau",
+				size = "UDim2.fromOffset(160, Theme.Size.ButtonHeightSmall)",
+			},
+		}
+		local function split(args: string): { string }
+			local out, depth, start = {}, 0, 1
+			for i = 1, #args do
+				local c = string.sub(args, i, i)
+				if c == "(" or c == "{" then
+					depth += 1
+				elseif c == ")" or c == "}" then
+					depth -= 1
+				elseif c == "," and depth == 0 then
+					table.insert(out, string.sub(args, start, i - 1))
+					start = i + 1
+				end
+			end
+			table.insert(out, string.sub(args, start))
+			return out
+		end
+		local function trim(text: string): string
+			return (string.gsub(text, "^%s*(.-)%s*$", "%1"))
+		end
+		-- the value of a height expression, nil when the spec cannot read it
+		local function value(expr: string, lines: { string }, at: number, depth: number): number?
+			expr = trim(expr)
+			local n = tonumber(expr)
+			if n then
+				return n
+			end
+			local tokenName = string.match(expr, "^Theme%.Size%.([%w_]+)$")
+			if tokenName then
+				return tonumber(string.match(theme, `\n%s*{tokenName} = (%d+)`))
+			end
+			local a, op, b = string.match(expr, "^([%w_%.]+)%s*([%+%-])%s*(%d+)$")
+			if a and op and b and depth < 3 then
+				local base = value(a, lines, at, depth + 1)
+				if base then
+					return if op == "+" then base + tonumber(b) :: number else base - tonumber(b) :: number
+				end
+				return nil
+			end
+			if string.match(expr, "^[%a_][%w_]*$") and depth < 3 then
+				for i = at, 1, -1 do
+					local found = string.match(lines[i], `^%s*local {expr} = (.+)$`)
+					if found then
+						if string.find(string.lower(found), "touch", 1, true) then
+							return 44
+						end
+						return value(found, lines, i - 1, depth + 1)
+					end
+				end
+			end
+			return nil
+		end
+		local problems: { string } = {}
+		local checked = 0
+		local function check(path: string)
+			local lines = string.split(fs.readFile(path), "\n")
+			for i, line in lines do
+				if not string.find(line, "Button%(%s*[%w_]+%s*,%s*{%s*$") then
+					continue
+				end
+				local indent = #(string.match(line, "^(\t*)") or "")
+				-- the call's Size (its continuation lines are deeper than the Size line)
+				for j = i + 1, math.min(#lines, i + 40) do
+					local own = #(string.match(lines[j], "^(\t*)") or "")
+					if own <= indent then
+						break
+					end
+					local first = string.match(lines[j], "^%s*Size = (.+)$")
+					if first and own == indent + 1 then
+						local expr = first
+						for k = j + 1, #lines do
+							if #(string.match(lines[k], "^(\t*)") or "") <= own then
+								break
+							end
+							expr ..= " " .. trim(lines[k])
+						end
+						checked += 1
+						if string.find(string.lower(expr), "touch", 1, true) then
+							break
+						end
+						local offset = string.match(expr, "UDim2%.fromOffset(%b())")
+						local args = offset or string.match(expr, "UDim2%.new(%b())")
+						if not args then
+							break
+						end
+						local parts = split(string.sub(args, 2, -2))
+						if not offset and tonumber(trim(parts[3] or "")) ~= 0 then
+							break -- a height by the parent's scale: the parent's own height is judged where it is set
+						end
+						local height = value(parts[#parts], lines, j, 0)
+						local allowed = false
+						for _, pc in PC_ONLY do
+							allowed = allowed or (pc.file == path and string.find(expr, pc.size, 1, true) ~= nil)
+						end
+						if height and height < 44 and not allowed then
+							table.insert(problems, `{path}:{j}: {trim(expr)}`)
+						end
+						break
+					end
+				end
+			end
+		end
+		local function walk(dir: string)
+			local names = fs.readDir(dir)
+			table.sort(names)
+			for _, name in names do
+				local path = `{dir}/{name}`
+				if fs.isDir(path) then
+					walk(path)
+				elseif string.sub(name, -5) == ".luau" and TextScan.ownerOfFile(path) == "E" then
+					check(path)
+				end
+			end
+		end
+		walk("src/client/UI/Screens")
+		T.expect(problems).toEqual({})
+		T.expect(checked > 80).toBe(true)
+	end)
+
 	T.it("the sections of E's windows have their defaults in Folds/World or Folds/Menu", function()
 		local mine: { [string]: boolean } = {}
 		for _, area in Folds do

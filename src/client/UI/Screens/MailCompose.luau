@@ -8,12 +8,14 @@
 -- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the form
 -- scrolls in the window (Window.Parts `Scroll`) and the postage line with "Send" is its pinned footer, so the button
 -- never sits over the last field on a short screen.
+-- Review 2026-11-11: the friends' quick picks are whole touch targets on touch (40 on PC).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
@@ -139,6 +141,7 @@ local function MailCompose(scope: Scope, props: Props): Window.Parts
 			end
 		end
 		table.sort(names)
+		local height = if use(Device.Touch) == true then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
 		local out = {}
 		for i, name in names do
 			if i > 6 or string.lower(name) == typed then
@@ -148,7 +151,7 @@ local function MailCompose(scope: Scope, props: Props): Window.Parts
 				out,
 				Button(s, {
 					LayoutOrder = i,
-					Size = UDim2.fromOffset(120, 34),
+					Size = UDim2.fromOffset(120, height),
 					TextSize = Theme.TextSize.Small,
 					Text = name,
 					OnClick = function()

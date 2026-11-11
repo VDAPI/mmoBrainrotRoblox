@@ -132,6 +132,8 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 		local inset = (l.row - avatar) / 2
 		local left = avatar + inset + 14
 		local compact = l.row < 64
+		-- review 2026-11-11 ("Lider" and "Wyrzuć" 40 high in a phone's 48-px row): touch targets on touch
+		local action = if use(Device.Touch) == true then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
 		local list = {}
 		if type(p) ~= "table" then
 			table.insert(
@@ -217,7 +219,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -92, 0.5, 0),
-							Size = UDim2.fromOffset(84, 40),
+							Size = UDim2.fromOffset(84, action),
 							TextSize = Theme.TextSize.Small,
 							Text = Text.T(s, "party.promote"),
 							Visible = use(amLeader) and member.id ~= myId,
@@ -228,7 +230,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -6, 0.5, 0),
-							Size = UDim2.fromOffset(80, 40),
+							Size = UDim2.fromOffset(80, action),
 							TextSize = Theme.TextSize.Small,
 							Variant = "danger",
 							Text = Text.T(s, "party.kick"),

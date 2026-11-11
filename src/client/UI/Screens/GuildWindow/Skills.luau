@@ -139,7 +139,8 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 			Button(scope, {
 				AnchorPoint = Vector2.new(1, 1),
 				Position = UDim2.new(1, -10, 1, -8),
-				Size = UDim2.fromOffset(150, 42),
+				-- review 2026-11-11: a whole touch target (the card's cost line ends 2 px above it)
+				Size = UDim2.fromOffset(150, Theme.Size.MinTouch),
 				Variant = "primary",
 				TextSize = Theme.TextSize.Small,
 				Text = Text.T(scope, "guild.skill.upgrade"),

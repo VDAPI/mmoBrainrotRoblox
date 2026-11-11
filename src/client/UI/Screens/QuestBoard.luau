@@ -14,6 +14,9 @@
 -- Owner 2026-11-10 ("bardzo dużo napisów, nic się nie zwija"; UI plan E, Logic/WorldLayout.questBoard): the hunting block
 -- is a Section (boardHunt: open on PC, folded on a phone) with the board's rule and the "next contract from level N"
 -- line behind its (i); a phone puts the set's line beside the tabs and shows smaller cards, so two cards show.
+-- Review 2026-11-11 ("Swap" 30 high on a phone): a card's buttons are at least Theme.Size.MinTouch high on touch and
+-- ButtonHeightSmall on PC. A phone's card (92) has no room for two such rows, so "Swap" stands left of "Collect"; on
+-- PC and a tablet "Collect" moves to the card's bottom under "Swap".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -180,7 +183,12 @@ type Card = {
 	reroll: (() -> ())?, -- S159: "Swap" (nil = no button)
 	info: string?, -- owner 2026-10-21: the longer text behind an "i" after the title
 	compact: boolean?, -- owner 2026-11-10: a phone's card (WorldLayout.BOARD_CARD.compact, smaller reward slots)
+	touch: boolean?, -- review 2026-11-11: a touch screen's buttons are touch targets
 }
+
+-- The buttons' column at a card's right: "Collect" (CLAIM wide, 10 from the edge) and, on a phone's card, "Swap"
+-- (REROLL wide) left of it.
+local CLAIM, REROLL = 150, 120
 
 -- S159: runs a board action and shows its error.
 local function act(fn: () -> (boolean, string?), after: (() -> ())?)
@@ -198,6 +206,10 @@ end
 local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 	local size = WorldLayout.BOARD_CARD
 	local compact = c.compact == true
+	local small = if c.touch then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
+	-- a phone's card: "Swap" beside "Collect"; PC and a tablet: "Swap" at the top, "Collect" at the bottom
+	local beside = compact and c.reroll ~= nil
+	local right = if beside then 10 + CLAIM + 8 + REROLL + 10 else CLAIM + 20
 	return s:New("Frame")({
 		LayoutOrder = c.order,
 		Size = UDim2.new(1, 0, 0, if compact then size.compact else size.height),
@@ -207,7 +219,7 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			s:New("UIPadding")({ PaddingLeft = UDim.new(0, 12), PaddingTop = UDim.new(0, 8) }),
 			s:New("TextLabel")({
-				Size = UDim2.new(1, if c.info then -200 else -170, 0, 26),
+				Size = UDim2.new(1, -(right + (if c.info then 30 else 0)), 0, 26),
 				BackgroundTransparency = 1,
 				Text = c.title,
 				TextScaled = true,
@@ -221,7 +233,7 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 			}),
 			s:New("TextLabel")({
 				Position = UDim2.fromOffset(0, if compact then 26 else 28),
-				Size = UDim2.new(1, -170, 0, if compact then 22 else 28),
+				Size = UDim2.new(1, -right, 0, if compact then 22 else 28),
 				BackgroundTransparency = 1,
 				Text = c.line,
 				TextWrapped = true,
@@ -238,7 +250,7 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 				then InfoTip.new(s, {
 					Text = c.info,
 					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, -172, 0, 13),
+					Position = UDim2.new(1, -(right + 2), 0, 13),
 				}) :: any
 				else nil,
 			-- S31: rewards as icons and item slots with tooltips.
@@ -247,12 +259,13 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 				Reward = c.reward,
 				SlotSize = if compact then size.compactSlot else size.slot,
 				Position = UDim2.fromOffset(0, if compact then 50 else 58),
-				Width = UDim.new(1, -170),
+				Width = UDim.new(1, -right),
 			}),
 			Button(s, {
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -10, 0.5, if c.reroll then 12 else -4),
-				Size = UDim2.fromOffset(150, if c.reroll then 44 else 50),
+				-- at the card's middle (beside "Swap" on a phone), or at its bottom under "Swap"
+				AnchorPoint = if c.reroll and not beside then Vector2.new(1, 1) else Vector2.new(1, 0.5),
+				Position = if c.reroll and not beside then UDim2.new(1, -10, 1, -8) else UDim2.new(1, -10, 0.5, -4),
+				Size = UDim2.fromOffset(CLAIM, if c.reroll then Theme.Size.MinTouch else 50),
 				Variant = "primary",
 				Text = Text.get(use, if c.claimed then "quest.claimed" else "quest.claim"),
 				Disabled = c.claimed or not c.done,
@@ -263,9 +276,9 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 			if c.reroll
 				then Button(s, {
 					Name = "Reroll",
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.new(1, -10, 0, 0),
-					Size = UDim2.fromOffset(150, 30),
+					AnchorPoint = if beside then Vector2.new(1, 0.5) else Vector2.new(1, 0),
+					Position = if beside then UDim2.new(1, -(10 + CLAIM + 8), 0.5, -4) else UDim2.new(1, -10, 0, 0),
+					Size = UDim2.fromOffset(if beside then REROLL else CLAIM, small),
 					Variant = "ghost",
 					TextSize = Theme.TextSize.Small,
 					Text = `⟳ {Text.get(use, "quest.reroll")}`,
@@ -409,6 +422,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 		local list = {}
 		local lvl = use(level) or 1
 		local compact = use(layout).card < WorldLayout.BOARD_CARD.height
+		local touch = use(Device.Touch) == true
 		if use(tab) == "daily" then
 			local d = use(daily)
 			if type(d) ~= "table" then
@@ -423,6 +437,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 						id = `daily{i}`,
 						order = i,
 						compact = compact,
+						touch = touch,
 						title = Text.get(use, `daily.{entry.template}.title`),
 						line = QuestText.objective(use, entry.objective, entry.progress),
 						done = entry.progress >= entry.objective.n,
@@ -472,6 +487,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 					id = `weekly{i}`,
 					order = i,
 					compact = compact,
+					touch = touch,
 					title = Text.get(use, `weekly.{entry.template}.title`),
 					line = QuestText.objective(use, entry.objective, entry.progress),
 					done = entry.progress >= entry.objective.n,
@@ -501,6 +517,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 					id = "bossContract",
 					order = 100,
 					compact = compact,
+					touch = touch,
 					title = `{Text.get(use, "quest.bossContract.title")}: {bossName}`,
 					line = Text.get(use, "quest.bossContract.text.short", { boss = bossName, n = n })
 						.. "  "
