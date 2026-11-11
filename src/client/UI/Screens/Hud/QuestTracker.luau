@@ -212,6 +212,8 @@ end
 
 -- Owner 2026-10-21 (the tracker took ~40 % of the screen): one entry of a group, a single line: the mark and name
 -- (cut at the end), the progress on the right and "▸" / "▾" when it unfolds (its objectives, "Return to" with ➤).
+-- Final UI review 2026-11-10 ("Pokonaj: Wilk 3/8" stood under "3/8"): the progress stands on the line while the entry
+-- is folded, as a panel header's value (Hud/PanelHeader.showsValue); an open entry says it on its objective rows.
 export type Entry = {
 	key: string, -- its id (pulse and unfolded state)
 	text: string, -- mark and name
@@ -617,7 +619,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Padding = UDim.new(0, 6),
 					}),
 					name,
-					if e.progress and e.progress ~= ""
+					if PanelHeader.showsValue(e.progress, isOpen)
 						then s:New("TextLabel")({
 							Name = "Progress",
 							LayoutOrder = 2,
@@ -712,7 +714,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					line(
 						Text.get(use, "tracker.contracts.more", { n = #taken - shown }),
 						Theme.Iron.TextMuted,
-						Theme.TextSize.Caption,
+						Theme.TextSize.Small, -- a sentence: Caption is for upper-case labels (UI-ZASADY §8)
 						Theme.Fonts.Body,
 						INDENT
 					)
