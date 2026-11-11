@@ -10,7 +10,8 @@
 -- (WindowFrame.body) and their buttons in the footer row; GearLayout's sizes are the window frame's and Theme's.
 -- Review 2026-11-11: the wardrobe keeps its saved looks with "Załóż" / "Zapisz obecny" on every phone (the preview
 -- gives up height, the hint goes behind an (i)) and 2 rows of its list under the balance row; the NPC shop's Buy list
--- takes the drop strip's room on touch while no backpack item is picked.
+-- takes the drop strip's room on touch while no backpack item is picked; the skills window's PC directions header
+-- (the set switch, the points, the leading direction) fits for every direction, the capstone under the switch.
 
 local fs = require("@lune/fs")
 
@@ -23,6 +24,7 @@ local Format = require("../src/shared/Util/Format")
 local GearLayout = require("../src/shared/Logic/GearLayout")
 local ItemName = require("../src/shared/Logic/ItemName")
 local Locale = require("../src/shared/Util/Locale")
+local PathData = require("../src/shared/Data/Paths")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local Rarities = require("../src/shared/Data/Rarities")
 local Recipes = require("../src/shared/Data/Recipes")
@@ -388,6 +390,40 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			end
 		end
 	)
+
+	T.it("the PC directions header fits every direction, its points whole; the capstone under the switch", function()
+		local header = fs.readFile("src/client/UI/Screens/SkillsWindow/Header.luau")
+		local setW = assert(tonumber(string.match(header, "local SET_W = (%d+)")))
+		local gap = assert(tonumber(string.match(header, "Padding = UDim.new%(0, (%d+)%)")))
+		local infoTip =
+			assert(tonumber(string.match(fs.readFile("src/client/UI/Components/InfoTip.luau"), "DEFAULT_SIZE = (%d+)")))
+		-- Components/BuildSetSwitch with "Kopiuj" (ShowModal): three buttons
+		local switch = 3 * setW + 2 * theme("Theme.Padding").Small
+		local width = cases("skills")[1].area.w -- the PC content of the 920-px window
+		for _, lang in { "pl", "en" } do
+			local points = TextCaps.width(Locale.T("paths.points", { n = 88 }, lang), 17)
+			-- "Prowadzi: brak" has its rule behind an (i)
+			local worst = TextCaps.width(Locale.T("skills.tree.leadingNone", nil, lang), 17) + gap + infoTip
+			local name = "none"
+			for _, path in PathData.list do
+				local text = Locale.T("skills.tree.leading", { name = Locale.T(path.nameKey, nil, lang) }, lang)
+				if TextCaps.width(text, 17) > worst then
+					worst, name = TextCaps.width(text, 17), path.id
+				end
+			end
+			T.expect({ lang, name, switch + gap + points + gap + worst <= width }).toEqual({ lang, name, true })
+		end
+		-- the points label never shrinks (its number stays), the capstone stands under the switch (PathTab)
+		T.expect(string.find(header, "if whole then nil else", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(header, "skills.tree.capstone", 1, true) == nil).toBe(true)
+		local tab = fs.readFile("src/client/UI/Screens/SkillsWindow/PathTab.luau")
+		-- after the end of the phone's own block (the leading direction under the switch)
+		local touchAt =
+			assert(string.find(tab, "if touch then\n\t\t\t-- owner 2026-11-10 (UI plan): the short", 1, true))
+		local touchEnd = assert(string.find(tab, "\n\t\tend\n", touchAt, true))
+		local capstoneAt = assert(string.find(tab, '"skills.tree.capstone"', 1, true))
+		T.expect(capstoneAt > touchEnd).toBe(true)
+	end)
 
 	T.it("the folded 'Koszt i odnowienie' line fits the PC panel: cost and cooldown, no range", function()
 		-- review 2026-11-10: with the range (and the cooldown's reduction) the line ran past the panel for every skill

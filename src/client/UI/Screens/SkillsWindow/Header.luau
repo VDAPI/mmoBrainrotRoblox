@@ -2,15 +2,17 @@
 -- Header row of the skills window (S59, ROZWOJ 4): the build set switch of S58 ("Set 1 / Set 2", "Copy").
 -- S139 (DESIGN-18 §12): on a pool tab the free skill points of the shown pool (green while a rank can be bought), the
 -- reservation ("Confirm (+3)") and "Cancel" (PC; the phone pins them to the bottom of the screen); on
--- the directions tab the free talent points (green while a node can be bought), the leading direction ("Leading
--- direction: <name>" or "none (12 points in one direction)", Logic/PathView.leading) and the set's capstone
--- (Logic/Paths.capstoneOf; the phone shows these two under the directions switch, PathTab). PC 44 px with 32 px
--- buttons, phone 52 px with 44 px.
+-- the directions tab the free talent points (green while a node can be bought) and the leading direction ("Leading
+-- direction: <name>" or "none (12 points in one direction)", Logic/PathView.leading; the phone shows it under the
+-- directions switch, PathTab). PC 44 px with 32 px buttons, phone 52 px with 44 px.
 -- Owner 2026-11-10 (UI plan, "niektóre rzeczy zasłaniają inne"): the directions tab needed about 1046 px of 876, so
 -- the capstone ran past the window's edge and the points lost their number. Now the labels share what the set switch
 -- leaves (each shrinks, UIFlexItem, instead of a fixed maximum), the texts are short ("Punkty kierunków: 3",
 -- "Prowadzi: <name>" or "Prowadzi: brak" with the rule behind its "i"), the capstone shows only once there is one,
 -- and the set switch is narrower here (80-px buttons).
+-- Review 2026-11-11: with "Zwieńczenie: <name>" the PC row still needed up to 1005 px of 876 (mostly the leading
+-- direction's name twice) and the points shrank to "Punkty kierunk…". The capstone now stands under the directions
+-- switch on PC too (PathTab), and the points never shrink; tests/gearlayout.spec measures the row for every direction.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -42,8 +44,9 @@ local SET_W = 80 -- the set switch's buttons here ("Zestaw 1", "Kopiuj"), 96 els
 
 function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, touch: boolean): Instance
 	local buttonHeight = if touch then Theme.Size.MinTouch else 32
-	-- a label as wide as its text, shrinking (and cut at its end) only when the row runs out of room
-	local function label(s: Scope, order: number, text: string, color: Color3): Instance
+	-- a label as wide as its text, shrinking (and cut at its end) only when the row runs out of room; `whole` never
+	-- shrinks (the free points keep their number)
+	local function label(s: Scope, order: number, text: string, color: Color3, whole: boolean?): Instance
 		return s:New("TextLabel")({
 			LayoutOrder = order,
 			BackgroundTransparency = 1,
@@ -55,7 +58,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 			TextColor3 = color,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
-			[Children] = s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+			[Children] = if whole then nil else s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
 		})
 	end
 	local items = scope:Computed(function(use, s: Scope): { Instance }
@@ -118,7 +121,8 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 				s,
 				2,
 				Text.get(use, "paths.points", { n = free }),
-				if attention and attention.points then Theme.Paper.Success else Theme.Paper.TextMuted
+				if attention and attention.points then Theme.Paper.Success else Theme.Paper.TextMuted,
+				true
 			)
 		)
 		if not touch then
@@ -143,19 +147,6 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 						LayoutOrder = 4,
 						Text = Text.get(use, "skills.tree.leadingHint", { n = Paths.MAIN_MIN_POINTS }),
 					})
-				)
-			end
-			local capstone = Paths.capstoneOf(c)
-			local capstoneDef = if capstone then PathData.get(capstone) else nil
-			if capstoneDef then
-				table.insert(
-					out,
-					label(
-						s,
-						5,
-						Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) }),
-						Theme.Paper.Text
-					)
 				)
 			end
 		end

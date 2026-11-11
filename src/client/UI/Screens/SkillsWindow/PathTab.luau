@@ -10,9 +10,9 @@
 -- Same tree on PC (510 px list) and phone (full width, bigger tiles).
 -- S139 (DESIGN-18 §12 D): the "Directions" tab: a switch of the class's directions at the top (a card per direction:
 -- its name, role and points, a dot when something waits there), then the tree of the shown one; node tiles are the
--- pool tree's tiles (SkillsWindow/Tile). The leading direction, the capstone and the free talent points stand in the
--- window header (the phone: only the points; the other two under the switch). A class without directions shows
--- "Paths soon".
+-- pool tree's tiles (SkillsWindow/Tile). The free talent points and the leading direction stand in the window header,
+-- the capstone under the switch (the phone: only the points in the header, the leading direction under the switch
+-- too; review 2026-11-11). A class without directions shows "Paths soon".
 -- Owner 2026-10-21 (too many detailed descriptions): the "one capstone per set" rule behind an "i" on the name row
 -- (was a line over the tree); "Paths soon" in one short line with the rest behind an "i".
 
@@ -198,11 +198,10 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}))
 		end
-		-- The phone's header has room only for the talent points: the set's leading direction (with its threshold) and
-		-- capstone stand under the switch.
+		-- The phone's header has room only for the talent points: the set's leading direction stands under the switch.
 		if touch then
-			-- owner 2026-11-10 (UI plan): the short header texts; the capstone only once there is one (the rule of a
-			-- leading direction is in the direction's details)
+			-- owner 2026-11-10 (UI plan): the short header texts (the rule of a leading direction is in the direction's
+			-- details)
 			local leading = PathView.leading(character)
 			local leadingDef = if leading.pathId then PathData.get(leading.pathId) else nil
 			label(
@@ -212,11 +211,13 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 				Theme.Paper.Heading,
 				Theme.Fonts.BodyBold
 			)
-			local capstone = Paths.capstoneOf(character)
-			local capstoneDef = if capstone then PathData.get(capstone) else nil
-			if capstoneDef then
-				label(Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) }))
-			end
+		end
+		-- the set's capstone, only once there is one; under the switch on PC too (review 2026-11-11: in the PC header it
+		-- cut the free points' number and the names)
+		local capstone = Paths.capstoneOf(character)
+		local capstoneDef = if capstone then PathData.get(capstone) else nil
+		if capstoneDef then
+			label(Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) }))
 		end
 		-- Header: the name (a click shows the path's description), the ranks in the direction (S138).
 		local pathSelected = s:Computed(function(use2): boolean
