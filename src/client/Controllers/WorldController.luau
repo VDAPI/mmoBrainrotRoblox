@@ -552,9 +552,12 @@ local function onPortal(portalId: string, targetId: string)
 	if low then
 		table.insert(warnings, Text.now("portal.warnLevel", { level = target.minLevel }))
 	end
-	-- S22: region maps open the area picker; the warnings become a line in it.
+	local both = red and low
+	-- S22: region maps open the area picker; the warnings become a line in it. Review 2026-11-11 (a phone showed under
+	-- 2 areas below the two warnings): both dangers make one line there too, as in the modal below.
 	if WorldController.HasAreaChoice(targetId, portalId) then
-		WorldController.OpenAreaPicker(targetId, warnings, function(areaId: string): (boolean, string?)
+		local line = if both then { Text.now("portal.warnBoth", { level = target.minLevel }) } else warnings
+		WorldController.OpenAreaPicker(targetId, line, function(areaId: string): (boolean, string?)
 			return Net.Invoke("UsePortal", portalId, areaId)
 		end)
 		return
@@ -566,7 +569,6 @@ local function onPortal(portalId: string, targetId: string)
 	-- owner 2026-11-10 (a modal's message at most 90 characters): one warning is the message. Review 2026-11-10 (the
 	-- level warning waited unseen under "Więcej ▸" behind the red zone's): both dangers make one line of their own,
 	-- and "Więcej ▸" keeps the red zone's full sentence, a longer version of that line, not a second warning.
-	local both = red and low
 	WindowManager.ShowModal({
 		Title = Text.now(target.nameKey),
 		Message = if both then Text.now("portal.warnBoth", { level = target.minLevel }) else warnings[1],
@@ -724,7 +726,8 @@ function WorldController.Init(registry)
 	WindowManager.Register({
 		id = "areapicker",
 		titleKey = "window.areapicker.title",
-		size = Vector2.new(560, 560),
+		-- review 2026-11-11: 5 areas with their profile line under the portal's warning on PC (WorldLayout.areaPicker)
+		size = Vector2.new(560, 720),
 		build = function(s)
 			return AreaPicker(s, {
 				MapId = pickerMap,

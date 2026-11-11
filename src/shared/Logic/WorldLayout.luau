@@ -460,6 +460,47 @@ function WorldLayout.finderStepperText(): number
 	return F.cell - 2 * (F.button + 4)
 end
 
+-- Area picker --------------------------------------------------------------------------------------------------------
+-- "Dokąd?" (a portal's or the Map Stone's region map): the header line (the map and the player's level, the (i) of the
+-- selected area's profile), the portal's warning when there is one, then the areas; "Ruszaj" is the window's pinned
+-- footer, so `body` is the content above it (Logic/WindowFrame.body). A row: the name with the levels at its right,
+-- the monster kinds with the tag ("★ Polecane", "◈ Zlecenie", "od poz. X"), and the hunting ground profile when the
+-- area has one. Review 2026-11-11 (a phone under a warning showed 1.7 rows of 88, PC 4): a phone's rows are compact
+-- (56, 72 with the profile), the portal's two dangers make one line there as in its modal (portal.warnBoth), and PC's
+-- window is 720 high, so a phone shows 2 rows under the longest warning and PC 5.
+export type AreaPicker = { list: List, plainRow: number, compact: boolean }
+
+WorldLayout.AREA_PICKER = table.freeze({
+	header = 24, -- the header line
+	gap = 8, -- the column's gap under the header line and under the warning
+	line = WorldLayout.SMALL + 3, -- a line of the warning (Theme.TextSize.Small, wrapped)
+	pad = 2, -- the list's top padding
+	row = 66, -- an area without a profile: the name and the kinds
+	profileRow = 88, -- and the profile line
+	compactRow = 56,
+	compactProfileRow = 72,
+	rowGap = 6,
+})
+
+-- `warningLines`: the lines of the portal's warning at the body's width (0 without one). The list's row is an area
+-- with a profile, the taller one (`plainRow` is the other).
+function WorldLayout.areaPicker(body: Size, device: Device, warningLines: number): AreaPicker
+	local A = WorldLayout.AREA_PICKER
+	local compact = device == "phone"
+	local warning = if warningLines > 0 then warningLines * A.line + A.gap else 0
+	local top = A.header + A.gap + warning + A.pad
+	return {
+		list = {
+			top = top,
+			height = math.max(0, body.h - top),
+			row = if compact then A.compactProfileRow else A.profileRow,
+			gap = A.rowGap,
+		},
+		plainRow = if compact then A.compactRow else A.row,
+		compact = compact,
+	}
+end
+
 -- Character select ------------------------------------------------------------------------------------------------
 -- The whole layer: the title and subtitle under Roblox's top bar, the slot cards, the test-mode line. A card keeps its
 -- buttons in a footer pinned to its bottom, as a window's (UI package C: one WindowFrame.FOOTER row under a rule in the

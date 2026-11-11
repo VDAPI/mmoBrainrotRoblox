@@ -10,7 +10,8 @@
 -- UI package C's parts (same owner note): E's dialog-like windows pin their actions in the window's footer
 -- (Components/Window `Footer`, Logic/WindowFrame.body above it) and show at least 2 rows over it on a phone and 5 on
 -- PC; the quest dialog's page and reward choice share that body; the character card's "Usuń" and "Graj" stand in one
--- footer row on the screen; the quest journal's six tabs fit its strip whole.
+-- footer row on the screen; the quest journal's six tabs fit its strip whole. Review 2026-11-11: the area picker shows 2
+-- areas under the portal's longest warning on a phone and 5 on PC (WorldLayout.areaPicker).
 
 local fs = require("@lune/fs")
 
@@ -584,12 +585,13 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 	-- the screen under the top bar; the body above it (the window's scroll, or the area picker's list and the quest
 	-- dialog's page) keeps at least 2 rows on a phone and 5 on PC.
 	T.it("footer windows: the actions pinned on the screen, 2 rows over them on a phone, 5 on PC", function()
+		-- the area picker counts its own rows under its header and warning (the next test)
 		local windows = {
 			{ id = "dungeon", file = "DungeonWindow.luau", scroll = true },
 			{ id = "bloodmoon", file = "BloodMoonWindow.luau", scroll = true },
 			{ id = "login", file = "LoginReward.luau", scroll = true },
 			{ id = "whatsnew", file = "WhatsNew.luau", scroll = true },
-			{ id = "areapicker", file = "AreaPicker.luau", scroll = false },
+			{ id = "areapicker", file = "AreaPicker.luau", scroll = false, ownRows = true },
 			{ id = "questnpc", file = "QuestDialog.luau", scroll = false },
 			{ id = "mailCompose", file = "MailCompose.luau", scroll = true },
 			{ id = "guildfound", file = "GuildFound.luau", scroll = true },
@@ -612,12 +614,54 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 				local body = bodyOf(w.id, screen)
 				local rows = math.floor(body.h / WorldLayout.ROW + 1e-6)
 				local want = wanted(screen.device, 2, 5)
-				if body.w < 0 or rows < want then
+				if body.w < 0 or (not w.ownRows and rows < want) then
 					table.insert(problems, `{screen.name} {w.id}: {rows} rows over the footer < {want}`)
 				end
 			end
 		end
 		T.expect(problems).toEqual({})
+	end)
+
+	-- Review 2026-11-11 (the footer test counted 48-px rows; the picker's are 66/88 under its header line and a
+	-- warning, 1.7 of them on a phone): WorldLayout.areaPicker models the column, the spec counts the rows with a
+	-- profile line (the taller ones) under the longest warning a portal passes (pl and en, wrapped at the body's width).
+	T.it("area picker: 2 areas under the portal's longest warning on a phone, 5 on PC", function()
+		local warnings: { string } = {}
+		for _, strings in { pl, en } :: { { [string]: string } } do
+			for _, key in { "portal.warnRed", "portal.warnLevel", "portal.warnBoth" } do
+				table.insert(warnings, TextCaps.expand(strings[key]))
+			end
+		end
+		local problems: { string } = {}
+		for _, screen in screens() do
+			local body = bodyOf("areapicker", screen)
+			local lines = 0
+			for _, text in warnings do
+				lines = math.max(lines, TextCaps.lines(text, WorldLayout.SMALL, body.w))
+			end
+			local picker = WorldLayout.areaPicker(body, screen.device, lines)
+			local want = wanted(screen.device, 2, 5)
+			local rows = WorldLayout.rows(picker.list)
+			if rows < want then
+				table.insert(problems, `{screen.name}: {rows} areas under {lines} warning lines < {want}`)
+			end
+			if picker.compact ~= (screen.device == "phone") or picker.plainRow > picker.list.row then
+				table.insert(problems, `{screen.name}: the rows {picker.plainRow} / {picker.list.row}`)
+			end
+		end
+		T.expect(problems).toEqual({})
+		-- the window reads the column and its rows, and a portal passes its two dangers as one line
+		local src = fs.readFile("src/client/UI/Screens/AreaPicker.luau")
+		T.expect(string.find(src, "local A = WorldLayout.AREA_PICKER", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(src, "ROW_HEIGHT", 1, true)).toBe(nil)
+		for _, field in { "A.compactProfileRow", "A.profileRow", "A.header", "A.gap", "A.rowGap", "A.pad" } do
+			T.expect(`{field} {string.find(src, field, 1, true) ~= nil}`).toBe(`{field} true`)
+		end
+		local controller = fs.readFile("src/client/Controllers/WorldController.luau")
+		local merged = 'if both then { Text.now("portal.warnBoth", { level = target.minLevel }) } else warnings'
+		T.expect(string.find(controller, merged, 1, true) ~= nil).toBe(true)
+		-- the touch rows stay touch targets
+		T.expect(WorldLayout.AREA_PICKER.compactRow >= 44).toBe(true)
 	end)
 
 	-- UI package C's tabs (owner 2026-11-10, "too much text, things covering each other"; the plan found the journal's
