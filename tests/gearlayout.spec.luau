@@ -839,13 +839,18 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 				for _, lang in { "pl", "en" } do
 					local seen: { [string]: string } = {}
 					for _, recipe in Recipes.list do
-						-- every name reads apart in a wide queue, the blessings in each
-						if wide or recipe.group == "blessing" then
-							local name = ItemName.get(lang, recipe.result.id)
-							local v = shown(name, 17, text)
-							T.expect({ case.name, lang, name, (seen[v] or name) == name })
-								.toEqual({ case.name, lang, name, true })
-							seen[v] = name
+						-- every order's name reads apart in every queue (final UI review 2026-11-11: the four resistance
+						-- elixirs read "Eliksir Odporności …" in a phone's; their short queue name shows whole)
+						local elixir = recipe.group == "elixir"
+						local name = if elixir
+							then Locale.T(`alchemy.queue.{recipe.id}`, nil, lang)
+							else ItemName.get(lang, recipe.result.id)
+						local v = shown(name, 17, text)
+						T.expect({ case.name, lang, name, (seen[v] or name) == name })
+							.toEqual({ case.name, lang, name, true })
+						seen[v] = name
+						if elixir then
+							T.expect({ case.name, lang, name, v == name }).toEqual({ case.name, lang, name, true })
 						end
 					end
 				end
@@ -865,6 +870,29 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			local source = fs.readFile("src/client/UI/Screens/AlchemyWindow.luau")
 			local _, dense = string.gsub(source, "Tall = true,%s+Dense = true,", "")
 			T.expect(dense).toBe(2)
+			-- the queue names: every elixir recipe has one in both languages; the order's icon (its tooltip) keeps the
+			-- item's full name
+			local pl = require("../src/shared/Data/Localization/pl") :: any
+			local en = require("../src/shared/Data/Localization/en") :: any
+			local elixirs = 0
+			for _, recipe in Recipes.list do
+				if recipe.group == "elixir" then
+					elixirs += 1
+					local key = `alchemy.queue.{recipe.id}`
+					T.expect({ key, type(pl[key]), type(en[key]) }).toEqual({ key, "string", "string" })
+				end
+			end
+			T.expect(elixirs).toBe(4)
+			for _, needle in
+				{
+					"then Text.get(use, `alchemy.queue.{recipe.id}`)",
+					"else ItemText.get(use, recipe.result.id)",
+					"Text = orderName(use, recipe),",
+					"SlotId = `view:queue:{index}`,",
+				}
+			do
+				T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
 			for _, needle in
 				{
 					"local ICON = 44",

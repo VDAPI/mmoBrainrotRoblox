@@ -50,6 +50,15 @@ local ICON = 44
 
 type Layout = Fusion.Computed<GearLayout.Alchemy>
 
+-- Final UI review 2026-11-11: an order's name in the queue. A resistance elixir has a short one ("Eliksir na ogień",
+-- whole in a phone's 270-px queue, where the four full names all read "Eliksir Odporności …"); its icon's tooltip keeps
+-- the full name.
+local function orderName(use: Fusion.Use, recipe: Recipes.Recipe): string
+	return if recipe.group == "elixir"
+		then Text.get(use, `alchemy.queue.{recipe.id}`)
+		else ItemText.get(use, recipe.result.id)
+end
+
 -- The position and the size of one of the layout's rects, following it.
 local function placed(
 	scope: Scope,
@@ -253,7 +262,7 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): ({ Instan
 						Dense = true,
 						Inset = ICON + 4,
 						RichText = true,
-						Text = ItemText.get(use, recipe.result.id),
+						Text = orderName(use, recipe),
 						Sub = sub,
 						[Children] = {
 							ItemSlot(s, {

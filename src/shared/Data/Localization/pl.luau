@@ -1568,6 +1568,11 @@ return {
 	["alchemy.group.elixir"] = "Eliksiry",
 	["alchemy.order"] = "Zleć",
 	["alchemy.queue"] = "Zamówienia",
+	-- final UI review 2026-11-11: a resistance elixir's order in the queue (AlchemyWindow), whole in a phone's
+	["alchemy.queue.elixir_resFire"] = "Eliksir na ogień",
+	["alchemy.queue.elixir_resIce"] = "Eliksir na lód",
+	["alchemy.queue.elixir_resLightning"] = "Eliksir na błyskawice",
+	["alchemy.queue.elixir_resPoison"] = "Eliksir na truciznę",
 	["alchemy.emptySlot"] = "Wolne miejsce",
 	["alchemy.collectAll"] = "Odbierz wszystko",
 	["alchemy.collected"] = "Odebrano zamówienia: {n}.",
