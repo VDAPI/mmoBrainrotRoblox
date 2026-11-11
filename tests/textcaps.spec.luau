@@ -239,6 +239,34 @@ describe("textcaps T2: universal rules", function()
 		end
 		fail(problems, "a word the glossary replaced")
 	end)
+
+	-- Final UI review 2026-11-11: the windows' texts (packages C, D and E) keep the glossary's words too. The premium
+	-- currency is "Smocza Waluta" (DECYZJE S120), ◆ beside a number in a reward list: the arena's season tab, the
+	-- tournament, the quest board and the rankings said "Smocze Odłamki" or a bare "odłamków", which reads like the
+	-- upgrade material; en says "Dragon Shards" everywhere.
+	it("C, D and E texts name the premium currency one way", function()
+		local OTHER = { "smocz[^ ]* odłamk", "}%s*odłamk", "%d%s*odłamk", "odłamki z kompletu" }
+		local problems = {}
+		for key, text in pl :: { [string]: string } do
+			local owner = TextScan.owner(key)
+			if owner == "C" or owner == "D" or owner == "E" then
+				local lower = string.lower(text)
+				for _, pattern in OTHER do
+					if string.find(lower, pattern) then
+						table.insert(problems, `{key} ({owner}): {pattern}`)
+					end
+				end
+				local english = (en :: { [string]: string })[key]
+				if english and string.find(english, "Dragon Currency", 1, true) then
+					table.insert(problems, `{key} ({owner}) en: Dragon Currency`)
+				end
+			end
+		end
+		fail(problems, "a second name for the premium currency")
+		-- the glossary's words themselves
+		expect(string.find(pl["premium.currency.note"], "Smocza Waluta", 1, true) ~= nil).toBe(true)
+		expect(string.find(en["premium.currency.note"], "Dragon Shards", 1, true) ~= nil).toBe(true)
+	end)
 end)
 
 describe("textcaps T1-T3: caps and the per-package lists", function()
