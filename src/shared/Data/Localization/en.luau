@@ -9924,6 +9924,7 @@ return {
 	["skills.mod.active"] = "{node} ({path}): rank {rank}/{max}, working",
 	["skills.mod.inactive"] = "{node} ({path}): {rank}/{max}, not working now",
 	["skills.mod.idle"] = "{node} ({path}): to buy in row {row}",
+	["skills.mods.summary"] = "Working: {n} of {total}",
 	["skills.item.line"] = "Empowered by an item: {name}",
 	["skills.action.add"] = "+ rank",
 	["skills.action.remove"] = "− rank",

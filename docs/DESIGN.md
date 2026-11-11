@@ -1920,7 +1920,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   plecak ma 500 px także na telefonie. Szczegóły umiejętności: ranga i krótki opis, „Koszt i odnowienie” zwinięte do
   linii kosztu i odnowienia (tabela rang pod spodem; pasywka: „Wartości rangi”), „Przełomy” zwinięte do linii
   działających wersji („Ranga 5: A · Ranga 10: B”) albo „Przełom do wyboru”, karta przełomu w jednym wierszu z
-  „Wybierz”, zasada zmian raz, pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
+  „Wybierz”, zasada zmian raz, „Zmiany z kierunków” zwinięte do linii „Działa: N z M” (przegląd 2026-11-11), pełny
+  opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
   nagłówek kierunków „Punkty kierunków: N” (liczba nigdy ucięta), „Prowadzi: …” albo „Prowadzi: brak” (zasada za
   (i)), zwieńczenie dopiero, gdy jest, i pod przełącznikiem kierunków (przegląd 2026-11-11: w nagłówku PC ucinało
   nazwy i liczbę punktów); opis węzła dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym

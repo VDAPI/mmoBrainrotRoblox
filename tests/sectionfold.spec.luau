@@ -372,7 +372,18 @@ T.describe("SectionFold", function()
 		T.expect(named >= 8).toBe(true)
 		-- what the plan folds: the statistics and the attack open, the rest to one line
 		T.expect({ Gear.charStats, Gear.charOffense }).toEqual({ true, true })
-		for _, id in { "charSets", "charDefense", "charResources", "charOther", "skillCost", "skillBreakpoints" } do
+		-- review 2026-11-11: "Zmiany z kierunków" folds too (up to six lines stood open under the other two)
+		for _, id in
+			{
+				"charSets",
+				"charDefense",
+				"charResources",
+				"charOther",
+				"skillCost",
+				"skillBreakpoints",
+				"skillDirections",
+			}
+		do
 			T.expect(`{id} {Gear[id]}`).toBe(`{id} false`)
 		end
 	end)

@@ -106,7 +106,8 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
 - Okna:
   - Plecak: Statystyki otwarte, Zestawy i tytuł zwinięte (decyzja 2026-11-10). Statystyki pochodne w czterech
     sekcjach: Ofensywa otwarta; Defensywa, Zasoby i Inne zwinięte.
-  - Umiejętności: krótki opis otwarty; „Koszt i odnowienie” oraz „Przełomy” zwinięte.
+  - Umiejętności: krótki opis otwarty; „Koszt i odnowienie”, „Przełomy” i „Zmiany z kierunków” (linia „Działa: 1 z 3”)
+    zwinięte.
   - Ustawienia: Dźwięk, Grafika, Walka i Interfejs otwarte; Łupy, Społeczność i Klawisze zwinięte; na dotyku bez
     Klawiszy.
   - Dziennik: historia i ukończone wątki zwinięte.

@@ -9922,6 +9922,7 @@ return {
 	["skills.mod.active"] = "{node} ({path}): ranga {rank}/{max}, działa",
 	["skills.mod.inactive"] = "{node} ({path}): {rank}/{max}, teraz nie działa",
 	["skills.mod.idle"] = "{node} ({path}): do kupienia, rząd {row}",
+	["skills.mods.summary"] = "Działa: {n} z {total}",
 	["skills.item.line"] = "Wzmocnione przez przedmiot: {name}",
 	["skills.action.add"] = "+ ranga",
 	["skills.action.remove"] = "− ranga",

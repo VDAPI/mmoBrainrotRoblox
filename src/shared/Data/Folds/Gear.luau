@@ -14,7 +14,9 @@ return table.freeze({
 	charResources = false,
 	charOther = false,
 	-- The skills window's details (SkillsWindow/Details): "Koszt i odnowienie" folds to its one line (the cost and the
-	-- cooldown; the shape, the element and the rank table under it), the breakpoints fold to their header.
+	-- cooldown; the shape, the element and the rank table under it), the breakpoints fold to their header, and
+	-- "Zmiany z kierunków" to how many of its direction nodes work (review 2026-11-11).
 	skillCost = false,
 	skillBreakpoints = false,
+	skillDirections = false,
 } :: { [string]: boolean | { pc: boolean, phone: boolean } })

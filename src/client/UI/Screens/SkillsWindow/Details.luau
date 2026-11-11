@@ -559,9 +559,11 @@ function Details.lines(
 				Children = bp.rows,
 			}))
 		end
-		-- "Changes from directions"
+		-- "Zmiany z kierunków" (review 2026-11-11: up to six lines stood open under the two folded sections): a Section
+		-- folded to how many of the direction nodes work now, a line per node under it
 		if #d.mods > 0 then
-			sub(Text.get(use, "skills.section.directions"))
+			local modRows: { Instance } = {}
+			local working = 0
 			for _, mod in d.mods do
 				local args = {
 					node = Text.get(use, mod.nameKey),
@@ -570,14 +572,25 @@ function Details.lines(
 					max = mod.maxRank,
 					row = mod.row,
 				}
+				local item: Instance
 				if mod.rank <= 0 then
-					line(`• {Text.get(use, "skills.mod.idle", args)}`, Theme.Paper.TextMuted)
+					item = label(`• {Text.get(use, "skills.mod.idle", args)}`, Theme.Paper.TextMuted)
 				elseif mod.active then
-					line(`• {Text.get(use, "skills.mod.active", args)}`, Theme.Paper.Success)
+					working += 1
+					item = label(`• {Text.get(use, "skills.mod.active", args)}`, Theme.Paper.Success)
 				else
-					line(`• {Text.get(use, "skills.mod.inactive", args)}`, Theme.Paper.Warning)
+					item = label(`• {Text.get(use, "skills.mod.inactive", args)}`, Theme.Paper.Warning)
 				end
+				(item :: any).LayoutOrder = #modRows + 1
+				table.insert(modRows, item)
 			end
+			add(Section.new(s, {
+				Id = "skillDirections",
+				Name = "DirectionsSection",
+				Title = Text.get(use, "skills.section.directions"),
+				Summary = Text.get(use, "skills.mods.summary", { n = working, total = #d.mods }),
+				Children = modRows,
+			}))
 		end
 		-- "From items" (S134g, DESIGN-18 §0.9)
 		if #d.items > 0 then
