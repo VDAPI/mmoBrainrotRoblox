@@ -12,6 +12,7 @@
 -- Final UI review 2026-11-10: the death screen's content keeps the messages off as a dialog does, and what waits keeps
 -- its time while it shows (the killer's toast of a PvP death showed under it and dropped unseen); the legendary card,
 -- the only way to the reveal, stands 20 s and waits ten minutes for its place.
+-- Seams 2026-11-11: the legendary card's item gets no pickup toast beside it (LootController).
 
 local fs = require("@lune/fs")
 
@@ -439,6 +440,22 @@ T.describe("NoticeQueue: the policy (fake clock)", function()
 		T.expect(own.wait).toBe(5)
 		local notify = fs.readFile("src/client/UI/Notify.luau")
 		T.expect(string.find(notify, "wait = card.wait,", 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("seams 2026-11-11: a legendary pickup names its item once, on the card", function()
+		-- the pickup toasted '+1 Ostrze Pustki' in the same second as the card 'Legendarny przedmiot! / Ostrze Pustki'
+		-- (one home, UI-ZASADY §1); the bag's other items keep their toasts, up to 4
+		local loot = fs.readFile("src/client/Controllers/LootController.luau")
+		local picked = string.find(loot, "local function onPicked(", 1, true) :: number
+		local carded = string.find(loot, "local carded: ItemInstance? = reveal or firstPick", picked, true)
+		local toast = string.find(loot, "Toast.push(", picked, true)
+		T.expect(carded ~= nil and toast ~= nil and (carded :: number) < (toast :: number)).toBe(true)
+		T.expect(string.find(loot, "if shown < 4 and item ~= carded then", picked, true) ~= nil).toBe(true)
+		-- the card goes to the same item: the best legendary or mythic piece, else the first valuable drop
+		T.expect(
+			string.find(loot, "if reveal then\n\t\topenReveal(reveal)\n\telseif firstPick then", picked, true) ~= nil
+		)
+			.toBe(true)
 	end)
 
 	T.it("lets the achievement wait for an open window, and a prompt show until its deadline", function()

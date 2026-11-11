@@ -2,11 +2,12 @@
 -- Loot bags in the world (DESIGN §5.5), visible only to their owner: a small bag glowing in the colour of the
 -- best item inside with its name above it. Pick up with F (prompt), E, or a click. Legendary drops add an
 -- orange pillar of light, a sound and a screen flash, mythic ones a taller red pillar with embers and a red
--- flash (S30); picking one up opens the reveal window. S155b: the first valuable drop of a new character (the bag's
--- `first`, TutorialService) gets the same pillar in its rarity's colour, a toast and the reveal with its own title.
--- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner question 1):
--- the pickup shows one of UI/Notify's cards (the title and the item; the PC corner, a phone's M zone) and the reveal
--- opens from its 'Szczegóły'.
+-- flash (S30). S155b: the first valuable drop of a new character (the bag's `first`, TutorialService) gets the same
+-- pillar in its rarity's colour, a toast and, picked up, the reveal with its own title.
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner questions 1
+-- and UI 10): picking such an item up shows one of UI/Notify's cards (the title and the item; the PC corner, a phone's
+-- M zone) and the reveal opens from its 'Szczegóły', never by itself. The card names that item, so it gets no
+-- "+1 <name>" toast (one home, UI-ZASADY §1; seams 2026-11-11); the rest of the bag keeps its toasts.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -336,20 +337,6 @@ local function openReveal(item: ItemInstance, titleKey: string?)
 end
 
 local function onPicked(items: { ItemInstance })
-	local shown = 0
-	for _, item in items do
-		if shown < 4 then
-			shown += 1
-			Toast.push(
-				`<font color="#{ItemText.rarityName(item.rarity, "iron"):ToHex()}">{Text.now("loot.picked", {
-					n = item.n,
-					name = ItemText.name(item.id, item.up, item.el),
-				})}</font>`,
-				"info",
-				2.5
-			)
-		end
-	end
 	-- Reveal the best legendary / mythic equipment piece of the pickup (S155b: or the first valuable drop).
 	local reveal: ItemInstance? = nil
 	local firstPick: ItemInstance? = nil
@@ -360,6 +347,22 @@ local function onPicked(items: { ItemInstance })
 		if firstUids[item.uid] then
 			firstUids[item.uid] = nil
 			firstPick = item
+		end
+	end
+	-- The card names its item: no "+1 <name>" toast for it in the same second (one home). The others: up to 4.
+	local carded: ItemInstance? = reveal or firstPick
+	local shown = 0
+	for _, item in items do
+		if shown < 4 and item ~= carded then
+			shown += 1
+			Toast.push(
+				`<font color="#{ItemText.rarityName(item.rarity, "iron"):ToHex()}">{Text.now("loot.picked", {
+					n = item.n,
+					name = ItemText.name(item.id, item.up, item.el),
+				})}</font>`,
+				"info",
+				2.5
+			)
 		end
 	end
 	if reveal then
