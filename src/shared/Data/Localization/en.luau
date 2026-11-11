@@ -3600,8 +3600,6 @@ return {
 	["npc.service.talk"] = "Talk",
 	["worldmap.search.talk"] = "talk side quest gossip",
 	["quest.tab.side"] = "Side",
-	["quest.tag.side"] = "SIDE",
-	["quest.tag.main"] = "STORY",
 	["quest.fromLevel"] = "from lv. {level}",
 	["quest.page"] = "{page}/{pages}",
 	["quest.next"] = "Next ▸",
@@ -5195,7 +5193,6 @@ return {
 	["admin.weekly.done"] = "Done.",
 	["admin.questbudget.line"] = "Level {level}: monster EXP ×{mul} (band {lo}–{hi}, quest target {target}%)",
 	-- S99: hunting contracts (docs/DESIGN-15.md §3.3)
-	["quest.tag.contract"] = "CONTRACT",
 	["contract.title"] = "Hunting contract {n}: {monster} ({area})",
 	["contract.titleShort"] = "Hunting contract {n}",
 	["contract.board.title"] = "Hunting contracts",

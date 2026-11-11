@@ -5,6 +5,8 @@
 -- COMPANION_GROUPS.S10x (S103-S105 also BARKS_ONLY.S10x: the chapter's existing quests), S106-S108 their side quests
 -- and region. S109 audits the whole data ("Dialogue audit (S109)" at the end).
 
+local fs = require("@lune/fs")
+
 local Barks = require("../src/shared/Logic/Barks")
 local Config = require("../src/shared/Config")
 local Dialogue = require("../src/shared/Logic/Dialogue")
@@ -1673,5 +1675,27 @@ describe("Quest lines teach no controls (review 2026-11-10)", function()
 		expect(windowIn("Zajrzyj do okna Umiejętności.")).toBe("okna Umiejętności.")
 		expect(windowIn("Check the Skills window.")).toBe("Skills window")
 		expect(windowIn("Stajnia w mieście, okno pod ☰.")).toBeNil()
+	end)
+
+	it("the NPC's quest list names a quest's category as its window does (final UI review 2026-11-11)", function()
+		-- the story quest read 'FABUŁA' in the NPC's list and 'GŁÓWNE' one tap later in its window, on the map's card
+		-- and on the journal's tab; a scout's boss quest 'POBOCZNE' but under the journal's 'Bossowie'
+		local list = fs.readFile("src/client/UI/Screens/NpcDialog.luau")
+		expect(string.find(list, "TextCase.upper(Text.get(use, `quest.tab.{row.category}`))", 1, true) ~= nil).toBe(
+			true
+		)
+		expect(string.find(list, "quest.tag.", 1, true)).toBeNil()
+		local window = fs.readFile("src/client/UI/Screens/QuestDialog.luau")
+		expect(string.find(window, "TextCase.upper(Text.get(use, `quest.tab.{v.row.category}`))", 1, true) ~= nil).toBe(
+			true
+		)
+		local card = fs.readFile("src/client/UI/Screens/WorldMap/Cards.luau")
+		expect(string.find(card, "T(`quest.tab.{row.category}`)", 1, true) ~= nil).toBe(true)
+		for _, category in { "main", "side", "boss", "contract" } do
+			for lang, tbl in { pl = pl :: any, en = en :: any } do
+				expect({ lang, category, type(tbl[`quest.tab.{category}`]) }).toEqual({ lang, category, "string" })
+				expect({ lang, category, tbl[`quest.tag.{category}`] }).toEqual({ lang, category, nil })
+			end
+		end
 	end)
 end)

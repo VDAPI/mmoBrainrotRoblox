@@ -3598,8 +3598,6 @@ return {
 	["npc.service.talk"] = "Rozmowa",
 	["worldmap.search.talk"] = "rozmowa zadanie poboczne quest plotki",
 	["quest.tab.side"] = "Poboczne",
-	["quest.tag.side"] = "POBOCZNE",
-	["quest.tag.main"] = "FABUŁA",
 	["quest.fromLevel"] = "od poz. {level}",
 	["quest.page"] = "{page}/{pages}",
 	["quest.next"] = "Dalej ▸",
@@ -5193,7 +5191,6 @@ return {
 	["admin.weekly.done"] = "Gotowe.",
 	["admin.questbudget.line"] = "Poziom {level}: EXP potworów ×{mul} (pasmo {lo}–{hi}, cel questów {target}%)",
 	-- S99: hunting contracts (docs/DESIGN-15.md §3.3)
-	["quest.tag.contract"] = "ZLECENIE",
 	["contract.title"] = "Zlecenie łowieckie {n}: {monster} ({area})",
 	["contract.titleShort"] = "Zlecenie łowieckie {n}",
 	["contract.board.title"] = "Zlecenia łowieckie",

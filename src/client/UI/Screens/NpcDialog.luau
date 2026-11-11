@@ -29,6 +29,7 @@ local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
+local TextCase = require(ReplicatedStorage.Shared.Logic.TextCase)
 local Theme = require(script.Parent.Parent.Theme)
 local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
@@ -190,10 +191,9 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 				then `  ({Text.get(use, "quest.fromLevel", { level = NpcQuests.minLevel(row) })})`
 				elseif row.mode == "turnIn" then `  ({Text.get(use, "quest.readyShort")})`
 				else ""
-			local tag = if row.kind == "side"
-				then Text.get(use, "quest.tag.side")
-				elseif row.kind == "contract" then Text.get(use, "quest.tag.contract")
-				else Text.get(use, "quest.tag.main")
+			-- final UI review 2026-11-11: the quest's category, the word its window, the map's card and the journal's tab
+			-- use ("GŁÓWNE", never "FABUŁA" here and "GŁÓWNE" one tap later)
+			local tag = TextCase.upper(Text.get(use, `quest.tab.{row.category}`))
 			table.insert(
 				list,
 				s:New("TextButton")({
