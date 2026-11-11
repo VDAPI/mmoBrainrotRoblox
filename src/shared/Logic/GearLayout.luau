@@ -28,6 +28,7 @@
 --   GearLayout.look(area)                 the appearance window: preview and picker side by side
 --   GearLayout.wardrobe(area, touch, compact)  the wardrobe: preview, saved looks, hint; tabs, balance and list
 --   GearLayout.backpackShop(area)         a row of the backpack shop: its text and its button
+--   GearLayout.npcShop(tab, drop)         the NPC shop: what its list gives up to the bars, where the buy bar stands
 
 local CharacterSections = require("./CharacterSections")
 local WindowFrame = require("./WindowFrame")
@@ -496,6 +497,26 @@ function GearLayout.backpackShop(area: Size): ShopRow
 		button = button,
 		height = R.height,
 	}
+end
+
+-- The NPC shop (UI/Screens/ShopWindow): the tab row over the list; under the list the buy bar (Buy tab, 6 px over
+-- the list's end) or the sell bar (Sell tab), and the strip a backpack item is dropped on to sell it (Buy and Buy
+-- back). Review 2026-11-11: on touch the shop and the backpack swap places (WindowManager's "Plecak" / "◂ Sklep"), so
+-- the strip is of use only after a backpack item was picked there; `drop` is whether it shows, and without it the
+-- list and the buy bar take its room (a phone's Buy list showed about one row of icons). Returns how much of the
+-- content's height the list gives up (the tab row and the bars) and how far the buy bar stands over the bottom.
+GearLayout.NPC_SHOP = table.freeze({ tabs = 50, buyBar = 64, sellBar = 60, drop = 44, gap = 6 })
+
+function GearLayout.npcShop(tab: string, drop: boolean): (number, number)
+	local S = GearLayout.NPC_SHOP
+	if tab == "sell" then
+		return S.tabs + S.sellBar, 0
+	end
+	local lift = if drop then S.drop + S.gap else 0
+	if tab == "buy" then
+		return S.tabs + lift + S.buyBar + S.gap, lift
+	end
+	return S.tabs + lift, lift
 end
 
 return GearLayout

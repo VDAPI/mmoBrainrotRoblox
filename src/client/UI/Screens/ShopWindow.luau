@@ -13,13 +13,17 @@
 -- vendor and the dealer (no entries: no Buy tab) show who sells the player's gear, with "Guide me".
 -- 2026-10-21 (owner: too many detailed descriptions): short hints; the vendor bar names the vendor, where to find them
 -- is behind its "i" (shop.vendor.otherClass).
+-- Review 2026-11-11: on touch the "drop here to sell" strip shows only while a backpack item is picked (the shop and
+-- the backpack swap places there); otherwise the Buy list and the buy bar take its room (Logic/GearLayout.npcShop).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Device = require(script.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
@@ -60,7 +64,7 @@ local SELL_RETRY = 0.3 -- S134f: pause before a rate-limited single sale is retr
 -- FIX 2026-10-14: the Buy grid's cell and icon, and the buy bar under it.
 local CELL = 68
 local ICON = 60
-local BUY_BAR = 64
+local BUY_BAR = GearLayout.NPC_SHOP.buyBar
 local RED_HEX = "#" .. Theme.Paper.Danger:ToHex()
 
 -- Highest rarity the "sell all" buttons may include (S30: the `quickSell` rarities, Common and Unique).
@@ -702,14 +706,24 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		ItemTooltip.setMerchantOpen(false)
 	end)
 
+	-- Review 2026-11-11: the drop strip on Buy and Buy back; on touch only while a backpack item is picked (a tap
+	-- in the backpack, then "◂ Sklep" and a tap on the strip sells it), so a phone's Buy list keeps its rows.
+	local dropShown = scope:Computed(function(use): boolean
+		if use(tab) == "sell" then
+			return false
+		end
+		if not use(Device.Touch) or use(DragDrop.Dragging) ~= nil then
+			return true
+		end
+		local picked = use(DragDrop.Selected)
+		return picked ~= nil and string.sub(picked, 1, 4) == "inv:"
+	end)
 	local dropZone = scope:New("TextLabel")({
 		Name = "SellDrop",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.fromScale(0, 1),
-		Size = UDim2.new(1, 0, 0, 44),
-		Visible = scope:Computed(function(use): boolean
-			return use(tab) ~= "sell"
-		end),
+		Size = UDim2.new(1, 0, 0, GearLayout.NPC_SHOP.drop),
+		Visible = dropShown,
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			return if use(DragDrop.Dragging) ~= nil then Theme.Paper.Rule else Theme.Paper.Surface
 		end),
@@ -967,15 +981,11 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 
 	local listFrame = scope:New("ScrollingFrame")({
 		Name = "List",
-		Position = UDim2.fromOffset(0, 50),
+		Position = UDim2.fromOffset(0, GearLayout.NPC_SHOP.tabs),
+		-- the tab row and the bars shown under the list (GearLayout.npcShop)
 		Size = scope:Computed(function(use): UDim2
-			local current = use(tab)
-			return UDim2.new(
-				1,
-				0,
-				1,
-				if current == "sell" then -110 elseif current == "buy" then -(100 + BUY_BAR + 6) else -100
-			)
+			local cut = GearLayout.npcShop(use(tab), use(dropShown))
+			return UDim2.new(1, 0, 1, -cut)
 		end),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -1026,7 +1036,10 @@ local function ShopWindow(scope: Scope, props: Props): Fusion.Child
 		scope:New("Frame")({
 			Name = "BuyBar",
 			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.new(0, 0, 1, -50),
+			Position = scope:Computed(function(use): UDim2
+				local _, lift = GearLayout.npcShop(use(tab), use(dropShown))
+				return UDim2.new(0, 0, 1, -lift)
+			end),
 			Size = UDim2.new(1, 0, 0, BUY_BAR),
 			BackgroundColor3 = Theme.Paper.Raised,
 			BackgroundTransparency = 0.4,

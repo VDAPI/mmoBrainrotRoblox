@@ -9,7 +9,8 @@
 -- their main buttons in Components/Window's Footer, so their views are measured in the body above it
 -- (WindowFrame.body) and their buttons in the footer row; GearLayout's sizes are the window frame's and Theme's.
 -- Review 2026-11-11: the wardrobe keeps its saved looks with "Załóż" / "Zapisz obecny" on every phone (the preview
--- gives up height, the hint goes behind an (i)) and 2 rows of its list under the balance row.
+-- gives up height, the hint goes behind an (i)) and 2 rows of its list under the balance row; the NPC shop's Buy list
+-- takes the drop strip's room on touch while no backpack item is picked.
 
 local fs = require("@lune/fs")
 
@@ -48,6 +49,7 @@ local WINDOWS: { [string]: Size } = {
 	backpacks = { w = 640, h = 640 },
 	trade = { w = 640, h = 520 },
 	wardrobe = { w = 980, h = 640 },
+	shop = { w = 720, h = 640 },
 }
 
 -- Each case: the window's content area as the view gets it (`tabs`: under the window's own tab strip).
@@ -967,6 +969,53 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 		-- the window reads it, and the hint's text is behind the (i) when its line has no room
 		local source = fs.readFile("src/client/UI/Screens/Wardrobe.luau")
 		for _, needle in { "GearLayout.wardrobe(", 'Name = "HintInfo"', "use(hinted)", "l.listTopPlain" } do
+			T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+		end
+	end)
+
+	T.it("the NPC shop: no bar covers the list, and a phone's Buy list takes the drop strip's room", function()
+		local S = GearLayout.NPC_SHOP
+		-- with a mouse the strip always shows on Buy and Buy back: the numbers the window had
+		T.expect({ GearLayout.npcShop("buy", true) }).toEqual({ 100 + S.buyBar + 6, 50 })
+		T.expect({ GearLayout.npcShop("buyback", true) }).toEqual({ 100, 50 })
+		T.expect({ GearLayout.npcShop("sell", true) }).toEqual({ 110, 0 })
+		T.expect({ GearLayout.npcShop("sell", false) }).toEqual({ 110, 0 })
+		for _, case in cases("shop") do
+			for _, tab in { "buy", "sell", "buyback" } do
+				for _, drop in { true, false } do
+					local cut, lift = GearLayout.npcShop(tab, drop)
+					local w, h = case.area.w, case.area.h
+					local rects: { [string]: Rect } = {
+						tabs = { left = 0, top = 0, right = w, bottom = S.tabs },
+						list = { left = 0, top = S.tabs, right = w, bottom = h - cut + S.tabs },
+					}
+					if tab == "buy" then
+						rects.buyBar = { left = 0, top = h - lift - S.buyBar, right = w, bottom = h - lift }
+					elseif tab == "sell" then
+						rects.sellBar = { left = 0, top = h - S.sellBar + 8, right = w, bottom = h }
+					end
+					if drop and tab ~= "sell" then
+						rects.drop = { left = 0, top = h - S.drop, right = w, bottom = h }
+					end
+					check({ name = `{case.name} {tab} drop {drop}`, area = case.area, touch = case.touch }, rects)
+				end
+			end
+			-- on touch with nothing picked (the strip hidden) the Buy list shows a class vendor's header line (30 + 6),
+			-- a group's header (24 + 4) over a row of 68-px icons, and the next group's header (6 + 28)
+			if case.touch then
+				local cut = GearLayout.npcShop("buy", false)
+				T.expect({ case.name, case.area.h - cut >= 36 + 28 + 68 + 6 + 28 }).toEqual({ case.name, true })
+			end
+		end
+		local source = fs.readFile("src/client/UI/Screens/ShopWindow.luau")
+		for _, needle in
+			{
+				"GearLayout.npcShop(use(tab), use(dropShown))",
+				'string.sub(picked, 1, 4) == "inv:"',
+				"Visible = dropShown,",
+				"if not use(Device.Touch) or use(DragDrop.Dragging) ~= nil then",
+			}
+		do
 			T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
 		end
 	end)
