@@ -1843,10 +1843,12 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   pełny widok; 2026-10-31), cena tylko w sklepie / u kupca, na końcu
   „Alt: szczegóły” (PC) albo „Więcej ▸” (dotyk). Przytrzymany klawisz szczegółów (`item_details`, domyślnie Alt; Shift
   ma kamera) pokazuje pełny tooltip jak wyżej i przypina go (wskazanie linii otwiera jej panel), na dotyku „Więcej ▸” /
-  „Mniej ▾” przełącza, nowy przedmiot zaczyna skrócony. Tooltip umiejętności na pasku: nazwa i ranga, jedno zdanie,
-  koszt · odnowienie · zasięg, wymagany żywioł; obszar, celowanie, rodzaj ciosu, mnożnik szybkości broni, leczenie na
-  tobie, osiągnięte przełomy i pełny opis to jego szczegóły (klawisz szczegółów, na dotyku dłuższe przytrzymanie). Okna
-  pokazują krótką linię, a długi tekst chowają za okrągłym „i” (`InfoTip`) albo pod „Więcej ▸” (`Details`).
+  „Mniej ▾” przełącza, nowy przedmiot zaczyna skrócony; pełny widok nigdy nie jest wyższy niż miejsce na ekranie
+  (`Popover.awayRoom`), jego linie się przewijają, a „Mniej ▾” stoi przypięte pod nimi (przegląd całego UI 2026-11-10).
+  Tooltip umiejętności na pasku: nazwa i ranga, jedno zdanie, koszt · odnowienie · zasięg, wymagany żywioł; obszar,
+  celowanie, rodzaj ciosu, mnożnik szybkości broni, leczenie na tobie, osiągnięte przełomy i pełny opis to jego
+  szczegóły (klawisz szczegółów, na dotyku dłuższe przytrzymanie). Okna pokazują krótką linię, a długi tekst chowają za
+  okrągłym „i” (`InfoTip`) albo pod „Więcej ▸” (`Details`).
 - Liczby obrażeń nad celami (S29): każde rozstrzygnięte trafienie ma liczbę. Moje duże białe, krytyk „KRYT! 1 234” pomarańczowo-złoty z wyskokiem, cudze mniejsze i przygaszone, otrzymane czerwone, „Pochłonięto” (tarcza), „Odporny”, „Unik”, leczenie i HoT zielone, ticki DoT małe w kolorze żywiołu. Liczby układają się w stos nad celem (maks. 6, powyżej 8/s łączą się w sumę), żyją ok. 1,2 s. Opcja: wszystkie / moje i otrzymane / wyłączone.
 - **Jedno główne okno naraz**: otwarcie okna zamyka poprzednie. Wyjątek: okna usług (sklep, kowal, alchemik, handel, aukcja, poczta, plecakarz) otwierają się razem z plecakiem-towarzyszem, który znika razem z ostatnią usługą (✕, Esc, odejście od NPC, koniec handlu, śmierć, zmiana mapy), chyba że gracz otworzył go sam wcześniej (S29). Depozyt ma własną siatkę plecaka.
 - **Mapa świata** (przebudowa po testach S17): duże okno (do 85% ekranu) ze **szczegółowym rysunkiem mapy** wygenerowanym z danych layoutu (teren i biomy kolorami, drogi, woda, lasy jako skupiska drzew, budynki, mosty, wzgórza), **obszary potworów** z nazwą i poziomami (§3.6, lista potworów po najechaniu), portale podpisane nazwą celu i poziomami, wejścia do jaskiń i lochów osobnymi ikonami, NPC w mieście z podpisami, węzły zbierackie, łowiska, członkowie grupy, cel questa; legenda z przełącznikami warstw, przybliżanie kółkiem/szczypaniem, przesuwanie, „wyśrodkuj na mnie”. Znacznik gracza porusza się na żywo i obraca w kierunku, w którym idzie postać.
@@ -1856,9 +1858,9 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - Mobile: joystick Roblox, przycisk ataku duży w prawym dolnym, skille wokół, mikstury nad nimi, menu jako ikony na górze.
 - **Nagroda za logowanie (S100)**: przycisk ✧ (44 × 44) w rzędzie „coś czeka” pod minimapą (faza 2; telefon: w
   szufladzie ☰), widoczny tylko wtedy, gdy nagroda czeka (plan UI, faza 1; zawsze jest kafelek w menu gry); „!” i
-  pulsująca złota ramka, podpowiedź z dniem serii. Okno (860 × 520; na telefonie pełny ekran, karty w dwóch rzędach po
-  4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza w mosiężnej ramce, odebrane z ✓, stopka „Odbierz” albo
-  „Odebrano dziś” z odliczaniem do następnej nagrody (§20a).
+  pulsująca złota ramka, podpowiedź z dniem serii. Okno „Nagroda dnia” (tak jak kafelek, przycisk i list z nagrodą; 860
+  × 520; na telefonie pełny ekran, karty w dwóch rzędach po 4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza
+  w mosiężnej ramce, odebrane z ✓, stopka „Odbierz” albo „Odebrano dziś” z odliczaniem do następnej nagrody (§20a).
 - **Kafelki menu gry** (plan UI, faza 1; właściciel 2026-10-31: „UI słabo przejrzyste, zbyt dużo informacji i możliwości
   na jednym ekranie”): wszystko, co zeszło z HUD, jest kafelkiem na górze menu gry (Esc / ☰), po 4 w rzędzie: Gildia,
   Grupa, Znajomi, Poczta, Arena, Rankingi, Krwawy Księżyc, Osiągnięcia, Wierzchowce (gdy dostępne), Garderoba, Emotki,
@@ -1876,9 +1878,10 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   kafelki menu działają od początku; postacie sprzed samouczka widzą wszystko.
 - **Menu gry (Opisy-3, 2026-10-21)**: ustawienia w sekcjach z nagłówkami (Dźwięk, Grafika i kamera, Walka,
   Interfejs), rzadziej zmieniane (Łup i handel, Społeczność, Skróty klawiszowe) zwinięte pod „nazwa ▸” (`Details`,
-  stan na sesję). Etykiety krótkie, dłuższe wyjaśnienia za „i” obok przełącznika. Okna postaci, umiejętności, dziennika
-  i tablicy zleceń pokazują krótką linię (`stat.<id>.short`, `class.<id>.short`, `*.short`), pełny opis za „i” albo
-  pod „Więcej ▸”.
+  stan na sesję). Etykiety krótkie, dłuższe wyjaśnienia za „i” obok przełącznika; przycisk z kilkoma wartościami ma
+  szerokość najdłuższej z nich po polsku i angielsku (co najmniej 150 px), więc wybrana wartość nie jest ucięta. Okna
+  postaci, umiejętności, dziennika i tablicy zleceń pokazują krótką linię (`stat.<id>.short`, `class.<id>.short`,
+  `*.short`), pełny opis za „i” albo pod „Więcej ▸”.
 - **Okna świata i społeczności (plan UI 2026-11-10, pakiet E)**: układ liczy `Logic/WorldLayout` z treści okna
   (`WindowFrame.content`): na telefonie lista pokazuje co najmniej 2–3 wiersze, na PC 5, nic nie dostaje ujemnej
   wysokości. Rankingi: okno 900×720, podium jako sekcja (na telefonie zwinięta), filtr klas osobnym paskiem, a na
@@ -1889,22 +1892,28 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   blok łowów jako sekcja (na telefonie zwinięta, wtedy nagłówek mówi „Gotowe: n · Do przyjęcia: n”), zasady za (i).
   Rozmowa z questem: strona do 140 znaków, dalej „Dalej ▸”, 3 linie nad jednym rzędem wyboru nagrody; rozmowa z NPC:
   powitanie do 60 znaków z (i), linia (także linia questu u tego NPC) do 140 znaków, reszta za (i), linia nie wchodzi na
-  wybory. Cele, teksty i strony questów nie uczą sterowania: bez nazw klawiszy i słów „kliknij”, „dwuklik” (sterowanie
-  uczy kafelek samouczka). Przepustka: zwarty nagłówek na telefonie z końcem sezonu („koniec za 5 d 3 h”, w dniach
-  odbioru „odbiór do …”). Arena: przyciski „Do kolejki 1 na 1” i „Do kolejki 3 na 3”. Grupa: bonus jedną linią z (i);
-  znajomi jednym rzędem z przyciskami po prawej. Wybór postaci: „Usuń” i „Graj” w jednym rzędzie stopki przypiętej do
-  dołu karty, na telefonie mniejszy nagłówek i herb. Okna dialogowe (loch, Krwawy Księżyc, nagroda dnia, Co nowego,
-  „Dokąd?”, rozmowa z questem, nowy list, zakładanie gildii) mają akcję w przypiętej stopce okna, a treść przewija się
-  nad nią; Krwawy Księżyc bez akcji ma w stopce miejsce gracza. Pod paskiem tytułu okno nie powtarza tytułu: nagroda
-  dnia zaczyna od „Dzień 3 z 7”, Krwawy Księżyc od stanu i krótkiego opisu z (i). „Dokąd?”: 560×720, na telefonie zwarte
-  wiersze, ostrzeżenia portalu jedną linią, pod nimi 2 regiony na telefonie i 5 na PC. Wiersze list mają 48, z drugą
-  linią 64 (osiągnięcia na telefonie jedną linią, bestiariusz jedną linią na każdym urządzeniu, znajomi 56); małe
-  przyciski mają na dotyku 44 px wysokości, na PC 40. Dziennik: 680 szerokości, sześć zakładek całych w 1280×720. Koło
-  emotek i panel łowienia układają się w warstwie okien (bezpieczny obszar urządzenia). Koło emotek: promień z wysokości
-  ekranu poniżej paska Robloxa, koło szersze niż wysokie. Łowienie: panel nie wchodzi pod pasek Robloxa; na telefonie
-  stoi między kolumnami HUD, z podpowiedzią dotyku, „Anuluj” w czasie czekania. Portal do czerwonej strefy przy za
-  niskim poziomie: oba zagrożenia jedną linią, pełne zdanie o PvP pod „Więcej ▸”. Pole tekstowe w tych oknach ma
-  podpowiedź do 20 znaków; dozwolone znaki i powód odmowy mówi linia błędu pod polem albo komunikat.
+  wybory; questy NPC mają etykietę kategorii jak w oknie questów („GŁÓWNE”, „ŁOWIECKIE”), a przycisk kupca mówi
+  „Sklep” jak tytuł okna, które otwiera („Handel” to wymiana między graczami). Odebrane zlecenie na tablicy ma przycisk
+  „✓ Odebrano”. Cele, teksty i strony questów nie uczą sterowania: bez nazw klawiszy i słów „kliknij”, „dwuklik”
+  (sterowanie uczy kafelek samouczka). Przepustka: zwarty nagłówek na telefonie z końcem sezonu („koniec za 5 d 3 h”, w
+  dniach odbioru „odbiór do …”). Arena: przyciski „Do kolejki 1 na 1” i „Do kolejki 3 na 3”. Grupa: bonus jedną linią z
+  (i); znajomi jednym rzędem z przyciskami po prawej. Wybór postaci: „Usuń” i „Graj” w jednym rzędzie stopki przypiętej
+  do dołu karty, na telefonie mniejszy nagłówek i herb; w kreatorze przewijają się tylko klasy i wygląd, a pole imienia
+  z „Wróć” i „Utwórz” stoi w przypiętej stopce, nad nim nazwa pola i jego stan (przegląd całego UI 2026-11-10). Wolna
+  karta mówi „Wolne miejsce”, a kreator „Nowa postać · miejsce N”. Okna dialogowe (loch, Krwawy Księżyc, nagroda dnia,
+  Co nowego, „Dokąd?”, rozmowa z questem, nowy list, zakładanie gildii) mają akcję w przypiętej stopce okna, a treść
+  przewija się nad nią; Krwawy Księżyc bez akcji ma w stopce miejsce gracza. Pod paskiem tytułu okno nie powtarza
+  tytułu: nagroda dnia zaczyna od „Dzień 3 z 7”, Krwawy Księżyc od stanu i krótkiego opisu z (i). „Dokąd?”: 560×720, na
+  telefonie zwarte wiersze, ostrzeżenia portalu jedną linią, pod nimi 2 regiony na telefonie i 5 na PC. Wiersze list
+  mają 48, z drugą linią 64 (osiągnięcia na telefonie jedną linią, bestiariusz jedną linią na każdym urządzeniu, znajomi
+  56); małe przyciski mają na dotyku 44 px wysokości, na PC 40. Dziennik: 680 szerokości, sześć zakładek całych w
+  1280×720. Koło emotek i panel łowienia układają się w warstwie okien (bezpieczny obszar urządzenia). Koło emotek:
+  promień z wysokości ekranu poniżej paska Robloxa, koło szersze niż wysokie. Łowienie: panel nie wchodzi pod pasek
+  Robloxa; na telefonie stoi między kolumnami HUD tego urządzenia (`PhoneHud.places`), z podpowiedzią dotyku, „Anuluj” w
+  czasie czekania. Przerywnik na dotyku: linia tekstem Small 17, oba pasy co najmniej 70 px (`WorldLayout.CUTSCENE`),
+  więc dwie linie mieszczą się w dolnym pasie. Portal do czerwonej strefy przy za niskim poziomie: oba zagrożenia jedną
+  linią, pełne zdanie o PvP pod „Więcej ▸”. Pole tekstowe w tych oknach ma podpowiedź do 20 znaków; dozwolone znaki i
+  powód odmowy mówi linia błędu pod polem albo komunikat.
 - **Zwijanie w oknach świata (plan UI 2026-11-10, pakiet E)**: sekcje zapisane na koncie (`Data/Folds/World`, `Menu`; w
   ustawieniach, gildii i Krwawym Księżycu zamiast `Details` ze stanem na sesję z Opisy-3). Zwinięte: historia i
   ukończone wątki w dzienniku, sklep NPC na karcie mapy, kronika, sztandar, uprawnienia rang i „Jak zdobywać EXP gildii”
@@ -1920,22 +1929,30 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   plecak ma 500 px także na telefonie. Szczegóły umiejętności: ranga i krótki opis, „Koszt i odnowienie” zwinięte do
   linii kosztu i odnowienia (tabela rang pod spodem; pasywka: „Wartości rangi”), „Przełomy” zwinięte do linii
   działających wersji („Ranga 5: A · Ranga 10: B”) albo „Przełom do wyboru”, karta przełomu w jednym wierszu z
-  „Wybierz”, zasada zmian raz, „Zmiany z kierunków” zwinięte do linii „Działa: N z M” (przegląd 2026-11-11), pełny
-  opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
-  nagłówek kierunków „Punkty kierunków: N” (liczba nigdy ucięta), „Prowadzi: …” albo „Prowadzi: brak” (zasada za
-  (i)), zwieńczenie dopiero, gdy jest, i pod przełącznikiem kierunków (przegląd 2026-11-11: w nagłówku PC ucinało
-  nazwy i liczbę punktów); opis węzła dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym
-  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź +N”), szczegóły co najmniej 260 px
-  także pod pełnym paskiem Robloxa, przełom wybierany na karcie; na dotyku plecak ma sloty 56 px (także obok usługi),
-  a sortowanie, akcje plecaka, przyciski statystyk i Zwój Ochrony 44 px. Usługi (kowal, aukcja, alchemik, wygląd,
-  plecakarz) i handel: główne przyciski stoją w przypiętej stopce okna (u kowala i na aukcji rząd wybranej zakładki),
-  szary przycisk ma obok siebie powód, a czynny swoją cenę (kowal: Przemiana, Efekt, Wygląd; okno wyglądu: powód pod
-  ceną), na dotyku ostrzeżenie handlu stoi w stopce przy jego przyciskach, długa treść przewija się w swoim miejscu nad
-  nią, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą (lista przedmiotów kowala zostaje kolumną z lewej,
-  obie strony handlu przewijają się, niska lista wytwarzania ma wiersze 58 px, żeby widać było dwie receptury); kolejka
-  alchemika to wiersze listy 64 px z paskiem postępu i nazwą tekstem Small 17 (300 px tam, gdzie receptury mieszczą się
-  obok: PC i telefon 932 px); plecak obok usługi zostaje przy własnym pasku akcji, a tooltip przedmiotu na dotyku go
-  omija; lista tytułów ma wiersze z drugą linią.
+  „Wybierz”, zasada zmian raz, „Zmiany z kierunków” zwinięte do linii „Działa: N z M” (przegląd całego UI 2026-11-10),
+  pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów; nagłówek kierunków „Punkty kierunków:
+  N” (liczba nigdy ucięta), „Prowadzi: …” albo „Prowadzi: brak” (zasada za (i)), zwieńczenie dopiero, gdy jest, i pod
+  przełącznikiem kierunków (przegląd całego UI 2026-11-10: w nagłówku PC ucinało nazwy i liczbę punktów); opis węzła
+  dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym paskiem na dole (Wróć,
+  akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź +N”), szczegóły co najmniej 260 px także pod pełnym paskiem
+  Robloxa, przełom wybierany na karcie; na dotyku plecak ma sloty 56 px (także obok usługi), a sortowanie, akcje
+  plecaka, przyciski statystyk i Zwój Ochrony 44 px. Usługi (kowal, aukcja, alchemik, wygląd, plecakarz) i handel:
+  główne przyciski stoją w przypiętej stopce okna (u kowala i na aukcji rząd wybranej zakładki), szary przycisk ma obok
+  siebie powód, a czynny swoją cenę (kowal: Przemiana, Efekt, Wygląd; okno wyglądu: powód pod ceną), na dotyku
+  ostrzeżenie handlu stoi w stopce przy jego przyciskach, długa treść przewija się w swoim miejscu nad nią, telefon
+  jedną kolumną tylko tam, gdzie dwie się nie mieszczą (lista przedmiotów kowala zostaje kolumną z lewej, obie strony
+  handlu przewijają się, niska lista wytwarzania ma wiersze 58 px, żeby widać było dwie receptury); kolejka alchemika to
+  wiersze listy 64 px z paskiem postępu i nazwą tekstem Small 17 (300 px tam, gdzie receptury mieszczą się obok: PC i
+  telefon 932 px; eliksiry odporności krótko, „Eliksir na ogień”, pełna nazwa w dymku ikony); plecak obok usługi zostaje
+  przy własnym pasku akcji, a tooltip przedmiotu na dotyku go omija; lista tytułów ma wiersze z drugą linią. Garderoba
+  układa się z treści okna (`GearLayout.wardrobe`): na niskim ekranie podgląd oddaje wysokość, podpowiedź idzie za (i)
+  przy zapisanych wyglądach, a na telefonie filtr klas stoi w rzędzie salda, więc zapisane wyglądy z „Załóż” i „Zapisz”
+  oraz dwa wiersze listy zostają na ekranie. Sklep NPC na dotyku pokazuje pas „upuść, aby sprzedać” tylko z wybranym
+  przedmiotem plecaka, a bez niego lista i pasek zakupu biorą jego miejsce (`GearLayout.npcShop`). Ułamki mają znak
+  języka (`format.decimal`, „5,3%” po polsku): statystyki postaci z podglądem i rozbiciem, podgląd ulepszenia u kowala,
+  K/D w profilu, pasek rzucania bossa. Pancerz ma jedną nazwę, „Pancerz”, w oknie postaci, umiejętnościach i opisach
+  (role i obrona potworów w bestiariuszu zostają „Obrona”), a zakładka „Kierunki” liczy „N pkt do wydania” jak zakładki
+  pul.
   Teksty tych okien (część tekstowa pakietu D) mieszczą się w limitach `docs/UI-ZASADY.md` §2: krótki opis
   umiejętności i krótka linia węzła najwyżej 60 znaków, przełom najwyżej 48 i zawsze z liczbami („Rozprysk: 13%
   obrażeń do 4 st. od celu”), linia okna 60, przycisk 18, zakładka 12 (całe terminy słownika mogą być dłuższe:

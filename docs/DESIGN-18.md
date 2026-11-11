@@ -434,8 +434,8 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
    miejscach), pasywki, reszta po `unlock`. Gracz zachowuje to, czego używał.
 2. `barPool = SkillPools.activePool(character)`, `hotbar` = dawny pasek przefiltrowany do puli i obcięty do 8,
    uzupełniony `startBar`; `bars[pool]` innych pul = `startBar`.
-3. `respecFree = true`, `poolsVersion = <wersja klasy>`, `reworkNotice = true` (klient pokazuje nowe okno „Rozwój
-   umiejętności się zmienił” z kluczy `rework2.*`).
+3. `respecFree = true`, `poolsVersion = <wersja klasy>`, `reworkNotice = true` (klient pokazuje nowe okno „Zmiana
+   rozwoju umiejętności” z kluczy `rework2.*`).
 4. `path.nodes` i `path.bp` zostają (S138 nie zmienia węzłów, tylko zasady).
 - **Zmiana pul klasy w późniejszej sesji** (S140–S145) nie potrzebuje migracji: podbija `version` w
   `Data/SkillPools/<Klasa>`; przy wczytaniu `SkillPoints.needsRespec` → `SkillPoints.clean` (rangi umiejętności, których

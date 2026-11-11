@@ -14949,6 +14949,10 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `UI/Theme`, `Controllers/WindowManager|ItemController|ReworkController`, `Logic/WindowFrame|Popover|WindowRules`,
   lokalizacja (pl, en), `tests/uiframe.spec.luau`, `tests/windowrules.spec.luau`, `tests/uifit.spec.luau`,
   `tests/fixtures/textcaps/C.luau`.
+- Ostatni przegląd całego UI (2026-11-10): pełny widok tooltipu przedmiotu na dotyku („Więcej ▸”) mieści się na
+  ekranie telefonu. Przy przedmiocie heroicznym, legendarnym i mitycznym linie przewijają się pod paskiem tytułu okna, a
+  „Mniej ▾” zawsze widać pod nimi; wcześniej widok wchodził na pasek tytułu i kończył się pod dolną krawędzią ekranu.
+  Pasek rzucania bossa pisze sekundy po polsku z przecinkiem („1,5 s”).
 
 ### Plan UI 2026-11-10, pakiet E: okna świata i społeczności, rozmowy, ustawienia (2026-11-10)
 - Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
@@ -15098,6 +15102,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   UI-ZASADY §4 (zwinięte „Jak zdobywać EXP gildii” oraz zasady i nagrody Krwawego Księżyca, obie bez linii
   podsumowania), zasada toastu w DECYZJE, JAK-DODAC i komentarzu `dialogue.spec` zgodna z §3. `worldlayout.spec` ma 20
   testów. Bramka zielona: 10272 testy, `wikidump --check` aktualny.
+- Ostatni przegląd całego UI (2026-11-10): w kreatorze postaci przewijają się tylko klasy i wygląd, a pole imienia z
+  „Wróć” i „Utwórz” stoi zawsze na dole ekranu, na PC i na telefonie, ze stanem imienia nad polem; wolna karta mówi
+  „Wolne miejsce”. Na telefonie linia przerywnika mieści się w dolnym pasie, a panel łowienia bierze miejsca HUD tego
+  telefonu (jest szerszy i nie kończy się nad paskiem gestów, którego urządzenie tam nie ma). W ustawieniach wybrana
+  wartość nie jest ucięta („Moje i otrzymane”, szepty „Wszyscy” / „Znajomi i gildia”). U NPC questy mają etykietę
+  kategorii jak w oknie questów („GŁÓWNE”), a kupiec przycisk „Sklep”, jak tytuł okna. Okno nagrody i list z nią
+  nazywają się „Nagroda dnia”, jak kafelek. Odebrane zlecenie ma przycisk „✓ Odebrano”, dziennik mówi „Dostępny od
+  poziomu 12.”, a nagrody tablicy, areny, turnieju, rankingów, poczty, gildii i osiągnięć to „Smocza Waluta” albo
+  „◆ 25”. K/D w profilu ma przecinek („1,50”).
 
 ### Plan UI 2026-11-10, pakiet D: plecak, umiejętności, usługi, sklepy i tooltip przedmiotu (2026-11-10)
 - Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
@@ -15247,6 +15260,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Screens/BlacksmithWindow/Reroll`, `Screens/PremiumShop/Currency`, `tests/fixtures/textcaps/D.luau`,
   `wiki/src/data/*.json`, `docs/PRZEDMIOTY.md`, `docs/DESIGN.md` §23, `docs/DECYZJE.md`, `docs/PROGRESS.md`,
   `docs/JAK-DODAC.md`.
+- Ostatni przegląd całego UI (2026-11-10): na telefonie garderoba zostawia na ekranie zapisane wyglądy z „Załóż” i
+  „Zapisz” oraz dwa wiersze listy (filtr klas stoi w rzędzie salda, podpowiedź za (i)), a sklep NPC pokazuje w zakładce
+  kupna kilka rzędów towarów, bo pas „upuść, aby sprzedać” pojawia się dopiero z wybranym przedmiotem plecaka. Na PC
+  nagłówek kierunków umiejętności pokazuje całą liczbę punktów i nie ucina nazw, a zwieńczenie stoi pod przełącznikiem
+  kierunków; zakładka „Kierunki” mówi „3 pkt do wydania” jak zakładki pul. W szczegółach umiejętności „Zmiany z
+  kierunków” są zwinięte do „Działa: 1 z 3”. Statystyki postaci i podgląd ulepszenia u kowala mają przecinek („5,3%”),
+  pancerz nazywa się wszędzie „Pancerz”, a w kolejce alchemika na telefonie eliksiry odporności różnią się nazwą
+  („Eliksir na ogień”). Przedmioty questowe, garderoba i wierzchowce mówią „quest”, a podpowiedź kowala wskazuje
+  Smoczy Sklep.
 
 ### Plan UI 2026-11-10, pakiet B: komunikaty w jednej kolejce (2026-11-10)
 - Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się

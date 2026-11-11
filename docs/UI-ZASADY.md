@@ -5,11 +5,6 @@
 > właściciela (`docs/DECYZJE.md`, `docs/DESIGN.md` §23) mają pierwszeństwo. Zmiana zasady to najpierw zmiana w kodzie,
 > który jej pilnuje (`Logic/TextCaps`, `Logic/HudZones`, `Logic/WindowFrame`, `Logic/Popover`, `Data/Folds`), potem
 > tutaj. Pilnują ich specy Lune (§9).
-> Części planu jeszcze nie ma w kodzie; dochodzą z pakietami A–E: `Logic/TutorialTile`, `Screens/Hud/PanelHeader`
-> i `Screens/Hud/StackChip` (A, HUD), `UI/Notify`, `Logic/NoticeQueue` i `Components/Prompt` (B, komunikaty),
-> `Logic/GearLayout` (D) i `Logic/WorldLayout` (E), wszystkie już z właścicielem w `TextScan.OWNERS`, do tego specy
-> `noticequeue`, `gearlayout` i `worldlayout` oraz sekcje okien (lista w §4). Do tego czasu nowy kod trzyma się
-> reszty zasad.
 
 ## 1. Zasada główna
 
@@ -72,11 +67,13 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
 - Bez opisu sterowania poza samouczkiem i listą klawiszy („kliknij”, „najedź”, „przeciągnij”, „prawy klik”).
 - W toastach bez klawiszy i nazw okien („(K)”, „w oknie Umiejętności”).
 - Długą nazwę własną piszemy raz, potem symbol (◆ zamiast „Smoczej Waluty”).
-- Liczby piszemy cyframi, jednostki skrótem (s, min, m, %).
+- Liczby piszemy cyframi, jednostki skrótem (s, min, m, %). Ułamek ma znak języka z `format.decimal` („1,5 s” po
+  polsku, „1.5 s” po angielsku).
 - „Lv N” na plakietkach i ramkach (decyzja 2026-10-21), „poziom N” w zdaniach.
 - Jedno słowo na jedną rzecz: Plecak, Umiejętności, Mapa, Questy (przycisk, okno, grupa tropiciela), Cele (nagłówek
-  tropiciela), Zlecenia, Sklep (Smoczy Sklep), Menu ☰, Ustawienia. Nazewnictwo questów czeka na potwierdzenie
-  właściciela. Nowe słowo wchodzi tylko przez dopisanie go tutaj.
+  tropiciela), Zlecenia, Sklep (kupiec NPC; Handel to wymiana między graczami), Smoczy Sklep, Smocza Waluta (◆ przy
+  liczbach), Pancerz (statystyka; Zbroja to część ekwipunku), miejsce na postać, Menu ☰, Ustawienia. Nazewnictwo
+  questów czeka na potwierdzenie właściciela. Nowe słowo wchodzi tylko przez dopisanie go tutaj.
 - pl i en zmieniamy razem, z tymi samymi placeholderami.
 
 ## 4. Zwijanie
@@ -108,13 +105,13 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
     sekcjach: Ofensywa otwarta; Defensywa, Zasoby i Inne zwinięte.
   - Umiejętności: krótki opis otwarty; „Koszt i odnowienie”, „Przełomy” i „Zmiany z kierunków” (linia „Działa: 1 z 3”)
     zwinięte.
-  - Ustawienia: Dźwięk, Grafika, Walka i Interfejs otwarte; Łupy, Społeczność i Klawisze zwinięte; na dotyku bez
-    Klawiszy.
+  - Ustawienia: Dźwięk, Grafika i kamera, Walka i Interfejs otwarte; Łup i handel, Społeczność i Skróty klawiszowe
+    zwinięte; na dotyku bez Skrótów klawiszowych.
   - Dziennik: historia i ukończone wątki zwinięte.
   - Mapa: legenda zwinięta na telefonie, sklepy NPC zwinięte.
   - Gildia: dziennik, ustawienia i „Jak zdobywać EXP gildii” zwinięte.
   - Krwawy Księżyc: zasady i nagrody zwinięte.
-  - Tablica zadań: blok polowań zwinięty na telefonie; zwinięty ma w nagłówku „Gotowe: n · Do przyjęcia: n”.
+  - Tablica zleceń: blok polowań zwinięty na telefonie; zwinięty ma w nagłówku „Gotowe: n · Do przyjęcia: n”.
   - Rankingi: podium zwinięte na telefonie.
   - Bestiariusz: regiony zwinięte na telefonie.
   - Linię podsumowania zastępuje tytuł, który sam mówi, co czeka: „Ukończone (n)” w dzienniku, wybrany region w
@@ -179,8 +176,8 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
   co najmniej 44 i stoi w prawym rogu. Esc zamyka. Naraz otwarte jest jedno okno główne (`WindowRules`).
 - Na dotyku okno zaczyna się pod paskiem Robloxa (`Scale.TopBar`). Na PC przeciągnięte okno trzyma nagłówek co
   najmniej 8 pod paskiem i co najmniej 80 px na ekranie.
-- Usługa i plecak: na PC stoją obok siebie. Na telefonie usługa ma w nagłówku przycisk „Plecak”, a plecak przycisk
-  „◂ <usługa>”.
+- Usługa i plecak: na PC stoją obok siebie. Na dotyku (telefon i tablet) usługa ma w nagłówku przycisk „Plecak”, a
+  plecak przycisk „◂ <usługa>”.
 - Treść:
   - odstęp od brzegu 22 na PC, 14 na telefonie;
   - 8 między elementami, 14 między sekcjami;
@@ -215,7 +212,8 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
 - Size:
   - dotyk i przyciski: MinTouch 44, ButtonHeight 52 (ButtonHeightSmall 40 tylko na PC), IconButton 52,
     InputHeight 52;
-  - okna i listy: WindowHeader 52, WindowHeaderCompact 44, RowHeight 48, SlotSize 64, TabHeight 44, SectionHeader 32;
+  - okna i listy: WindowHeader 52, WindowHeaderCompact 44, RowHeight 48, RowHeightTall 64 (dwie linie), SlotSize 64,
+    TabHeight 44, SectionHeader 32;
   - HUD: PanelLine 32, HudLine 52;
   - szerokości: TooltipWidth 340, InfoTipWidth 320, ModalWidth 520.
 - Padding: Tiny 4, Small 8, Medium 14, Large 22, Huge 36. HUD: margines 22, odstęp 8, ikona 52 (`Logic/HudStack`).
