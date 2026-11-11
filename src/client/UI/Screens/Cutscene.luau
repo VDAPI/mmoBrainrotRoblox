@@ -4,6 +4,8 @@
 -- bottom bar (speaker in gold, narration in italics, up to 1100 px wide), "Skip" in the top bar and the "Next ▸" hint
 -- at the right edge of the bottom bar. A click or tap anywhere goes to the next line. The card mode (no shot
 -- possible) shows the same over a dimmed view. `Black` fades the whole screen for the cuts.
+-- Review 2026-11-11: on touch the line is Small 17 and the bars are at least two of its lines with their padding
+-- (Logic/WorldLayout.CUTSCENE; a phone's 9% bar was 39 px for two lines of Body 20).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +13,7 @@ local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -34,9 +37,18 @@ end
 
 local function Cutscene(scope: Scope, props: Props): Instance
 	local touch = Device.Touch
+	local C = WorldLayout.CUTSCENE
 	local bar = scope:Computed(function(use): number
-		return if use(touch) then 0.09 else 0.12
+		return if use(touch) then C.touch else C.pc
 	end)
+	-- the bars' floor on touch: two lines of the Small line with their padding
+	local function barFloor(): Instance
+		return scope:New("UISizeConstraint")({
+			MinSize = scope:Computed(function(use): Vector2
+				return Vector2.new(0, if use(touch) then C.minTouch else 0)
+			end),
+		})
+	end
 	local function sized(pc: number, phone: number): Fusion.Computed<number>
 		return scope:Computed(function(use): number
 			return if use(touch) then phone else pc
@@ -79,6 +91,7 @@ local function Cutscene(scope: Scope, props: Props): Instance
 				BorderSizePixel = 0,
 				ZIndex = 51,
 				[Children] = {
+					barFloor(),
 					scope:New("TextButton")({
 						Name = "Skip",
 						AnchorPoint = Vector2.new(1, 0.5),
@@ -116,24 +129,25 @@ local function Cutscene(scope: Scope, props: Props): Instance
 				BorderSizePixel = 0,
 				ZIndex = 51,
 				[Children] = {
+					barFloor(),
 					scope:New("TextLabel")({
 						Name = "Line",
 						AnchorPoint = Vector2.new(0.5, 0.5),
 						Position = UDim2.fromScale(0.5, 0.5),
 						Size = scope:Computed(function(use): UDim2
 							-- clear of the hint on the right (also on 800 x 400)
-							return UDim2.new(1, if use(touch) then -220 else -320, 1, -8)
+							return UDim2.new(1, -(if use(touch) then C.cutTouch else C.cut), 1, -C.inset)
 						end),
 						BackgroundTransparency = 1,
 						RichText = true,
 						TextWrapped = true,
 						Text = lineText,
 						FontFace = Theme.Fonts.Body,
-						TextSize = sized(Theme.TextSize.Large, Theme.TextSize.Body),
+						TextSize = sized(Theme.TextSize.Large, Theme.TextSize.Small),
 						TextColor3 = Theme.Iron.Text,
 						ZIndex = 52,
 						[Children] = {
-							scope:New("UISizeConstraint")({ MaxSize = Vector2.new(1100, math.huge) }),
+							scope:New("UISizeConstraint")({ MaxSize = Vector2.new(C.maxLine, math.huge) }),
 						},
 					}),
 					scope:New("TextLabel")({

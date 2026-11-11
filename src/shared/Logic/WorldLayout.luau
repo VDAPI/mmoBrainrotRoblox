@@ -702,15 +702,17 @@ WorldLayout.FISHING = table.freeze({ width = 680, height = 190, bottom = 230, co
 -- row), and the weapon pool's name shares the cast line (`castBar`, was `pool`).
 WorldLayout.FISHING_FREE = table.freeze({ target = true, targetActions = true, targetEffects = true, castBar = true })
 -- PhoneHud's places under the middle band: package A's guide bar stands in the M zone under the cast line (`navBar`,
--- it was in the right column) and may show while fishing, so the panel ends over it (166 of its 170 px; the touch
--- hint ends at 160) instead of covering the guide's top.
+-- it was in the right column) where the zone is tall enough (PhoneHud.guideInM) and may show while fishing, so there
+-- the panel ends over it (166 of its 170 px; the touch hint ends at 160) instead of covering the guide's top.
 WorldLayout.FISHING_UNDER = table.freeze({ navBar = true })
 
 -- PhoneHud's places as rectangles in a layer `layer` whose HUD starts `topBar` down (the stack to the bottom gap).
+-- Review 2026-11-11: the device's own places (PhoneHud.places of its HUD), not the reference phone's: the minimap,
+-- the M zone and whether the guide bar stands in it follow the real size.
 function WorldLayout.phonePlaces(layer: Size, topBar: number): { [string]: Rect }
 	local out: { [string]: Rect } = {}
 	local hudH = layer.h - topBar
-	for name, place in PhoneHud.PLACES do
+	for name, place in PhoneHud.places(layer.w, hudH) do
 		local r = PhoneHud.rect(place, layer.w, hudH)
 		out[name] = { left = r.left, top = r.top + topBar, right = r.right, bottom = r.bottom + topBar }
 	end
@@ -758,6 +760,32 @@ function WorldLayout.fishing(layer: Size, topBar: number, compact: boolean): Fis
 		bar = width - 24,
 		compact = true,
 	}
+end
+
+-- Story cutscene -------------------------------------------------------------------------------------------------------
+-- The cinema bars of UI/Screens/Cutscene (on the Modals layer): 12% of the layer's height on PC with the line at
+-- Large 24; on touch 9%, but at least two lines of the line's Small 17 with Padding.Medium over and under them and the
+-- label's inset (review 2026-11-11: a phone's 39-px bar held two lines of Body 20 in a 31-px label, edge to edge).
+-- The line's label is the bar less `inset` high and the layer less `cut` wide (clear of "Dalej ▸"), at most 1100.
+export type Cutscene = { bar: number, line: Size, text: number }
+
+WorldLayout.CUTSCENE = table.freeze({
+	pc = 0.12,
+	touch = 0.09,
+	minTouch = 2 * 17 + 2 * 14 + 8,
+	inset = 8,
+	cut = 320,
+	cutTouch = 220,
+	maxLine = 1100,
+	text = 24,
+	textTouch = 17,
+})
+
+function WorldLayout.cutscene(layer: Size, touch: boolean): Cutscene
+	local C = WorldLayout.CUTSCENE
+	local bar = if touch then math.max(layer.h * C.touch, C.minTouch) else layer.h * C.pc
+	local width = math.min(C.maxLine, layer.w - (if touch then C.cutTouch else C.cut))
+	return { bar = bar, line = { w = width, h = bar - C.inset }, text = if touch then C.textTouch else C.text }
 end
 
 return WorldLayout

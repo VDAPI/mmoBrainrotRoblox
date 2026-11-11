@@ -18,6 +18,8 @@ local fs = require("@lune/fs")
 
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
+local CutsceneData = require("../src/shared/Data/Cutscenes")
+local Cutscenes = require("../src/shared/Logic/Cutscenes")
 local Folds = require("../src/shared/Data/Folds")
 local Leaderboards = require("../src/shared/Data/Leaderboards")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
@@ -833,6 +835,81 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 			end
 		end
 		T.expect(problems).toEqual({})
+	end)
+
+	-- Review 2026-11-11 (known item 3): a phone's panel is bounded by the device's own HUD places (its minimap, its M
+	-- zone, the guide bar only where it stands in the M zone), not by the reference phone's.
+	T.it("fishing: a phone's panel keeps clear of the device's own places and is as large as they allow", function()
+		local problems: { string } = {}
+		for _, device in PhoneHud.DEVICES do
+			local w, h = PhoneHud.area(device)
+			for _, bar in BARS do
+				local top = bar / PhoneHud.SCALE
+				local hudH = h - top
+				local f = WorldLayout.fishing({ w = w, h = h }, top, true)
+				local name = `{device.name} bar {bar}`
+				for id, place in PhoneHud.places(w, hudH) do
+					local r = PhoneHud.rect(place, w, hudH)
+					local placed = { left = r.left, top = r.top + top, right = r.right, bottom = r.bottom + top }
+					if not WorldLayout.FISHING_FREE[id] and overlaps(f.panel, placed) then
+						table.insert(problems, `{name}: the panel covers {id}`)
+					end
+				end
+				-- with no guide bar in the M zone the panel keeps its whole height
+				local tall = f.panel.bottom - f.panel.top
+				if not PhoneHud.guideInM(w, hudH) and math.abs(tall - WorldLayout.FISHING.compactHeight) > 0.01 then
+					table.insert(problems, `{name}: {tall} px tall without the guide bar`)
+				end
+			end
+		end
+		T.expect(problems).toEqual({})
+	end)
+
+	-- Review 2026-11-11 (a phone's 39-px bar held two lines of Body 20 in a 31-px label): every story line, with its
+	-- speaker, fits the bottom bar's label on PC, a tablet and a phone (Small 17 on touch), in pl and en.
+	T.it("cutscene: every line fits the bottom bar's label, a phone's in Small 17", function()
+		local C = WorldLayout.CUTSCENE
+		T.expect(C.minTouch)
+			.toBe(
+				2 * WorldLayout.SMALL
+					+ 2 * constant("src/client/UI/Theme.luau", "\n%s*Medium = (%d+),\n%s*Large = 22")
+					+ 8
+			)
+		T.expect(C.textTouch).toBe(WorldLayout.SMALL)
+		local problems: { string } = {}
+		for _, screen in screens() do
+			if screen.bar ~= 0 then
+				continue -- the Modals layer: the bars do not move with Roblox's top bar
+			end
+			local c = WorldLayout.cutscene({ w = screen.w, h = screen.h }, screen.touch)
+			for _, scene in CutsceneData.list do
+				for _, line in scene.lines do
+					for lang, texts in { pl = pl, en = en } do
+						local text = assert(texts[line.key], line.key)
+						local speaker = Cutscenes.speakerKey(line)
+						if speaker then
+							text = `{assert(texts[speaker], speaker)}   {text}`
+						end
+						local need = TextCaps.lines(text, c.text, c.line.w) * c.text
+						if need > c.line.h then
+							table.insert(problems, `{screen.name} {lang} {line.key}: {need} of {c.line.h}`)
+						end
+					end
+				end
+			end
+		end
+		T.expect(problems).toEqual({})
+		local src = fs.readFile("src/client/UI/Screens/Cutscene.luau")
+		for _, needle in
+			{
+				"local C = WorldLayout.CUTSCENE",
+				"Vector2.new(0, if use(touch) then C.minTouch else 0)",
+				"TextSize = sized(Theme.TextSize.Large, Theme.TextSize.Small),",
+				"return UDim2.new(1, -(if use(touch) then C.cutTouch else C.cut), 1, -C.inset)",
+			}
+		do
+			T.expect({ needle, string.find(src, needle, 1, true) ~= nil }).toEqual({ needle, true })
+		end
 	end)
 
 	-- Review 2026-11-11 (party "Lider" 40 and board "Zamień" 30 high in a phone's rows, guild actions 36-38): a Button in
