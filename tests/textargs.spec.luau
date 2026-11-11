@@ -207,4 +207,37 @@ T.describe("Localized text calls (package A review, owner 2026-11-10)", function
 			end
 		end
 	end)
+
+	T.it("the HUD's decimals take the language's mark: '2,5' in Polish (final UI review 2026-11-10)", function()
+		-- the cooldowns, the effect timers, the EXP hover, the world boss's share and the reward card read '2.5' where
+		-- the windows say '2,5' (format.decimal, S31/S33)
+		T.expect({ pl = pl["format.decimal"], en = en["format.decimal"] }).toEqual({ pl = ",", en = "." })
+		local sites = {
+			["src/client/UI/Screens/Hud/SkillBar.luau"] = 1,
+			["src/client/UI/Screens/Hud/EffectIcons.luau"] = 1,
+			["src/client/UI/Screens/Hud/init.luau"] = 1,
+			["src/client/UI/Screens/Hud/WorldBossPanel.luau"] = 1,
+			["src/client/UI/Screens/BossReward.luau"] = 1,
+		}
+		for path, least in sites do
+			local _, marks = string.gsub(fs.readFile(path), '"format%.decimal"', "")
+			T.expect({ path, marks >= least }).toEqual({ path, true })
+		end
+		-- every HUD file that writes a decimal with string.format reads the mark too
+		local function walk(dir: string)
+			for _, name in fs.readDir(dir) do
+				local path = `{dir}/{name}`
+				if fs.isDir(path) then
+					walk(path)
+				elseif string.sub(name, -5) == ".luau" then
+					local source = code(fs.readFile(path))
+					local raw = fs.readFile(path)
+					if string.find(raw, '"%%%.%d+f"') and string.find(source, "string.format", 1, true) then
+						T.expect({ path, string.find(raw, '"format.decimal"', 1, true) ~= nil }).toEqual({ path, true })
+					end
+				end
+			end
+		end
+		walk("src/client/UI/Screens/Hud")
+	end)
 end)

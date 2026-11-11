@@ -382,9 +382,15 @@ local function BossReward(scope: Scope, props: Props): Instance
 			)
 			-- S149c: the own contribution and the factor of the chances
 			if reward.share and reward.factor then
+				-- "12,5" and "×1,25" in Polish (format.decimal)
+				local function decimal(text: string): Fusion.Computed<string>
+					return scope:Computed(function(use): string
+						return (string.gsub(text, "%.", Text.get(use, "format.decimal")))
+					end)
+				end
 				local shareArgs = {
-					pct = string.format("%.1f", reward.share),
-					f = string.format("%.2f", reward.factor),
+					pct = decimal(string.format("%.1f", reward.share)),
+					f = decimal(string.format("%.2f", reward.factor)),
 				}
 				table.insert(
 					worldLines,

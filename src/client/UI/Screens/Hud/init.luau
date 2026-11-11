@@ -627,7 +627,8 @@ local function expBar(scope: Scope): Instance
 				return Text.get(use, "hud.expMax")
 			end
 			local pct = Exp.progress(use(level), use(exp), Config.MaxLevel) * 100
-			return Text.get(use, "hud.expPct", { pct = string.format("%.1f", pct) })
+			local mark = Text.get(use, "format.decimal") -- "45,3" in Polish
+			return Text.get(use, "hud.expPct", { pct = (string.gsub(string.format("%.1f", pct), "%.", mark)) })
 		end),
 	})
 	local strip = bar :: GuiObject

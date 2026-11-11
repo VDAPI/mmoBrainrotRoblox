@@ -265,7 +265,11 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 						if left <= SkillData.GCD then
 							return ""
 						end
-						return if left >= 10 then tostring(math.ceil(left)) else string.format("%.1f", left)
+						if left >= 10 then
+							return tostring(math.ceil(left))
+						end
+						-- "2,5" in Polish (format.decimal)
+						return (string.gsub(string.format("%.1f", left), "%.", Text.get(use, "format.decimal")))
 					end),
 					FontFace = Theme.Fonts.BodyBold,
 					TextSize = Theme.TextSize.Body,

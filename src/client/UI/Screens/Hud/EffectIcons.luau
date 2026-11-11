@@ -212,7 +212,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, 4),
 			}),
-			scope:ForValues(entries, function(_use, s: Scope, entry: Entry): Instance
+			scope:ForValues(entries, function(use, s: Scope, entry: Entry): Instance
 				local info = GLYPHS[entry.kind] or UNKNOWN
 				local count = entry.count
 				local full = entry.full == true
@@ -220,7 +220,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 					then (if entry.max then `{count}/{entry.max}` else tostring(count))
 					elseif info.lasting then ""
 					elseif entry.left >= 10 then tostring(math.floor(entry.left))
-					else string.format("%.1f", entry.left)
+					else (string.gsub(string.format("%.1f", entry.left), "%.", Text.get(use, "format.decimal")))
 				-- S119: the effect's picture inside the good / bad frame once loaded (glyph otherwise).
 				local artKey = UiArt.effect(entry.kind)
 				local artShown = ArtIcon.Shown(s, artKey)

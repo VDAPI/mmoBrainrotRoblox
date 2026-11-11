@@ -295,7 +295,9 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 	local shareText = scope:Computed(function(use): string
 		local m = use(mine)
 		local pct = if m then math.floor((tonumber(m.pct) or 0) * 1000 + 0.5) / 10 else 0
-		return Text.get(use, "hud.worldboss.share", { pct = pct })
+		-- "12,5" in Polish (format.decimal)
+		local text = string.gsub(tostring(pct), "%.", Text.get(use, "format.decimal"))
+		return Text.get(use, "hud.worldboss.share", { pct = text })
 	end)
 	local rewardOk = scope:Computed(function(use): boolean
 		local m = use(mine)
