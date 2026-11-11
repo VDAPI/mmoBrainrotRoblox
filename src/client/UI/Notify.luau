@@ -259,6 +259,10 @@ local function layout(shown: { NoticeQueue.Entry }): ({ [number]: Rect }, { [str
 	for _, r in Fusion.peek(HudCover.Modals) do
 		table.insert(modals, toLayer(r, at, k))
 	end
+	-- final UI review 2026-11-10: the death screen's content stands like a dialog (UI/HudCover.Death)
+	for _, r in Fusion.peek(HudCover.Death) do
+		table.insert(modals, toLayer(r, at, k))
+	end
 	-- the Toasts layer's own size (a phone's safe area), its top bar and what the HUD shows (Logic/TopBand.context)
 	local size = root.AbsoluteSize
 	local ctx = TopBand.context({
@@ -447,6 +451,8 @@ local function context(now: number, room: { [string]: number }?): NoticeQueue.Co
 		combat = now < combatUntil,
 		window = Fusion.peek(HudCover.Open),
 		room = room,
+		-- final UI review 2026-11-10: while the death screen shows, what waits keeps its time (Logic/NoticeQueue)
+		paused = Fusion.peek(HudCover.Dead),
 	}
 end
 
@@ -1096,7 +1102,9 @@ function Notify.mount(s: Scope, parent: Instance)
 			end
 		end)
 	)
-	for _, state in { Scale.VirtualSize, Scale.TopBar, HudCover.Rects, HudCover.Modals, TopBandState.Keep } :: { any } do
+	for _, state in
+		{ Scale.VirtualSize, Scale.TopBar, HudCover.Rects, HudCover.Modals, HudCover.Death, TopBandState.Keep } :: { any }
+	do
 		s:Observer(state):onChange(schedule)
 	end
 end

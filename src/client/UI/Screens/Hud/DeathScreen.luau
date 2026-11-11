@@ -12,6 +12,9 @@
 -- Owner 2026-11-10 ("too much text"; UI plan package A, a button at most 18 characters): the choices answer "Where do you
 -- want to respawn?" by the place ("City (free)", "Here (◉ 120)", "Dungeon entrance"), the skip says "Now for 5 ◆";
 -- the keys 1 and 2 stand in front of the choices only where a keyboard is (the code adds them, not the texts).
+-- Final UI review 2026-11-10: the content's size is Logic/HudZones.DEATH, and while the player is dead it is handed to
+-- UI/HudCover (SetDeath): the message band keeps its alert line, toasts and a phone's M line off it, and what waits
+-- comes after the screen closes (the killer's toast of a PvP death among them).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -23,6 +26,8 @@ local CurrencyIcon = require(script.Parent.Parent.Parent.Components.CurrencyIcon
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.Parent.HudCover)
+local HudZones = require(ReplicatedStorage.Shared.Logic.HudZones)
 local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.Parent.State)
@@ -201,8 +206,185 @@ local function DeathScreen(scope: Scope, props: Props?): Instance
 		end,
 	})
 
-	local width = 460
-	local CONTENT = 440
+	local DEATH = HudZones.DEATH
+
+	local content = scope:New("Frame")({
+		Name = "Content",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromScale(0.5, 0.5),
+		Size = UDim2.new(DEATH.share, 0, 0, DEATH.h), -- phones: 92% of the width, at most DEATH.w
+		BackgroundTransparency = 1,
+		ZIndex = 51,
+		[Children] = {
+			scope:New("UISizeConstraint")({ MaxSize = Vector2.new(DEATH.w, math.huge) }),
+			-- package A: inside the layer, 8 px from its edges
+			scope:New("UIScale")({
+				Scale = scope:Computed(function(use): number
+					local size: Vector2 = use(Scale.HudSize)
+					return HudZones.deathScale(size.Y)
+				end),
+			}),
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				Padding = UDim.new(0, Theme.Padding.Medium),
+			}),
+			label(scope, {
+				Name = "Title",
+				LayoutOrder = 0,
+				Size = UDim2.new(1, 0, 0, 80),
+				Text = Text.T(scope, "death.title"),
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Hero,
+				TextColor3 = Theme.Iron.Danger,
+				TextStrokeTransparency = 0.4,
+			}),
+			label(scope, {
+				Name = "Countdown",
+				LayoutOrder = 1,
+				Size = UDim2.new(1, 0, 0, 32),
+				Text = scope:Computed(function(use): string
+					if use(choosing) then
+						return Text.get(use, "death.choose")
+					end
+					return Text.get(use, "death.countdown", { time = Format.time(math.ceil(use(remaining))) })
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Large,
+			}),
+			label(scope, {
+				Name = "Note",
+				LayoutOrder = 2,
+				Size = UDim2.new(1, 0, 0, 24),
+				Text = scope:Computed(function(use): string
+					if use(choosing) then
+						return Text.get(use, "death.autoCity", { time = Format.time(math.ceil(use(untilCity))) })
+					end
+					return Text.get(use, "death.nothingLost")
+				end),
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.TextMuted,
+			}),
+			vipButton,
+			label(scope, {
+				Name = "BloodMoonHint",
+				LayoutOrder = 3,
+				Size = UDim2.new(1, 0, 0, 24),
+				Visible = scope:Computed(function(use): boolean
+					return use(counting) and use(moonBlocked)
+				end),
+				TextWrapped = true,
+				Text = Text.T(scope, "death.bloodMoonHint"),
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Danger,
+			}),
+			-- Countdown: pay to skip it (W28: Dragon Shards only, the shard icon at the left end).
+			withCurrency(
+				scope,
+				Button(scope, {
+					Surface = "iron", -- S135: on a dark HUD / overlay surface
+					Name = "RespawnNow",
+					LayoutOrder = 4,
+					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+					Variant = "primary",
+					Visible = canSkip,
+					Text = scope:Computed(function(use): string
+						return Text.get(use, "death.respawnNow", { cost = Format.number(use(cost)) })
+					end),
+					Disabled = busy,
+					OnClick = function()
+						if Fusion.peek(short) then
+							-- a clear refusal at once (the server says the same), "Top up" is right below
+							Sounds.play("error")
+							Toast.push(Text.now("death.error.noShards"), "error")
+							return
+						end
+						invoke("RespawnNow")
+					end,
+				})
+			),
+			topUpButton,
+			-- Choice.
+			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
+				Name = "RespawnCity",
+				LayoutOrder = 6,
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Variant = "primary",
+				Visible = choosing,
+				Disabled = busy,
+				Text = scope:Computed(function(use): string
+					return `{keyHint(1)}{Text.get(use, "death.respawnCity")}`
+				end),
+				OnClick = function()
+					choose("city")
+				end,
+			}),
+			Button(scope, {
+				Surface = "iron", -- S135: on a dark HUD / overlay surface
+				Name = "RespawnHere",
+				LayoutOrder = 7,
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Visible = choosing,
+				Disabled = scope:Computed(function(use): boolean
+					local owned = use(gold)
+					return use(busy) or (use(hereCost) > 0 and (type(owned) ~= "number" or owned < use(hereCost)))
+				end),
+				Text = scope:Computed(function(use): string
+					local d = use(death)
+					if d and d.dungeon then
+						return `{keyHint(2)}{Text.get(use, "death.respawnEntrance")}`
+					end
+					local price = use(hereCost)
+					if price > 0 then
+						local gold = Format.number(price)
+						return `{keyHint(2)}{Text.get(use, "death.respawnHereCost", { gold = gold })}`
+					end
+					return `{keyHint(2)}{Text.get(use, "death.respawnHere")}`
+				end),
+				OnClick = function()
+					choose("here")
+				end,
+			}),
+			label(scope, {
+				Name = "Shards",
+				LayoutOrder = 8,
+				Size = UDim2.new(1, 0, 0, 22),
+				Text = scope:Computed(function(use): string
+					if use(choosing) then
+						return Text.get(use, "death.goldOwned", { gold = Format.number(use(gold) or 0) })
+					end
+					return Text.get(use, "death.shardsOwned", { shards = Format.number(use(shards) or 0) })
+				end),
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.TextMuted,
+			}),
+			InfoLine.new(scope, {
+				Name = "Protection",
+				LayoutOrder = 9,
+				Size = UDim2.new(1, 0, 0, 24),
+				Center = true,
+				Visible = choosing,
+				Text = Text.T(scope, "death.protectionNote"),
+				Info = Text.T(scope, "death.protectionNote.info"),
+				Surface = "iron",
+				Color = Theme.Iron.TextMuted,
+				ZIndex = 52,
+			}),
+		},
+	}) :: Frame
+
+	-- final UI review 2026-11-10: the band's messages keep off the content while it shows (UI/HudCover.SetDeath)
+	scope:Observer(death):onBind(function()
+		if Fusion.peek(death) ~= nil then
+			HudCover.SetDeath(content)
+		else
+			HudCover.ClearDeath(content)
+		end
+	end)
+	table.insert(scope, function()
+		HudCover.ClearDeath(content)
+	end)
 
 	return scope:New("Frame")({
 		Name = "DeathScreen",
@@ -218,176 +400,7 @@ local function DeathScreen(scope: Scope, props: Props?): Instance
 				Color = ColorSequence.new(Theme.Announce.DeathGlow, Theme.Shade),
 				Rotation = 90,
 			}),
-			scope:New("Frame")({
-				Name = "Content",
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
-				Size = UDim2.new(0.92, 0, 0, CONTENT), -- phones: 92% of the width, at most `width`
-				BackgroundTransparency = 1,
-				ZIndex = 51,
-				[Children] = {
-					scope:New("UISizeConstraint")({ MaxSize = Vector2.new(width, math.huge) }),
-					-- package A: inside the layer, 8 px from its edges
-					scope:New("UIScale")({
-						Scale = scope:Computed(function(use): number
-							local size: Vector2 = use(Scale.HudSize)
-							return math.clamp((size.Y - 16) / CONTENT, 0.5, 1)
-						end),
-					}),
-					scope:New("UIListLayout")({
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						HorizontalAlignment = Enum.HorizontalAlignment.Center,
-						Padding = UDim.new(0, Theme.Padding.Medium),
-					}),
-					label(scope, {
-						Name = "Title",
-						LayoutOrder = 0,
-						Size = UDim2.new(1, 0, 0, 80),
-						Text = Text.T(scope, "death.title"),
-						FontFace = Theme.Fonts.Display,
-						TextSize = Theme.TextSize.Hero,
-						TextColor3 = Theme.Iron.Danger,
-						TextStrokeTransparency = 0.4,
-					}),
-					label(scope, {
-						Name = "Countdown",
-						LayoutOrder = 1,
-						Size = UDim2.new(1, 0, 0, 32),
-						Text = scope:Computed(function(use): string
-							if use(choosing) then
-								return Text.get(use, "death.choose")
-							end
-							return Text.get(use, "death.countdown", { time = Format.time(math.ceil(use(remaining))) })
-						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Large,
-					}),
-					label(scope, {
-						Name = "Note",
-						LayoutOrder = 2,
-						Size = UDim2.new(1, 0, 0, 24),
-						Text = scope:Computed(function(use): string
-							if use(choosing) then
-								return Text.get(
-									use,
-									"death.autoCity",
-									{ time = Format.time(math.ceil(use(untilCity))) }
-								)
-							end
-							return Text.get(use, "death.nothingLost")
-						end),
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Iron.TextMuted,
-					}),
-					vipButton,
-					label(scope, {
-						Name = "BloodMoonHint",
-						LayoutOrder = 3,
-						Size = UDim2.new(1, 0, 0, 24),
-						Visible = scope:Computed(function(use): boolean
-							return use(counting) and use(moonBlocked)
-						end),
-						TextWrapped = true,
-						Text = Text.T(scope, "death.bloodMoonHint"),
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Iron.Danger,
-					}),
-					-- Countdown: pay to skip it (W28: Dragon Shards only, the shard icon at the left end).
-					withCurrency(
-						scope,
-						Button(scope, {
-							Surface = "iron", -- S135: on a dark HUD / overlay surface
-							Name = "RespawnNow",
-							LayoutOrder = 4,
-							Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-							Variant = "primary",
-							Visible = canSkip,
-							Text = scope:Computed(function(use): string
-								return Text.get(use, "death.respawnNow", { cost = Format.number(use(cost)) })
-							end),
-							Disabled = busy,
-							OnClick = function()
-								if Fusion.peek(short) then
-									-- a clear refusal at once (the server says the same), "Top up" is right below
-									Sounds.play("error")
-									Toast.push(Text.now("death.error.noShards"), "error")
-									return
-								end
-								invoke("RespawnNow")
-							end,
-						})
-					),
-					topUpButton,
-					-- Choice.
-					Button(scope, {
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
-						Name = "RespawnCity",
-						LayoutOrder = 6,
-						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-						Variant = "primary",
-						Visible = choosing,
-						Disabled = busy,
-						Text = scope:Computed(function(use): string
-							return `{keyHint(1)}{Text.get(use, "death.respawnCity")}`
-						end),
-						OnClick = function()
-							choose("city")
-						end,
-					}),
-					Button(scope, {
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
-						Name = "RespawnHere",
-						LayoutOrder = 7,
-						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-						Visible = choosing,
-						Disabled = scope:Computed(function(use): boolean
-							local owned = use(gold)
-							return use(busy)
-								or (use(hereCost) > 0 and (type(owned) ~= "number" or owned < use(hereCost)))
-						end),
-						Text = scope:Computed(function(use): string
-							local d = use(death)
-							if d and d.dungeon then
-								return `{keyHint(2)}{Text.get(use, "death.respawnEntrance")}`
-							end
-							local price = use(hereCost)
-							if price > 0 then
-								local gold = Format.number(price)
-								return `{keyHint(2)}{Text.get(use, "death.respawnHereCost", { gold = gold })}`
-							end
-							return `{keyHint(2)}{Text.get(use, "death.respawnHere")}`
-						end),
-						OnClick = function()
-							choose("here")
-						end,
-					}),
-					label(scope, {
-						Name = "Shards",
-						LayoutOrder = 8,
-						Size = UDim2.new(1, 0, 0, 22),
-						Text = scope:Computed(function(use): string
-							if use(choosing) then
-								return Text.get(use, "death.goldOwned", { gold = Format.number(use(gold) or 0) })
-							end
-							return Text.get(use, "death.shardsOwned", { shards = Format.number(use(shards) or 0) })
-						end),
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Iron.TextMuted,
-					}),
-					InfoLine.new(scope, {
-						Name = "Protection",
-						LayoutOrder = 9,
-						Size = UDim2.new(1, 0, 0, 24),
-						Center = true,
-						Visible = choosing,
-						Text = Text.T(scope, "death.protectionNote"),
-						Info = Text.T(scope, "death.protectionNote.info"),
-						Surface = "iron",
-						Color = Theme.Iron.TextMuted,
-						ZIndex = 52,
-					}),
-				},
-			}),
+			content,
 		},
 	})
 end

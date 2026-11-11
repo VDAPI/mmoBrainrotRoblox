@@ -161,6 +161,13 @@ HudZones.MESSAGE = table.freeze({ width = 980, bottom = HudStack.MESSAGE_BOTTOM,
 -- move step at it (`thumb`).
 HudZones.THUMB = PhoneHud.THUMB
 
+-- Hud/DeathScreen's content: `share` of the layer's width, at most `w` wide, `h` tall, centred in the HUD's layer and
+-- scaled down to fit a short one (`edge` from its top and bottom, never under `least`; a phone's layer is ~436 high).
+-- Final UI review 2026-11-10: the message band treats it as a modal dialog (UI/HudCover.SetDeath): a message that
+-- would meet it waits until the screen closes (its alert line, toasts and a phone's M line stood on its title and
+-- countdown).
+HudZones.DEATH = table.freeze({ w = 460, h = 440, share = 0.92, edge = 8, least = 0.5 })
+
 -- The elements of src/client/UI/Screens/Hud that package A moves onto a HudZones place, by their Name: the place and
 -- the file under Screens/Hud that builds them (a Name can repeat in another file: the bark's NPC portrait). Only A's
 -- files: the NPC bark (Hud/BarkToast) is package B's, which reads barkSlot there; the party rows
@@ -339,6 +346,20 @@ function HudZones.barkSlot(state: State): Rect?
 	local n = others(state)
 	local top = if n > 0 then partyRow(n).bottom + GAP else HudStack.PARTY_TOP
 	return box(MARGIN, top, HudZones.BARK.w, HudZones.BARK.h)
+end
+
+-- The death screen's scale on a HUD layer `h` high (its UIScale).
+function HudZones.deathScale(h: number): number
+	local d = HudZones.DEATH
+	return math.clamp((h - 2 * d.edge) / d.h, d.least, 1)
+end
+
+-- The death screen's content on a w x h HUD layer (PC, tablet or phone).
+function HudZones.death(w: number, h: number): Rect
+	local d = HudZones.DEATH
+	local k = HudZones.deathScale(h)
+	local cw, ch = math.min(w * d.share, d.w) * k, d.h * k
+	return centred(w / 2, (h - ch) / 2, cw, ch)
 end
 
 -- The thumbstick zone of a touch layer w x h (nothing persistent belongs there).

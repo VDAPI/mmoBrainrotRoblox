@@ -9,6 +9,10 @@
 -- layer's real size, the scale, the top bar and the HUD's boss bar, arena panel and party), with a phone's dungeon boss
 -- bar, the PC party frames and the arena's return panel; an alert goes at its deadline and a blow to dodge goes first;
 -- the arena's offer takes the prompt's place; a modal dialog keeps the messages off.
+-- Final UI review 2026-11-10: the death screen's content keeps the messages off as a dialog does, and what waits keeps
+-- its time while it shows (the killer's toast of a PvP death showed under it and dropped unseen).
+
+local fs = require("@lune/fs")
 
 local HudStack = require("../src/shared/Logic/HudStack")
 local HudZones = require("../src/shared/Logic/HudZones")
@@ -355,6 +359,50 @@ T.describe("NoticeQueue: the policy (fake clock)", function()
 			T.expect(party.shown and not tourney.shown).toBe(true)
 		end
 	)
+
+	T.it("final UI review 2026-11-10: what waits keeps its time while the death screen shows", function()
+		-- a PvP death on a phone: the killer's toast comes as the screen opens, whose content leaves M no room; the
+		-- screen shows 5 s + 0.3 s a level and up to 60 s of choosing
+		local dead: NoticeQueue.Context = { paused = true, room = { line = 0, pane = 0 } }
+		local q = NoticeQueue.new("phone")
+		local killer = toast(q, 0, "Gracz cię pokonał.", "error") :: Entry
+		local saved = toast(q, 0, "Zapisano.", "success") :: Entry
+		local alert = NoticeQueue.push(q, 0, { class = "alert", text = "Unik!", deadline = 3 }) :: Entry
+		local invite = NoticeQueue.push(q, 0, { class = "partyInvite", text = "Ala", deadline = 30 }) :: Entry
+		run(q, 0.5, 80, 0.5, dead)
+		T.expect(NoticeQueue.find(q, killer.id) ~= nil and not killer.shown).toBe(true)
+		T.expect(NoticeQueue.find(q, saved.id) ~= nil).toBe(true)
+		-- the deadlines still run: the alert and the invitation went
+		T.expect(NoticeQueue.find(q, alert.id)).toBeNil()
+		T.expect(NoticeQueue.find(q, invite.id)).toBeNil()
+		-- the screen closes: the killer's toast shows its whole time, then the other one
+		NoticeQueue.update(q, 80.5)
+		T.expect(killer.shown).toBe(true)
+		run(q, 81, 84.5, 0.5)
+		T.expect(killer.shown).toBe(true)
+		NoticeQueue.update(q, 85)
+		T.expect(NoticeQueue.find(q, killer.id)).toBeNil()
+		T.expect(saved.shown).toBe(true)
+		-- without the screen a toast with no room drops after its 20 s; after the screen they count from its close
+		local q2 = NoticeQueue.new("phone")
+		local lost = toast(q2, 0, "Gracz cię pokonał.", "error") :: Entry
+		run(q2, 0.5, 20, 0.5, { room = { line = 0 } })
+		T.expect(NoticeQueue.find(q2, lost.id)).toBeNil()
+		local q3 = NoticeQueue.new("phone")
+		local kept = toast(q3, 0, "Gracz cię pokonał.", "error") :: Entry
+		run(q3, 0.5, 60, 0.5, dead)
+		run(q3, 60.5, 79.5, 0.5, { room = { line = 0 } })
+		T.expect(NoticeQueue.find(q3, kept.id) ~= nil).toBe(true)
+		NoticeQueue.update(q3, 80, { room = { line = 0 } })
+		T.expect(NoticeQueue.find(q3, kept.id)).toBeNil()
+		-- a quiet toast's combat hold waits out the screen too
+		local q4 = NoticeQueue.new("pc")
+		local quiet = toast(q4, 0, "Zapisano.", "success") :: Entry
+		run(q4, 0.5, 30, 0.5, { combat = true, paused = true, room = { toast = 0 } })
+		T.expect(NoticeQueue.find(q4, quiet.id) ~= nil).toBe(true)
+		NoticeQueue.update(q4, 30.5)
+		T.expect(quiet.shown).toBe(true)
+	end)
 
 	T.it("lets the achievement wait for an open window, and a prompt show until its deadline", function()
 		local q = NoticeQueue.new("pc")
@@ -794,6 +842,51 @@ T.describe("TopBand.slots: where the messages stand (L3, L6)", function()
 			T.expect(math.abs(r.bottom - m.bottom) < 1e-6 and math.abs(r.top - m.top) < 1e-6).toBe(true)
 		end
 	)
+
+	T.it("final UI review 2026-11-10: no message meets the death screen's content, on any screen", function()
+		local problems: { string } = {}
+		local states: { HudZones.State } = { {}, { bossBar = true }, { target = "monster", party = 4 } }
+		for _, s in screens() do
+			-- the content in the HUD's layer (Hud/DeathScreen), moved under the top bar as the Toasts layer sees it
+			local death = down(HudZones.death(s.hudW, s.hudH), s.bar)
+			if
+				death.left < -1e-6
+				or death.right > s.w + 1e-6
+				or death.top < s.bar - 1e-6
+				or death.bottom > s.h + 1e-6
+			then
+				table.insert(problems, `{s.name}: the death screen {show(death)} leaves the HUD's layer`)
+			end
+			for _, state in states do
+				local ctx = contextOf(s, state)
+				ctx.items = items(s.device)
+				ctx.card = if s.device == "pc" then "legend" else nil
+				ctx.bark = s.device == "pc"
+				ctx.modals = { death }
+				local placed = TopBand.slots(ctx)
+				local all: { [string]: Rect } = table.clone(placed.rects)
+				all.card = placed.card
+				all.bark = placed.bark
+				for id, r in all do
+					if TopBand.meets(r, death) then
+						table.insert(problems, `{s.name}: the {id} {show(r)} meets the death screen {show(death)}`)
+					end
+				end
+			end
+		end
+		if #problems > 0 then
+			error(table.concat(problems, "\n"))
+		end
+		-- the client: the screen hands its content over, the band treats it as a dialog and holds what waits
+		local screen = fs.readFile("src/client/UI/Screens/Hud/DeathScreen.luau")
+		T.expect(string.find(screen, "HudCover.SetDeath(content)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(screen, "HudCover.ClearDeath(content)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(screen, "HudZones.deathScale(size.Y)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(screen, "Size = UDim2.new(DEATH.share, 0, 0, DEATH.h)", 1, true) ~= nil).toBe(true)
+		local notify = fs.readFile("src/client/UI/Notify.luau")
+		T.expect(string.find(notify, "for _, r in Fusion.peek(HudCover.Death) do", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(notify, "paused = Fusion.peek(HudCover.Dead),", 1, true) ~= nil).toBe(true)
+	end)
 
 	T.it("puts a message over a window where it fits there, else under its title bar", function()
 		local w, h, bar = 1920, 1080, 58

@@ -16,6 +16,9 @@
 -- never comes back after "Walcz!"; a blow to dodge (tone "danger") goes first among the alerts; a prompt whose silence
 -- costs something (`penalty`: the arena's match offer, 5 min out of the queue) takes the prompt's place from the other
 -- prompts, which wait with their own deadlines and come back.
+-- Final UI review 2026-11-10: while the death screen shows (`paused`, UI/HudCover.Dead) what waits keeps its time: its
+-- wait and its combat hold count again once the screen closes, so a long death (5 s + 0.3 s a level, and up to 60 s of
+-- choosing) never drops the killer's name of a PvP death unseen; deadlines (alerts, prompts) still run.
 
 local NoticeQueue = {}
 
@@ -84,14 +87,17 @@ export type Queue = {
 	seq: number,
 	entries: { Entry },
 	errors: { [string]: number }, -- error identity -> when it last came on
+	paused: boolean, -- the last update's `paused`: what waits does not age
 }
 
--- The state the queue looks at: combat (UI/Notify's signal), an open window, and the places the screen has room for
--- now (Logic/TopBand.slots), by place name (`NoticeQueue.place`); a missing name keeps the device's capacity.
+-- The state the queue looks at: combat (UI/Notify's signal), an open window, the places the screen has room for now
+-- (Logic/TopBand.slots), by place name (`NoticeQueue.place`; a missing name keeps the device's capacity), and the
+-- death screen (`paused`: from this update on, what waits does not age until an update without it).
 export type Context = {
 	combat: boolean?,
 	window: boolean?,
 	room: { [string]: number }?,
+	paused: boolean?,
 }
 
 NoticeQueue.ORDER = table.freeze({
@@ -179,7 +185,7 @@ function NoticeQueue.kindOf(class: Class): Kind
 end
 
 function NoticeQueue.new(device: Device, now: number?): Queue
-	return { device = device, now = now or 0, seq = 0, entries = {}, errors = {} }
+	return { device = device, now = now or 0, seq = 0, entries = {}, errors = {}, paused = false }
 end
 
 -- A banner's tone from its key: a world boss's (red, 15 s), a mythic drop's or the Blood Moon's (red), else gold.
@@ -270,7 +276,8 @@ local function identity(spec: Spec): string?
 	return spec.key or spec.text
 end
 
--- The shown entries spend the time from the queue's clock to `now`.
+-- The shown entries spend the time from the queue's clock to `now`; while paused, the waiting ones do not age (their
+-- wait and combat hold count from `added`, which moves on with the clock).
 local function advance(q: Queue, now: number)
 	local dt = math.max(0, now - q.now)
 	q.now = math.max(q.now, now)
@@ -278,6 +285,8 @@ local function advance(q: Queue, now: number)
 		for _, e in q.entries do
 			if e.shown and e.left then
 				e.left = (e.left :: number) - dt
+			elseif not e.shown and q.paused then
+				e.added += dt
 			end
 		end
 	end
@@ -398,6 +407,7 @@ end
 function NoticeQueue.update(q: Queue, now: number, ctx: Context?): ({ Entry }, { Entry })
 	local context: Context = ctx or {}
 	advance(q, now)
+	q.paused = context.paused == true
 	local gone: { Entry } = {}
 	local kept: { Entry } = {}
 	for _, e in q.entries do
