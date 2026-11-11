@@ -18,6 +18,10 @@ T.describe("Format", function()
 		T.expect(Format.short(1234)).toBe("1.2k")
 		T.expect(Format.short(3400000)).toBe("3.4M")
 		T.expect(Format.short(-2500)).toBe("-2.5k")
+		-- the language's decimal mark (format.decimal): "245,3k" in Polish
+		T.expect(Format.short(245300, ",")).toBe("245,3k")
+		T.expect(Format.short(12000, ",")).toBe("12k")
+		T.expect(Format.short(999, ",")).toBe("999")
 	end)
 
 	T.it("time formats mm:ss and hh:mm:ss", function()

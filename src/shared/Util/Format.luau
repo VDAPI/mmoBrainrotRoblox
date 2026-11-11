@@ -23,8 +23,9 @@ end
 
 local SUFFIXES = { "", "k", "M", "B", "T" }
 
--- 1234 -> "1.2k", 3400000 -> "3.4M", 999 -> "999".
-function Format.short(n: number): string
+-- 1234 -> "1.2k", 3400000 -> "3.4M", 999 -> "999". `mark` is the decimal mark (default "."; the UI passes the
+-- language's format.decimal: "1,2k" in Polish).
+function Format.short(n: number, mark: string?): string
 	local negative = n < 0
 	local value = math.abs(n)
 	local index = 1
@@ -40,7 +41,7 @@ function Format.short(n: number): string
 		if rounded == math.floor(rounded) then
 			text = string.format("%d", rounded)
 		else
-			text = string.format("%.1f", rounded)
+			text = (string.gsub(string.format("%.1f", rounded), "%.", mark or "."))
 		end
 		text ..= SUFFIXES[index]
 	end

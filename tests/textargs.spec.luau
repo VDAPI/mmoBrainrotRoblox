@@ -211,7 +211,8 @@ T.describe("Localized text calls (package A review, owner 2026-11-10)", function
 	T.it("the HUD's decimals take the language's mark: '2,5' in Polish (final UI review 2026-11-10)", function()
 		-- the cooldowns, the effect timers, the EXP hover, the world boss's share and the reward card read '2.5' where
 		-- the windows say '2,5' (format.decimal, S31/S33); seams 2026-11-11: so did the fight card's 'udział 12.5%'
-		-- (FightView.placeLine rounds with math.floor, no string.format for the walk below to find)
+		-- (FightView.placeLine rounds with math.floor, no string.format for the walk below to find) and the damage
+		-- of its table under it, '245.3k (12%)' (FightTable: Format.short, on the card, the boss reward and the log)
 		T.expect({ pl = pl["format.decimal"], en = en["format.decimal"] }).toEqual({ pl = ",", en = "." })
 		local sites = {
 			["src/client/UI/Screens/Hud/SkillBar.luau"] = 1,
@@ -220,6 +221,7 @@ T.describe("Localized text calls (package A review, owner 2026-11-10)", function
 			["src/client/UI/Screens/Hud/WorldBossPanel.luau"] = 1,
 			["src/client/UI/Screens/BossReward.luau"] = 1,
 			["src/client/UI/FightView.luau"] = 1,
+			["src/client/UI/Components/FightTable.luau"] = 1,
 		}
 		for path, least in sites do
 			local _, marks = string.gsub(fs.readFile(path), '"format%.decimal"', "")

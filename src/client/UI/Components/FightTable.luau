@@ -42,7 +42,8 @@ local COL_DAMAGE: Column = {
 	key = "fight.col.damage",
 	width = 0.18,
 	value = function(row)
-		return if row.a then `{Format.short(row.a)} ({pct(row)})` else pct(row)
+		-- "12,5k (45%)" in Polish (format.decimal), as the card's "udział 12,5%" above the table
+		return if row.a then `{Format.short(row.a, Text.now("format.decimal"))} ({pct(row)})` else pct(row)
 	end,
 }
 local COL_SHARE: Column = { key = "fight.col.damage", width = 0.18, value = pct }
