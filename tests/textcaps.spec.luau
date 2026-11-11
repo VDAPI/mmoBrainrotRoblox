@@ -6,13 +6,16 @@
 --   T1 every mapped key, pl and en, fits each of its surfaces (TextCaps.check after the sample values), or is listed
 --   T2 no em dash in any text; no control words or "(K)" key hints on toasts, banners, alerts, prompts and the HUD;
 --      ratchets in the same lists, hard for every key once the lists are empty; the A and B texts keep the
---      glossary's words for a quest and the backpack
+--      glossary's words for a quest and the backpack; a message that names a PC key ({key}) has a `.touch`
+--      twin without it
 --   T3 the lists: a listed key that now passes, got longer or belongs to another package fails
 --   T4 every literal key at a toast, banner, alert, prompt or card site exists and has its surface; the scan read
 --      every file to its end and found today's message calls
 --   T6 the spec's own negative case: a 61-character toast fails
 -- T5 (the content budgets of the item tooltip, the skill bar tooltip and dialogue pages) lives in tooltip.spec,
 -- tiptext.spec and dialogue.spec.
+
+local fs = require("@lune/fs")
 
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
@@ -238,6 +241,43 @@ describe("textcaps T2: universal rules", function()
 			end
 		end
 		fail(problems, "a word the glossary replaced")
+	end)
+
+	-- Seams 2026-11-11: the guide's toasts said "Rozmawiaj [E]" and "Podróżuj [E] dalej" on phones and tablets, which
+	-- have no E (TextScan.KEY_HINTS only knows "(K)"). The PC keeps the owner's S25 text; a touch screen reads the
+	-- `.touch` twin without the key (NavController), and the prompt over the NPC, the portal or the gate is the button.
+	it("a message that names a PC key has a touch twin without it", function()
+		local function message(key: string): boolean
+			for _, surface in TextScan.surfaces(key) do
+				if TextScan.MESSAGES[surface] then
+					return true
+				end
+			end
+			return false
+		end
+		local problems = {}
+		local twins = 0
+		for key, text in pl :: { [string]: string } do
+			if string.find(text, "{key}", 1, true) and message(key) then
+				twins += 1
+				local twin = key .. ".touch"
+				for lang, texts in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+					local touch = texts[twin]
+					if touch == nil then
+						table.insert(problems, `{twin} ({lang}): missing`)
+					elseif string.find(touch, "{key}", 1, true) or TextScan.control(touch) then
+						table.insert(problems, `{twin} ({lang}): {touch}`)
+					end
+				end
+				if not message(twin) then
+					table.insert(problems, `{twin}: not read at a message site`)
+				end
+			end
+		end
+		fail(problems, "a PC key on a touch screen")
+		expect(twins).toBe(3) -- the guide's talk, portal and dungeon hints
+		local nav = fs.readFile("src/client/Controllers/NavController.luau")
+		expect(select(2, string.gsub(nav, "Fusion%.peek%(Device%.Touch%)", ""))).toBe(2)
 	end)
 
 	-- Final UI review 2026-11-11: the windows' texts (packages C, D and E) keep the glossary's words too. The premium

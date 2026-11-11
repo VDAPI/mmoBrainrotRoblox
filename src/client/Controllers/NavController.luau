@@ -16,6 +16,9 @@
 --     not leave combat: nothing changes on the server, it is ordinary movement.
 --   * Arriving (Config.Nav.arrive, NPCs Config.Nav.arriveNpc) clears the target; a walk to an NPC ends facing
 --     them with the "Talk [E]" hint.
+--   * The hints name the interact key on PC only (owner S25: "Rozmawiaj [E]", "Podróżuj [E] dalej"). A phone or a
+--     tablet has no E: it reads the `.touch` text without the key, and the prompt over the NPC, the portal or the
+--     gate is the button to tap (UI-ZASADY §3, seams 2026-11-11).
 -- /nav and /navdebug (admin) arrive through AdminClient.
 
 local Players = game:GetService("Players")
@@ -26,6 +29,7 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
@@ -480,7 +484,11 @@ local function arrived(target: NavTarget.Target, npcPosition: Vector3?)
 				r.CFrame = CFrame.lookAt(r.Position, look)
 			end
 		end
-		Toast.push(Text.now("nav.talkHint", { key = Keybinds.label("interact") }), "info", 4)
+		if Fusion.peek(Device.Touch) then
+			Toast.push(Text.now("nav.talkHint.touch"), "info", 4)
+		else
+			Toast.push(Text.now("nav.talkHint", { key = Keybinds.label("interact") }), "info", 4)
+		end
 	else
 		Toast.push(Text.now("nav.arrived", { name = label }), "success", 3)
 	end
@@ -620,7 +628,10 @@ local function step()
 		end
 	elseif exit and distance <= PORTAL_NEAR and hinted ~= exit.id then
 		hinted = exit.id
-		local key = if exit.kind == "dungeon" then "nav.atDungeon" else "nav.atPortal"
+		local touch = Fusion.peek(Device.Touch) == true
+		local key = if exit.kind == "dungeon"
+			then (if touch then "nav.atDungeon.touch" else "nav.atDungeon")
+			else (if touch then "nav.atPortal.touch" else "nav.atPortal")
 		local next = Maps.get(exit.target)
 		Toast.push(
 			Text.now(key, { key = Keybinds.label("interact"), map = if next then Text.now(next.nameKey) else "" }),
