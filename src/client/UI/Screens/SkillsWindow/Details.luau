@@ -29,6 +29,7 @@ local NodeText = require(ReplicatedStorage.Shared.Logic.NodeText)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local SectionLabel = require(script.Parent.Parent.Parent.Components.SectionLabel)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
@@ -395,7 +396,8 @@ function Details.lines(
 		return out
 	end
 	if not character or (not skill and not node) then
-		-- FIX 2026-10-14: a tree shows nothing until a tile (or the direction's name) is clicked
+		-- FIX 2026-10-14: a tree shows nothing until a tile (or the direction's name) is clicked. Owner 2026-11-10 (one
+		-- home per thing): the hint lives only here, in the empty panel; the pool tree no longer repeats it
 		line(Text.get(use, if use(ctx.onPools) then "skills.tree.hint" else "paths.tree.hint"), Theme.Paper.TextMuted)
 		return out
 	end
@@ -441,12 +443,8 @@ function Details.lines(
 		-- "What it does"
 		sub(Text.get(use, "skills.section.what"))
 		line(Details.boldNumbers(SkillInfo.short(use, skill, shown)), Theme.Paper.Text, Theme.TextSize.Body)
-		-- "Rank N → N+1"
-		sub(
-			if d.nextRank
-				then Text.get(use, "skills.section.rank", { rank = d.rank, next = d.nextRank })
-				else Text.get(use, "skills.section.rankMax", { rank = d.rank })
-		)
+		-- the rank, its limit and what holds the next one back (owner 2026-11-10: one line, no "Rank N → N+1" label
+		-- over it; the values of the next rank are in the table under "Koszt i odnowienie")
 		local rankText = Text.get(use, "skills.points.rank", { rank = d.rank, max = d.max, limit = d.cap })
 		if d.reserved > 0 then
 			rankText ..= ` {Text.get(use, "skills.points.reserved", { n = d.reserved })}`
@@ -459,6 +457,61 @@ function Details.lines(
 			line(Text.get(use, "skills.nextRank", { rank = d.nextRank, level = d.nextLevel }), Theme.Paper.Warning)
 		elseif not d.nextRank then
 			line(Text.get(use, "skills.detail.maxRank"), Theme.Paper.TextMuted)
+		end
+		-- what keeps the skill from working stays in sight, outside the folded section: the weapon's element (Mage,
+		-- S18; red while the weapon does not fit) and the weapon a skill needs
+		local element = Skills.requiredElement(skill)
+		if element then
+			local weapon = use(ctx.weapon)
+			local fits = type(weapon) == "table" and weapon.element == element
+			pictureLine(
+				UiArt.element(element),
+				20,
+				Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }),
+				if fits then Theme.readable(Elements.COLORS[element], "paper") else Theme.Paper.Danger
+			)
+		end
+		if skill.path and actual > 0 then
+			local usable, err = Paths.skillUsable(character, skill.id, weapons)
+			if not usable and err then
+				line(Text.get(use, err), Theme.Paper.Danger)
+			end
+		elseif skill.weapon then
+			-- S143: the skill's own weapon (Shield Bash: "requires a shield"), bought or not
+			local err = Paths.skillWeaponError(skill, weapons)
+			if err then
+				line(Text.get(use, err), Theme.Paper.Danger)
+			end
+		end
+		-- Owner 2026-11-10 (UI plan, "nothing folds"): "Koszt i odnowienie" folds to its one line, the cost and the
+		-- cooldown (SkillInfo.costSummary: "25 many · 6.4 s"; with the range it ran past the panel, review
+		-- 2026-11-10); open, it holds the shape, the cost line with the range, the aiming behind the "i", the adaptive
+		-- element and the table of the values now / after buying / the change. A passive has no cost: the same section
+		-- (one fold state) holds its table as "Wartości rangi"; the rank itself is the bold line above, so no summary.
+		local hasCost = table.find(d.sections, "cost") ~= nil
+		local costRows: { Instance } = {}
+		local function keepRow(item: Instance)
+			(item :: any).LayoutOrder = #costRows + 1
+			table.insert(costRows, item)
+		end
+		local mark = #out
+		if hasCost then
+			local shape = SkillInfo.shapeLine(use, skill, shown)
+			if shape ~= "" then
+				line(shape, Theme.Paper.Text)
+			end
+			-- owner 2026-10-21: cost, cooldown and range; aiming, kind of blow and weapon speed behind the "i"
+			local extra = SkillInfo.costLine(use, skill, shown, "extra")
+			line(
+				SkillInfo.costLine(use, skill, shown, "main"),
+				Theme.Paper.Text,
+				nil,
+				nil,
+				if extra ~= "" then extra else nil
+			)
+			if not element and skill.adaptive then
+				line(Text.get(use, "skill.adaptive.short"), Theme.Paper.Text, nil, nil, Text.get(use, "skill.adaptive"))
+			end
 		end
 		if #d.rows > 0 then
 			tableRow({
@@ -480,52 +533,31 @@ function Details.lines(
 		if heal ~= "" then
 			line(heal, Theme.Paper.Text)
 		end
-		-- "Cost and cooldown"
-		if table.find(d.sections, "cost") then
-			sub(Text.get(use, "skills.section.cost"))
-			local shape = SkillInfo.shapeLine(use, skill, shown)
-			if shape ~= "" then
-				line(shape, Theme.Paper.Text)
-			end
-			-- owner 2026-10-21: cost, cooldown and range; aiming, kind of blow and weapon speed behind the "i"
-			local extra = SkillInfo.costLine(use, skill, shown, "extra")
-			line(
-				SkillInfo.costLine(use, skill, shown, "main"),
-				Theme.Paper.Text,
-				nil,
-				nil,
-				if extra ~= "" then extra else nil
-			)
-			-- Weapon element (Mage, S18): requirement in red while the weapon does not fit, adaptive note.
-			local element = Skills.requiredElement(skill)
-			if element then
-				local weapon = use(ctx.weapon)
-				local fits = type(weapon) == "table" and weapon.element == element
-				pictureLine(
-					UiArt.element(element),
-					20,
-					Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }),
-					if fits then Theme.readable(Elements.COLORS[element], "paper") else Theme.Paper.Danger
-				)
-			elseif skill.adaptive then
-				line(Text.get(use, "skill.adaptive.short"), Theme.Paper.Text, nil, nil, Text.get(use, "skill.adaptive"))
-			end
-			if skill.path and actual > 0 then
-				local usable, err = Paths.skillUsable(character, skill.id, weapons)
-				if not usable and err then
-					line(Text.get(use, err), Theme.Paper.Danger)
-				end
-			elseif skill.weapon then
-				-- S143: the skill's own weapon (Shield Bash: "requires a shield"), bought or not
-				local err = Paths.skillWeaponError(skill, weapons)
-				if err then
-					line(Text.get(use, err), Theme.Paper.Danger)
-				end
-			end
+		-- the lines added since `mark` go into the section
+		while #out > mark do
+			local item = table.remove(out, mark + 1) :: Instance
+			keepRow(item)
 		end
-		-- "Breakpoints" (the cards have their own section label)
-		for _, item in Breakpoints.new(s, use, ctx, actions, skill, Paths.bpRank(character, skill.id), not touch) do
-			add(item)
+		if #costRows > 0 then
+			add(Section.new(s, {
+				Id = "skillCost",
+				Name = "CostSection",
+				Title = Text.get(use, if hasCost then "skills.section.cost" else "skills.section.values"),
+				Summary = if hasCost then SkillInfo.costSummary(use, skill, shown) else nil,
+				Children = costRows,
+			}))
+		end
+		-- "Przełomy" (owner 2026-11-10: folded to its header and the chosen letters; a choice waiting makes it a badge)
+		local bp = Breakpoints.new(s, use, ctx, actions, skill, Paths.bpRank(character, skill.id), touch)
+		if #bp.rows > 0 then
+			add(Section.new(s, {
+				Id = "skillBreakpoints",
+				Name = "BreakpointsSection",
+				Title = Text.get(use, "skills.breakpoints"),
+				Summary = bp.summary,
+				Accent = bp.waiting,
+				Children = bp.rows,
+			}))
 		end
 		-- "Changes from directions"
 		if #d.mods > 0 then
@@ -554,13 +586,10 @@ function Details.lines(
 				line(Text.get(use, "skills.item.line", { name = Text.get(use, nameKey) }), Theme.Paper.Success)
 			end
 		end
-		-- "Full description", folded (owner 2026-10-21: the shared "More ▸"; ctx.fullOpen resets on a new selection)
-		sub(Text.get(use, "skills.section.full"))
+		-- the full description under the standard "Więcej ▸" (owner 2026-11-10; ctx.fullOpen resets on a new selection)
 		add(More.new(s, {
 			Name = "FullToggle",
 			Open = ctx.fullOpen,
-			MoreText = Text.get(use, "skills.full.show"),
-			LessText = Text.get(use, "skills.full.hide"),
 			Children = { label(Details.boldNumbers(SkillInfo.full(use, skill, shown))) },
 		}))
 	end

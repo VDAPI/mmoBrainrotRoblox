@@ -8,9 +8,12 @@
 --     or out of a local bracket; while still in the bracket it asks first: a walkover) with "Stay and watch" for the
 --     out; after the final "Returning in 52 s".
 -- PC: the right column over the quest tracker (under the world event / Blood Moon panel). Touch: the left column
--- under the portrait (under a world event panel), folded to one line, a tap unfolds it (buttons 44 px); it leaves the
--- match panel (top centre) and the skill buttons free. Owner 2026-10-21: the column's order and places come from
--- UI/HudSlots (Logic/HudStack), round the elements the player moved.
+-- under the portrait (under a world event panel); it leaves the match panel (top centre) and the skill buttons free.
+-- Owner 2026-10-21: the column's order and places come from UI/HudSlots (Logic/HudStack), round the elements the
+-- player moved. Owner 2026-11-10 (UI plan package A): the header is Hud/PanelHeader ("⚜ Champion's Tournament" and
+-- one value: the bracket, the signups' close, the invitation's seconds); a click folds the panel to that line on the
+-- account (Section.state "hudTourney", Data/Folds/Hud: open on PC, folded on a phone; it replaced the touch screens'
+-- own fold), and the column folds it there too while it has no room (UI/HudSlots.forced).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,12 +25,16 @@ local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
+local PanelHeader = require(script.Parent.PanelHeader)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Tourney = require(ReplicatedStorage.Shared.Logic.Tourney)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 type Use = Fusion.Use
@@ -43,7 +50,6 @@ local WIDTH_PC = 280
 local WIDTH_TOUCH = 240
 local PAD = 8
 local GAP = 3
-local TITLE = 22
 local LINE = 20
 local BUTTON_PC = 34
 local BUTTON_TOUCH = 44
@@ -53,7 +59,6 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 	local level = State.Value({ "character", "level" })
 	local touch = Device.Touch
 	local now = scope:Value(Clock.now())
-	local expanded = scope:Value(false)
 	local staying = scope:Value(false)
 	local acc = 0
 	table.insert(
@@ -119,11 +124,27 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 	end
 
 	local headline = scope:Computed(function(use): string
-		if use(kind) == "live" then
-			local l = use(live)
-			return `⚜ {Text.get(use, "tourney.title")} · {l.range}`
-		end
 		return `⚜ {Text.get(use, "tourney.title")}`
+	end)
+	-- the header's one value: the bracket on its server, the signups' close, the bracket signed up for, the invitation's
+	-- seconds
+	local value = scope:Computed(function(use): string
+		local k = use(kind)
+		local t = use(tourney)
+		if type(t) ~= "table" then
+			return ""
+		end
+		if k == "live" then
+			local l = use(live)
+			return if l and l.range then tostring(l.range) else ""
+		elseif k == "signup" then
+			return ClockText.hhmm(Tourney.times(tonumber(t.startAt) or 0).close)
+		elseif k == "signed" then
+			return Tourney.rangeOf(t.signed.bracket)
+		elseif k == "invite" then
+			return `{math.ceil(math.max(0, (tonumber(t.invite.expiresAt) or 0) - use(now)))} s`
+		end
+		return ""
 	end)
 	local line1 = scope:Computed(function(use): string
 		local k = use(kind)
@@ -192,20 +213,26 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 			and type(t) == "table"
 			and t.server == "tournament"
 	end)
-	-- touch: one line until tapped
+	-- folded by the player (on the account) or by the column (no room)
+	local open = Section.state(scope, "hudTourney")
+	local forced = HudSlots.forced(scope, "tourney")
 	local folded = scope:Computed(function(use): boolean
-		return use(touch) and not use(expanded)
+		return not use(open) or use(forced)
 	end)
+	local header = PanelHeader.Height(scope)
 
 	local buttonH = scope:Computed(function(use): number
 		return if use(touch) then BUTTON_TOUCH else BUTTON_PC
 	end)
-	local height = scope:Computed(function(use): number
-		if use(folded) then
-			return PAD * 2 + BUTTON_TOUCH
+	-- The panel's height open, or `shut` to the header line. Package A review (owner 2026-11-10): the column hears the
+	-- player's own fold only (`open`; it folds a box to its line itself, and a box built from its fold fed the column
+	-- back: a Fusion loop that left the column with an old height); what is drawn folds with the column too (`folded`).
+	local function heightOf(use: Fusion.Use, shut: boolean): number
+		if shut then
+			return use(header)
 		end
 		local k = use(kind)
-		local h = PAD * 2 + TITLE + LINE + GAP
+		local h = use(header) + PAD + LINE + GAP
 		if k == "live" then
 			h += LINE + GAP + use(buttonH) + GAP
 			if use(showStay) then
@@ -215,21 +242,32 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 			h += use(buttonH) + GAP
 		end
 		return h
+	end
+	local height = scope:Computed(function(use): number
+		return heightOf(use, use(folded))
 	end)
+	-- package A review (owner 2026-11-10): on a phone a line of the stack, PhoneHud.PANEL_WIDTH wide, so it stands
+	-- beside the stack's '+N' chip (wider, it went behind the chip)
+	local function widthOf(use: Fusion.Use): number
+		return if use(PhoneLayout.Compact) then PhoneHud.PANEL_WIDTH elseif use(touch) then WIDTH_TOUCH else WIDTH_PC
+	end
 	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
 	local handle = HudDrag.new(scope, "tourney", function(use)
-		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
+		return widthOf(use)
+	end, function(use)
+		return heightOf(use, not use(open))
 	end)
 	-- owner 2026-10-21: the built-in place in the HUD column, round the moved elements (UI/HudSlots)
 	local slot = HudSlots.join(
 		scope,
 		"tourney",
 		scope:Computed(function(use): HudSlots.Box
-			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height)
+			local w, h = widthOf(use), heightOf(use, not use(open))
 			return {
 				shown = use(shown),
 				w = w,
 				h = h,
+				line = use(header),
 				custom = HudSlots.moved(use(handle.corner), w, h, use(handle.scale)),
 			}
 		end)
@@ -278,48 +316,32 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, PAD),
-				PaddingBottom = UDim.new(0, PAD),
+				PaddingBottom = scope:Computed(function(use): UDim
+					return UDim.new(0, if use(folded) then 0 else PAD)
+				end),
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10),
 			}),
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, GAP) }),
-			-- touch: the folded line (tap = unfold)
-			scope:New("TextButton")({
-				Name = "Fold",
-				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, BUTTON_TOUCH),
-				BackgroundTransparency = 1,
-				Visible = folded,
-				Text = scope:Computed(function(use): string
-					return `{use(headline)} · {use(line1)}`
-				end),
-				TextColor3 = GOLD,
-				TextSize = Theme.TextSize.Small,
-				FontFace = Theme.Fonts.BodyBold,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				[OnEvent("Activated")] = function()
-					expanded:set(true)
-				end,
-			}),
-			scope:New("TextButton")({
-				Name = "Title",
+			PanelHeader.new(scope, {
 				LayoutOrder = 1,
-				Size = UDim2.new(1, 0, 0, TITLE),
-				BackgroundTransparency = 1,
-				AutoButtonColor = false,
-				Visible = notFolded,
-				Text = headline,
-				TextColor3 = GOLD,
-				TextSize = Theme.TextSize.Small,
-				FontFace = Theme.Fonts.BodyBold,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				[OnEvent("Activated")] = function()
-					if Fusion.peek(touch) then
-						expanded:set(false)
+				Title = headline,
+				Value = value,
+				-- package A review: the open body says the sign-up time, the bracket and the invite's seconds in words;
+				-- a live tourney's level band only the header says
+				KeepValue = scope:Computed(function(use): boolean
+					return use(kind) == "live"
+				end),
+				Color = GOLD,
+				Open = notFolded,
+				OnClick = function()
+					if Fusion.peek(forced) then
+						-- the column folded it: it stays open in the column before the others
+						HudSlots.bring("tourney")
+						Section.set("hudTourney", true)
+						return
 					end
+					Section.set("hudTourney", not Fusion.peek(open))
 				end,
 			}),
 			label(2, LINE, line1, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.BodyMedium, notFolded),
@@ -403,9 +425,10 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 		AnchorPoint = Vector2.zero,
 		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
+			return UDim2.fromOffset(widthOf(use), use(height))
 		end),
-		Visible = shown,
+		-- package A: not while it waits behind the column's '+N' chip
+		Visible = HudSlots.visible(scope, slot, shown, handle.corner),
 		Content = body,
 	})
 end

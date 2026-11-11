@@ -7,11 +7,17 @@
 -- marker's linger. On any other map from the first warning to the end of the fight (S149c): one line "{boss} in 7:42 ·
 -- {place}", then "{boss} fights, 1:52:31 left · {place}" (Logic/WorldBoss.lineOf) with "Guide"; a tap on the line opens
 -- the world map at the barrow with its card (props.OpenMap).
--- A tap on the header folds the panel to one line (kept for the session). PC: the right column over the quest
+-- Owner 2026-11-10 (UI plan package A): the header is Hud/PanelHeader ("♛ boss", its HP or the time, "i" with the
+-- place on other maps); a click folds the panel to that line on the account (Section.state "hudWorldBoss", Data/Folds/Hud:
+-- open on PC, folded on a phone; it replaced the fold kept for the session), and the column folds it there too while it
+-- has no room (UI/HudSlots.forced; a click then brings it back first). PC: the right column over the quest
 -- tracker (the S101 world event panel stands under it: the boss comes first); touch: the left column under the
 -- portrait like the world event panel (never over the skill buttons); owner 2026-10-21: the column's order and places
 -- come from UI/HudSlots (Logic/HudStack), round the elements the player moved. Sounds: ui.worldboss.spawn when the boss
 -- wakes, ui.worldboss.victory when it falls (silent until the owner picks ids). Iron surface (Data/UiWindows).
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the reward's reason is a short line ("Reward from level 30");
+-- the whole "{boss} in 7:42 · {place}" sentence is the header's "i" (written in the header's props, so the text scan
+-- holds it to the "i" and not to a HUD line).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,6 +32,10 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local PanelHeader = require(script.Parent.PanelHeader)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -33,7 +43,7 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -50,7 +60,6 @@ local WIDTH_PC = 280
 local WIDTH_TOUCH = 220
 local PAD = 8
 local GAP = 3
-local TITLE = 24
 local LINE = 20
 local BAR = 16
 local CHANNEL = 20
@@ -58,16 +67,18 @@ local REWARD = 30
 local BUTTON_PC = 34
 local BUTTON_TOUCH = 44
 
--- The fold of the panel lives for the session (a remount keeps it).
-local folded = false
-
 local function WorldBossPanel(scope: Scope, props: Props): Instance
 	local branch = State.Value({ "worldBoss" })
 	local zoneMap = State.Value({ "zone", "map" })
 	local touch = Device.Touch
 	local now = scope:Value(Clock.now())
 	local inside = scope:Value(false)
-	local collapsed = scope:Value(folded)
+	-- folded by the player (on the account) or by the column (no room)
+	local open = Section.state(scope, "hudWorldBoss")
+	local forced = HudSlots.forced(scope, "worldBoss")
+	local collapsed = scope:Computed(function(use): boolean
+		return not use(open) or use(forced)
+	end)
 	local clock = 0
 	table.insert(
 		scope,
@@ -112,18 +123,23 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 	local active = scope:Computed(function(use): boolean
 		return use(full) and use(phase) == "active"
 	end)
-	local channel = scope:Computed(function(use): any
+	-- the channel to break while the boss fights; the panel shows it while open
+	local channelOf = scope:Computed(function(use): any
 		local b = use(current)
-		return if use(active) and b and type(b.channel) == "table" then b.channel else nil
+		return if b and b.phase == "active" and type(b.channel) == "table" then b.channel else nil
+	end)
+	local channel = scope:Computed(function(use): any
+		return if use(active) then use(channelOf) else nil
 	end)
 	local standing = scope:Computed(function(use): boolean
 		local p = use(phase)
 		return use(full) and (p == "active" or p == "slain")
 	end)
+	-- the line on other maps is one header line: its click opens the map at the barrow (the guide is on its card)
 	local guideShown = scope:Computed(function(use): boolean
 		local m = use(mode)
 		if m == "line" then
-			return true
+			return false
 		end
 		local p = use(phase)
 		return use(full) and (p == "warn" or p == "active") and not use(inside)
@@ -131,10 +147,8 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 	local button = scope:Computed(function(use): number
 		return if use(touch) then BUTTON_TOUCH else BUTTON_PC
 	end)
-	-- the header folds the panel, so on touch it is a full-size tap target
-	local header = scope:Computed(function(use): number
-		return if use(touch) then BUTTON_TOUCH else TITLE
-	end)
+	-- the header folds the panel (one line of the column: Hud/PanelHeader's height)
+	local header = PanelHeader.Height(scope)
 
 	-- Sounds when the boss wakes and when it falls (only for players who see the panel).
 	local lastKey = ""
@@ -157,47 +171,67 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		end
 	end)
 
-	local height = scope:Computed(function(use): number
+	-- The panel's height with its rows open, or `folded` to the header line. Package A review (owner 2026-11-10,
+	-- "things covering each other"): the column hears the player's own fold only (`open`); it folds a box to its line
+	-- itself (Logic/HudStack), and a box built from its fold (`forced`) fed the column back: a Fusion loop that left the
+	-- column with an old height, the panel over the tracker. What is drawn folds with the column too (`collapsed`).
+	local function heightOf(use: Fusion.Use, folded: boolean): number
 		local rows = { use(header) }
-		if use(full) then
+		local body = false
+		local p = use(phase)
+		if use(mode) == "full" and not folded then
+			body = true
 			table.insert(rows, LINE)
-			if use(active) then
+			if p == "active" then
 				table.insert(rows, BAR)
-				if use(channel) ~= nil then
+				if use(channelOf) ~= nil then
 					table.insert(rows, CHANNEL)
 				end
 			end
-			if use(standing) then
+			if p == "active" or p == "slain" then
 				table.insert(rows, LINE)
 				table.insert(rows, REWARD)
 			end
+			-- "Guide" while outside the fighters' circle
+			if (p == "warn" or p == "active") and not use(inside) then
+				table.insert(rows, use(button))
+			end
 		end
-		if use(guideShown) then
-			table.insert(rows, use(button))
-		end
-		local h = PAD * 2
+		-- folded: the header line alone; open: the rows under it and PAD at the bottom
+		local h = if body then PAD else 0
 		for i, row in rows do
 			h += row + (if i > 1 then GAP else 0)
 		end
 		return h
+	end
+	local height = scope:Computed(function(use): number
+		return heightOf(use, use(collapsed))
 	end)
 	local shown = scope:Computed(function(use): boolean
 		return use(current) ~= nil
 	end)
+	-- package A review (owner 2026-11-10): on a phone a line of the stack, PhoneHud.PANEL_WIDTH wide, so it stands
+	-- beside the stack's '+N' chip (wider, it went behind the chip)
+	local function widthOf(use: Fusion.Use): number
+		return if use(PhoneLayout.Compact) then PhoneHud.PANEL_WIDTH elseif use(touch) then WIDTH_TOUCH else WIDTH_PC
+	end
 	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
 	local handle = HudDrag.new(scope, "worldBoss", function(use)
-		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
+		return widthOf(use)
+	end, function(use)
+		return heightOf(use, not use(open))
 	end)
 	-- owner 2026-10-21: the built-in place in the HUD column, round the moved elements (UI/HudSlots)
 	local slot = HudSlots.join(
 		scope,
 		"worldBoss",
 		scope:Computed(function(use): HudSlots.Box
-			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height)
+			local w, h = widthOf(use), heightOf(use, not use(open))
 			return {
 				shown = use(shown),
 				w = w,
 				h = h,
+				line = use(header),
 				custom = HudSlots.moved(use(handle.corner), w, h, use(handle.scale)),
 			}
 		end)
@@ -217,25 +251,26 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		end
 		return math.floor(math.clamp(tonumber(b.hp) or 1, 0, 1) * 100 + 0.5)
 	end)
+	-- the header: "♛ boss" and one value (the HP while it fights, else the time to the start or to its leave); on other
+	-- maps the whole line with the place goes behind the "i"
 	local title = scope:Computed(function(use): string
+		return `♛ {use(bossName)}`
+	end)
+	local value = scope:Computed(function(use): string
 		local b = use(current)
 		if not b then
 			return ""
 		end
 		if use(mode) == "line" then
-			local map = Maps.get(b.map)
-			local key, seconds = WorldBoss.lineOf(b, use(now))
-			return Text.get(use, key or "hud.worldboss.line", {
-				boss = use(bossName),
-				time = Time.format(seconds or 0),
-				place = Text.get(use, WorldBoss.spot().nameKey),
-				map = if map then Text.get(use, map.nameKey) else b.map,
-			})
+			local _, seconds = WorldBoss.lineOf(b, use(now))
+			return Time.format(seconds or 0)
 		end
-		if use(collapsed) then
-			return Text.get(use, "hud.worldboss.collapsed", { boss = use(bossName), pct = use(hpPct) })
+		if b.phase == "active" then
+			return `{use(hpPct)}%`
+		elseif b.phase == "warn" then
+			return Time.format(Time.remaining(b.startsAt or 0, use(now)))
 		end
-		return `♛ {use(bossName)}`
+		return ""
 	end)
 	local stateText = scope:Computed(function(use): string
 		local b = use(current)
@@ -312,28 +347,36 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({ Color = stroke, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, PAD),
-				PaddingBottom = UDim.new(0, PAD),
+				PaddingBottom = scope:Computed(function(use): UDim
+					return UDim.new(0, if use(height) > use(header) then PAD else 0)
+				end),
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10),
 			}),
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, GAP) }),
-			-- the header: a tap folds / unfolds the full panel
-			scope:New("TextButton")({
-				Name = "Header",
+			-- the header: a click folds / unfolds the full panel (the line on other maps opens the map)
+			PanelHeader.new(scope, {
 				LayoutOrder = 1,
-				AutoButtonColor = false,
-				BackgroundTransparency = 1,
-				Size = scope:Computed(function(use): UDim2
-					return UDim2.new(1, 0, 0, use(header))
+				Title = title,
+				Value = value,
+				Open = scope:Computed(function(use): boolean
+					return use(mode) == "full" and not use(collapsed)
 				end),
-				Text = title,
-				TextColor3 = Theme.Brass.Bright,
-				TextSize = Theme.TextSize.Small,
-				FontFace = Theme.Fonts.Display,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				[OnEvent("Activated")] = function()
+				Info = scope:Computed(function(use): string
+					local b = use(current)
+					if not b or use(mode) ~= "line" then
+						return ""
+					end
+					local map = Maps.get(b.map)
+					local key, seconds = WorldBoss.lineOf(b, use(now))
+					return Text.get(use, key or "hud.worldboss.line", {
+						boss = use(bossName),
+						time = Time.format(seconds or 0),
+						place = Text.get(use, WorldBoss.spot().nameKey),
+						map = if map then Text.get(use, map.nameKey) else b.map,
+					})
+				end),
+				OnClick = function()
 					if Fusion.peek(mode) == "line" then
 						-- S149c: the compact line opens the map at the barrow
 						if props.OpenMap then
@@ -344,8 +387,13 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 					if Fusion.peek(mode) ~= "full" then
 						return
 					end
-					folded = not Fusion.peek(collapsed)
-					collapsed:set(folded)
+					if Fusion.peek(forced) then
+						-- the column folded it: it stays open in the column before the others
+						HudSlots.bring("worldBoss")
+						Section.set("hudWorldBoss", true)
+						return
+					end
+					Section.set("hudWorldBoss", not Fusion.peek(open))
 				end,
 			}),
 			line(2, LINE, stateText, Theme.Iron.Text, Theme.Fonts.BodyMedium, full),
@@ -409,9 +457,10 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		AnchorPoint = Vector2.zero,
 		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
+			return UDim2.fromOffset(widthOf(use), use(height))
 		end),
-		Visible = shown,
+		-- package A: not while it waits behind the column's '+N' chip
+		Visible = HudSlots.visible(scope, slot, shown, handle.corner),
 		Content = body,
 	})
 end

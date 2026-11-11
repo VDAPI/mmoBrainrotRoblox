@@ -4,12 +4,18 @@
 -- entry, so nothing is cached past its parent), and only while the element and every ancestor are visible; on a phone
 -- the Roblox thumbstick has no element: "joystick" is the lower left part of the screen where it appears. Rectangles
 -- are in the layer's virtual pixels (UI/Scale), so a window resize or a phone rotation moves the hint with the HUD.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A, the HUD's rework): the names live in
+-- Logic/Tutorial.ANCHOR_NAMES (frozen; tests/tutorial.spec checks that Screens/Hud still builds each of them) and the
+-- thumbstick's zone is Logic/HudZones.thumb, the one the phone's stack keeps clear of, so the pointers cannot drift
+-- from the elements they point at.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudZones = require(ReplicatedStorage.Shared.Logic.HudZones)
 local Theme = require(script.Parent.Theme)
+local Tutorial = require(ReplicatedStorage.Shared.Logic.Tutorial)
 
 local Children = Fusion.Children
 
@@ -19,17 +25,8 @@ export type Rect = { x: number, y: number, w: number, h: number }
 
 local HudAnchors = {}
 
--- Anchor -> element Name on PC / on a phone (nil: no element on that device).
-HudAnchors.NAMES = table.freeze({
-	questTracker = { pc = "QuestTracker", touch = "QuestTracker" },
-	backpackButton = { pc = "inventory", touch = "inventory", drawer = true }, -- the menu button of the backpack window (Hud menu)
-	potionBar = { pc = "PotionBar", touch = "PotionBar" },
-	attackButton = { touch = "AttackButton" },
-	skillBar = { pc = "Skill1", touch = "MobileSkill1" },
-} :: { [string]: { pc: string?, touch: string?, drawer: boolean? } })
-
--- The thumbstick zone of a phone as shares of the layer (left, top, width, height).
-local JOYSTICK = { x = 0.04, y = 0.58, w = 0.26, h = 0.34 }
+-- Anchor -> element Name on PC / on a touch screen (nil: no element on that device): Logic/Tutorial's frozen list.
+HudAnchors.NAMES = Tutorial.ANCHOR_NAMES
 
 local PULSE_SPEED = 4 -- rad/s
 local OUTLINE_PAD = 6 -- virtual px around the element
@@ -58,7 +55,8 @@ function HudAnchors.find(root: GuiObject, anchor: string?, touch: boolean, scale
 		if not touch then
 			return nil
 		end
-		return { x = size.X * JOYSTICK.x, y = size.Y * JOYSTICK.y, w = size.X * JOYSTICK.w, h = size.Y * JOYSTICK.h }
+		local zone = HudZones.thumb(size.X, size.Y)
+		return { x = zone.left, y = zone.top, w = zone.right - zone.left, h = zone.bottom - zone.top }
 	end
 	local names = HudAnchors.NAMES[anchor]
 	local name = names and (if touch then names.touch else names.pc)
@@ -75,7 +73,7 @@ function HudAnchors.find(root: GuiObject, anchor: string?, touch: boolean, scale
 		end
 	end
 	if not object and names and names.drawer then
-		local toggle = root:FindFirstChild("MenuToggle", true)
+		local toggle = root:FindFirstChild(Tutorial.DRAWER, true)
 		object = if toggle and toggle:IsA("GuiObject") and shown(toggle, root) then toggle else nil
 	end
 	if not object or not object:IsA("GuiObject") then

@@ -13,6 +13,11 @@
 -- Owner 2026-11-10 (the window's tabs are gone, the statistics fold in a section): `Compact` for a narrow column (the
 -- backpack window's left column on a small phone): the controls stand under the stat's name (its short line goes, the
 -- "i" keeps the details) and "Spend as the path suggests" gets a line of its own.
+-- Owner 2026-11-10 (UI plan: "bardzo dużo napisów"): one line per stat, "Siła 24", with what it raises and the numbers
+-- per point behind its "i" (no line under the name); the − / + buttons and "Wolne punkty" only while there are free
+-- points to spend (the row is then tall enough for the buttons), so a character without points reads five short lines.
+-- Review 2026-11-10: the name takes what the controls leave in either state (CharacterSections.statControls), so it
+-- stands at the column's edge without points too; on touch "Anuluj", "Zatwierdź" and the suggestion are 44 high.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -41,14 +46,15 @@ export type Props = {
 	-- { str, dex, int, vit } points reserved but not yet confirmed.
 	Pending: Fusion.Value<{ [string]: number }>,
 	Compact: boolean?, -- a narrow column: the controls under the name
+	Touch: boolean?, -- touch targets: the buttons under the stats 44 high (UI-ZASADY: ButtonHeightSmall only on PC)
 }
 
 local HOLD_DELAY = 0.35
-local ROW_HEIGHT = 50
-local VALUE_WIDTH = 90
+local ROW = CharacterSections.STAT_ROW
+local ROW_HEIGHT = ROW.button -- a row with free points: the − / + buttons are square
+local VALUE_WIDTH = ROW.value
 local HEAD_HEIGHT = 24
--- the controls of a row: two buttons, the value and the gaps
-local CONTROLS_WIDTH = ROW_HEIGHT * 2 + VALUE_WIDTH + Theme.Padding.Small * 3
+local LINE_HEIGHT = 32 -- a stat's row without free points: the name and the value on one line (Theme PanelLine)
 
 -- What one point of a stat gives, as arguments of "stat.<id>.desc" (Data/Stats.Formula).
 local function pct(value: number): string
@@ -76,7 +82,8 @@ local function stepButton(
 	glyph: string,
 	layoutOrder: number,
 	step: () -> boolean,
-	enabled: Fusion.UsedAs<boolean>
+	enabled: Fusion.UsedAs<boolean>,
+	visible: Fusion.UsedAs<boolean>
 ): Instance
 	local holding = 0
 	local function startHold()
@@ -104,6 +111,7 @@ local function stepButton(
 	return scope:New("TextButton")({
 		Name = glyph,
 		LayoutOrder = layoutOrder,
+		Visible = visible,
 		Size = UDim2.fromOffset(ROW_HEIGHT, ROW_HEIGHT),
 		AutoButtonColor = false,
 		BackgroundColor3 = Theme.Paper.Raised,
@@ -185,11 +193,14 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 		local n = use(statPoints)
 		return type(n) == "number" and n > 0
 	end)
+	-- owner 2026-11-10: the − / + buttons only with free points (a reservation needs them, and it needs points)
+	local controlsOn = hasPoints
 	local suggestOn = scope:Computed(function(use): boolean
 		local n = use(statPoints)
 		return CharacterSections.suggestShown(if type(n) == "number" then n else nil, use(planInfo) ~= nil)
 	end)
 	local compact = props.Compact == true
+	local buttonHeight = if props.Touch then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
 	-- the share of the row: Cancel, the suggestion, Confirm (without the suggestion, or with it on its own line in a
 	-- compact column, Cancel and Confirm take it all)
 	local function share(withSuggest: number, without: number): Fusion.Computed<UDim2>
@@ -264,15 +275,22 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 		local added = scope:Computed(function(use): number
 			return use(pending)[id] or 0
 		end)
-		-- the name with its "i" and its short line (compact: the name alone, the controls under it)
+		-- the name with its "i" on one line (compact: the controls under it while there are points); in a wide column it
+		-- takes what the controls leave, so the row is filled and the name starts at its left edge with or without them
 		local label = scope:New("Frame")({
 			Name = "Label",
 			LayoutOrder = 1,
-			Size = if compact then UDim2.new(1, 0, 0, HEAD_HEIGHT) else UDim2.new(1, -CONTROLS_WIDTH, 1, 0),
+			Size = if compact
+				then UDim2.new(1, 0, 0, HEAD_HEIGHT)
+				else scope:Computed(function(use): UDim2
+					return UDim2.new(1, -CharacterSections.statControls(use(controlsOn)), 1, 0)
+				end),
 			BackgroundTransparency = 1,
 			[Children] = {
 				scope:New("Frame")({
 					Name = "Head",
+					AnchorPoint = Vector2.new(0, 0.5),
+					Position = UDim2.fromScale(0, 0.5),
 					Size = UDim2.new(1, 0, 0, HEAD_HEIGHT),
 					BackgroundTransparency = 1,
 					[Children] = {
@@ -294,36 +312,28 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 						}),
-						-- owner 2026-10-21: what one point gives, with the numbers
+						-- owner 2026-10-21 / 2026-11-10: what the stat raises and what one point gives, with the numbers
 						InfoTip.new(scope, {
 							LayoutOrder = 2,
 							Title = Text.T(scope, `stat.{id}`),
-							Text = Text.T(scope, `stat.{id}.desc`, descArgs[id]),
+							Text = scope:Computed(function(use): string
+								local raises = Text.get(use, `stat.{id}.short`)
+								return `{raises}\n{Text.get(use, `stat.{id}.desc`, descArgs[id])}`
+							end),
 						}),
 					},
 				}),
-				scope:New("TextLabel")({
-					Name = "Desc",
-					Visible = not compact,
-					Position = UDim2.fromOffset(0, HEAD_HEIGHT),
-					Size = UDim2.new(1, 0, 1, -HEAD_HEIGHT),
-					BackgroundTransparency = 1,
-					Text = Text.T(scope, `stat.{id}.short`),
-					TextTruncate = Enum.TextTruncate.AtEnd,
-					FontFace = Theme.Fonts.Body,
-					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Paper.TextMuted,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					TextYAlignment = Enum.TextYAlignment.Top,
-				}),
 			},
 		})
+		-- in a wide column the name is in this list too (from the left); a compact row's controls have their own frame,
+		-- on the right under the name
 		local controls: { Instance } = {
 			scope:New("UIListLayout")({
 				FillDirection = Enum.FillDirection.Horizontal,
+				HorizontalAlignment = if compact then Enum.HorizontalAlignment.Right else Enum.HorizontalAlignment.Left,
 				VerticalAlignment = Enum.VerticalAlignment.Center,
 				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, Theme.Padding.Small),
+				Padding = UDim.new(0, ROW.gap),
 			}),
 			stepButton(
 				scope,
@@ -334,12 +344,15 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				end,
 				scope:Computed(function(use): boolean
 					return use(added) > 0
-				end)
+				end),
+				controlsOn
 			),
 			scope:New("TextLabel")({
 				Name = "Value",
 				LayoutOrder = 3,
-				Size = UDim2.fromOffset(VALUE_WIDTH, ROW_HEIGHT),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(VALUE_WIDTH, if use(controlsOn) then ROW_HEIGHT else LINE_HEIGHT)
+				end),
 				BackgroundTransparency = 1,
 				RichText = true,
 				Text = scope:Computed(function(use): string
@@ -368,7 +381,8 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				end,
 				scope:Computed(function(use): boolean
 					return use(available) > 0
-				end)
+				end),
+				controlsOn
 			),
 		}
 		table.insert(
@@ -377,14 +391,25 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				then scope:New("Frame")({
 					Name = id,
 					LayoutOrder = index,
-					Size = UDim2.new(1, 0, 0, HEAD_HEIGHT + Theme.Padding.Tiny + ROW_HEIGHT),
+					Size = scope:Computed(function(use): UDim2
+						-- the controls under the name only while there are points; else the value on the name's line
+						return UDim2.new(
+							1,
+							0,
+							0,
+							if use(controlsOn) then HEAD_HEIGHT + Theme.Padding.Tiny + ROW_HEIGHT else LINE_HEIGHT
+						)
+					end),
 					BackgroundTransparency = 1,
 					[Children] = {
 						label,
 						scope:New("Frame")({
 							Name = "Controls",
-							Position = UDim2.fromOffset(0, HEAD_HEIGHT + Theme.Padding.Tiny),
-							Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
+							AnchorPoint = Vector2.new(0, 1),
+							Position = UDim2.fromScale(0, 1),
+							Size = scope:Computed(function(use): UDim2
+								return UDim2.new(1, 0, 0, if use(controlsOn) then ROW_HEIGHT else LINE_HEIGHT)
+							end),
 							BackgroundTransparency = 1,
 							[Children] = controls,
 						}),
@@ -393,7 +418,9 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				else scope:New("Frame")({
 					Name = id,
 					LayoutOrder = index,
-					Size = UDim2.new(1, 0, 0, ROW_HEIGHT),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, 0, 0, if use(controlsOn) then ROW_HEIGHT else LINE_HEIGHT)
+					end),
 					BackgroundTransparency = 1,
 					[Children] = { label, controls :: any },
 				})
@@ -407,7 +434,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 		Variant = "secondary",
 		TextSize = Theme.TextSize.Small,
 		Size = if compact
-			then UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall)
+			then UDim2.new(1, 0, 0, buttonHeight)
 			else UDim2.new(0.42, -Theme.Padding.Small * 2 / 3, 1, 0),
 		Visible = suggestOn,
 		Disabled = scope:Computed(function(use): boolean
@@ -432,6 +459,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				LayoutOrder = 10,
 				Size = UDim2.new(1, 0, 0, 30),
 				BackgroundTransparency = 1,
+				Visible = hasPoints, -- owner 2026-11-10: "Wolne punkty" only with points to spend
 				Text = scope:Computed(function(use): string
 					return Text.get(use, "character.pointsLeft", { points = use(available) })
 				end),
@@ -445,7 +473,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Buttons",
 				LayoutOrder = 11,
-				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+				Size = UDim2.new(1, 0, 0, buttonHeight),
 				BackgroundTransparency = 1,
 				Visible = hasPoints,
 				[Children] = {
@@ -483,7 +511,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				then scope:New("Frame")({
 					Name = "Suggest",
 					LayoutOrder = 12,
-					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+					Size = UDim2.new(1, 0, 0, buttonHeight),
 					BackgroundTransparency = 1,
 					Visible = suggestOn,
 					[Children] = suggestButton,

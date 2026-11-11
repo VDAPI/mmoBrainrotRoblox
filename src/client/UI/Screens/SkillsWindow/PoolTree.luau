@@ -10,7 +10,8 @@
 -- be bought, the bar slot. No description on the tree: the PC hover shows the name and the short sentence, a click
 -- selects (details panel), a tap opens the phone sheet; a bought active of the worn pool drags onto the bar.
 -- Owner 2026-10-21 (too many detailed descriptions): the preview note of another pool in one short line with the rest
--- behind its "i"; the "click / drag" hint only until a skill is selected.
+-- behind its "i". Owner 2026-11-10 (UI plan, one home per thing): the "click / drag" hint stands only in the empty
+-- details panel (Details), no longer over the tiles as well.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -250,14 +251,6 @@ function PoolTree.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 		}))
 		if not view.active then
 			note(Text.get(use, "skills.pool.preview.short"), nil, Text.get(use, "skills.pool.preview"))
-		end
-		if not touch then
-			-- owner 2026-10-21: only until a skill is selected (a separate state: the tree is not rebuilt on a click)
-			s:Hydrate(note(Text.get(use, "skills.tree.hint")))({
-				Visible = s:Computed(function(use2): boolean
-					return use2(ctx.selected) == nil
-				end),
-			})
 		end
 
 		local function gridOf(name: string, tiles: { PathView.PoolTile }): Instance

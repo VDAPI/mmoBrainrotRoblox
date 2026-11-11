@@ -1861,7 +1861,10 @@ local function hurtFlash()
 		local gui = Instance.new("ScreenGui")
 		gui.Name = "Vaelthorn_HurtFlash"
 		gui.IgnoreGuiInset = true
-		gui.DisplayOrder = 5
+		-- owner 2026-11-10 ("things covering each other"; UI plan package A): over the HUD (UIController's Screens
+		-- layer, 1) and under the windows (its Windows layer, 5) and the tutorial's guide pointer (4). It stood at 5,
+		-- the Windows layer's own order, so an open window could be tinted red by a blow.
+		gui.DisplayOrder = 3
 		gui.ResetOnSpawn = false
 		local frame = Instance.new("Frame")
 		frame.Size = UDim2.fromScale(1, 1)

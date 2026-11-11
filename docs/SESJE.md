@@ -15098,3 +15098,445 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   UI-ZASADY §4 (zwinięte „Jak zdobywać EXP gildii” oraz zasady i nagrody Krwawego Księżyca, obie bez linii
   podsumowania), zasada toastu w DECYZJE, JAK-DODAC i komentarzu `dialogue.spec` zgodna z §3. `worldlayout.spec` ma 20
   testów. Bramka zielona: 10272 testy, `wikidump --check` aktualny.
+
+### Plan UI 2026-11-10, pakiet D: plecak, umiejętności, usługi, sklepy i tooltip przedmiotu (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”; „wiem, że jesteś w stanie zrobić czytelne i przyjemne GUI, postaraj się”. Część kodowa pakietu D (teksty
+  do limitów i pusta lista D w `tests/fixtures/textcaps` to osobna część), na API pakietu F; stopki, przewijanie i
+  inne nowe właściwości okien pakietu C przyjdą po jego scaleniu (miejsca w raporcie pakietu).
+- Układ: nowy czysty `Logic/GearLayout` (prostokąty z rozmiaru treści okna, `WindowFrame.content`, nigdy z ekranu):
+  `character` (kolumny `CharacterSections.columns` z szerokości treści), `backpack` (nagłówek, linia ostrzeżenia,
+  filtry, siatka, akcje), `skillPanel` i `skillSheet` (szczegóły umiejętności na PC i arkusz telefonu), `smithUpgrade`,
+  `auctionSell`, `auctionBrowse`, `alchemy`, `look`, `backpackShop`. Okna mierzą swój obszar (`Out("AbsoluteSize")`
+  przez `Scale.Value`) i stawiają części tam, gdzie mówi `GearLayout`; przyciski główne stoją w pasie stopki.
+- Okno plecaka: jedna linia na statystykę z (i), przyciski i „Wolne punkty” tylko z wolnymi punktami, statystyki
+  pochodne w czterech sekcjach (`charOffense` otwarta, `charDefense`, `charResources`, `charOther` zwinięte), nazwy
+  zawijane zamiast ucinanych, kolumny z szerokości treści (plecak 500 px na trzech telefonach), ostrzeżenie Small 17.
+- Okno umiejętności: sekcje `skillCost` („Koszt i odnowienie”, linia kosztu i odnowienia, tabela rang pod spodem;
+  pasywka „Wartości rangi”) i `skillBreakpoints` („Przełomy”, linia działających wersji albo „Przełom do wyboru”),
+  obie zwinięte; pełny opis pod wspólnym `Details` („Więcej ▸”); karty przełomów w jednym wierszu z „Wybierz”
+  także na telefonie, zasada zmian raz; jedna podpowiedź drzewka (pusty panel szczegółów); nagłówek kierunków mieści
+  się (etykiety się kurczą, krótsze teksty, zasada prowadzenia za (i), zwieńczenie tylko gdy jest, węższy przełącznik
+  zestawów); arkusz telefonu z jednym paskiem (wstecz, akcje, podgląd, „Anuluj” / „Zatwierdź (+N)” przy rezerwacji),
+  szczegóły co najmniej 260 px; `NodeText.LONG` 60 i 71 nowych `path.<ścieżka>.<węzeł>.short` (pl i en).
+- Usługi: kowal (ulepszanie: lista, kowadło z przedmiotem, przewijany środek, wynik, „Ulepsz” w stopce; na niskim
+  obszarze przedmiot obok środka), aukcja (wystawianie: formularz przewijany nad przypiętym „Wystaw przedmiot”;
+  przeglądanie: filtry przewijane nad przypiętym „Szukaj”, wyniki nad stronami), alchemik (receptury i kolejka z
+  przewijaną listą i przypiętym „Odbierz wszystko”), wygląd (podgląd i lista obok siebie, kolumna tylko gdy brak
+  miejsca), plecakarz (tekst wiersza kończy się przed przyciskiem, węższy przycisk poniżej 560 px).
+- Tooltip przedmiotu i sklepy (pierwszy commit): skrócony widok najwyżej 10 linii po najwyżej 60 znaków, krótkie
+  linie efektów (`tooltip.effect.*.short`, `item.stone_dungeon_*.short`), pełny widok bez zmian; Smoczy Sklep,
+  `PremiumConfirm`, `SeasonPassBuy`, depozyt i zdjęcie oferty z aukcji: jedno miejsce na każdy tekst.
+- Testy: nowy `gearlayout.spec` (PC i trzy telefony przy pasku 0 i 58 px: w obszarze, bez nakładania, przyciski w
+  stopce, co najmniej 2 rzędy plecaka na telefonie i 5 na PC, 260 px szczegółów umiejętności; okna czytają
+  `GearLayout`), rozszerzone `tooltip.spec` (limity skróconego widoku dla każdego przedmiotu, krótkie linie, tooltip
+  paska najwyżej 5 linii, pełny widok pod Alt i „Więcej ▸”), `charactersections.spec` (kolumny z szerokości treści,
+  sekcje pochodne, jedna linia statystyki), zaostrzony `shopshort.spec` (najechanie karty bez jej (i)) i w
+  `sectionfold.spec` test `Data/Folds/Gear` (każde id czytane przez okna plecaka i umiejętności, żadne inne).
+- Odstępstwa od planu: karty przełomów zawijają tekst zamiast go ucinać, póki teksty przełomów nie zejdą do 48 znaków
+  (część tekstowa); przyciski główne usług stoją we własnym pasie, póki pakiet C nie da stopki okna; kolejka alchemika
+  zostaje kartami 84 px do `ListRow` pakietu C; filtry plecaka i alchemika czekają na przewijane `Tabs` pakietu C;
+  `Avoid` tooltipu z paska akcji plecaka czeka na właściwość pakietu C. Poprawki w `TooltipModel`: linia „+N
+  więcej” z jawnym typem `Line`, a komentarz nie cytuje zmyślonego klucza w cudzysłowie (czyta go `data.spec`).
+- **Po przeglądzie (2026-11-10):** specy liczyły pasek Robloxa (58 px) jako px wirtualne, a okno bierze go
+  podzielonego przez skalę UI (68,5 px na telefonie): arkusz umiejętności miał na 844×390 tylko 251,5 px szczegółów,
+  a plecak obok usługi (sloty 64) jeden pełny rząd. Specy liczą teraz paski 0, 36 i 58 px prawdziwych
+  (`bar / PhoneHud.SCALE`), arkusz sięga w dolny margines okna (`GearLayout.sheetOverhang`, 261,5 px), plecak ma na
+  dotyku zawsze sloty 56 (`BackpackPanel`), a sortowanie i akcje plecaka, „Anuluj”, „Zatwierdź” i „Rozdaj wg ścieżki”
+  oraz Zwój Ochrony 44 px (`GearLayout.backpack(..., touch)`). Okna mierzą treść nowym `UI/ViewSize` (linijka 100 px
+  pod tymi samymi skalami, odczyt po ułożeniu, całe px), bo `AbsoluteSize` przez `Scale.Value` zawierało animację
+  otwierania okna: okno plecaka na telefonie budowało się od nowa w prawie każdej jej klatce, a przyciski usług się
+  przesuwały. Okno plecaka buduje się teraz od nowa tylko przy zmianie rodzaju układu, kolumny telefonu przesuwają się
+  same. Nazwa statystyki bez wolnych punktów stała 116 px od krawędzi; teraz zajmuje to, co zostawiają przyciski
+  (`CharacterSections.statControls`). Zwinięta linia „Koszt i odnowienie” jest bez zasięgu i procentu skrócenia
+  (`SkillInfo.costSummary`, `skills.cooldown.short`), bo z nimi nie mieściła się w panelu 326 px dla żadnej
+  umiejętności z zasięgiem; spec mierzy ją dla każdej umiejętności i rangi (278 px, `sectionSummary`). Spec panelu PC
+  liczy jego wnętrze po marginesie (`GearLayout.skillPanelArea`, liczby okna sprawdzane w źródle): przy podglądzie i
+  dwóch rzędach przycisków 142 px linii, próg 140. Pliki: `UI/ViewSize`, `UI/SkillInfo`, `Logic/GearLayout`,
+  `Logic/CharacterSections`, okna z listy niżej, `tests/gearlayout.spec`, `tests/charactersections.spec`.
+- **Pliki:** `Logic/GearLayout`, `Logic/CharacterSections`, `Logic/NodeText`, `Logic/TooltipModel`,
+  `Data/Folds/Gear`, `Data/Localization/pl|en`, `Screens/CharacterWindow/init|DerivedList|StatAllocator`,
+  `Screens/BackpackPanel`, `Screens/SkillsWindow/init|Details|Breakpoints|Sheet|Header|PathTab|PoolTree`,
+  `Screens/BlacksmithWindow/Upgrade`, `Screens/AuctionWindow/Sell|Browse|Mine`, `Screens/AlchemyWindow`,
+  `Screens/LookWindow`, `Screens/BackpackShop`, `Screens/DepositWindow`, `Screens/PremiumShop/init|Items|Cosmetics`,
+  `UI/PremiumConfirm`, `UI/SeasonPassBuy`, `tests/gearlayout.spec`, `tests/tooltip.spec`,
+  `tests/charactersections.spec`, `tests/shopshort.spec`, `tests/sectionfold.spec`.
+
+### Plan UI 2026-11-10, pakiet D, część tekstowa: teksty plecaka, umiejętności, usług i sklepów (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Teksty, które `TextScan.owner` daje pakietowi D, w limitach `docs/UI-ZASADY.md` §2 (pl i en, te same
+  placeholdery, linie zmieniane w miejscu); lista D w `tests/fixtures/textcaps` z 237 kluczy do pustej. Zmienionych
+  albo nowych kluczy: 251.
+- Okno umiejętności (pierwszy commit): 61 krótkich opisów umiejętności i 26 krótkich linii węzłów do 60 znaków, 90
+  opcji przełomów do 48 z wszystkimi liczbami (wzory „Rozprysk: …% obrażeń do … st. od celu”, „Fala ciosu: …”,
+  „pkt proc.”, po angielsku „points”), cztery długie opisy do 300 (`skill.arcaneTorrent`, `skill.intercept`,
+  angielski `skill.wheelOfFortune`, `path.scout.royalFalcon`), linie okna (`paths.row`, `paths.node.dip`,
+  `skills.mod.idle|inactive`, `skills.shape.guard|ring`; reguła wyboru celu Przechwycenia jest w jego opisie),
+  podpowiedzi drzewek bez „kliknij”, przyciski „Rozdaj wg ścieżki”, „Rozdaj wg puli”, „Zatwierdź +N”, „Zwróć węzły”,
+  pytanie o kopię zestawu w 90 znakach (`buildset.copy.message`, „Darmowy reset” dalej w `.info`).
+- Przedmioty, sklepy i usługi (drugi commit): przyciski sklepu, kowala i garderoby w 18 znakach, zakładki alchemika,
+  sklepu łowów i garderoby w 12, pytania potwierdzeń w 90 (aukcja, kowal, sklep kamieni, ustawienie kamienia), (i) w 240
+  i trzech zdaniach (`auction.sell.rules`, `portalshop.intro`, `autoGrind.desc`, cechy broni), podpowiedzi bez nazw
+  ruchów myszy, Smocza Waluta raz pełną nazwą i dalej ◆, bez długich myślników. Kod: `HuntShopWindow` (zawartość
+  skrzyni w `Details` okna), `WanderingMerchantWindow` (pod pytaniem poziom i wiązanie z nowych
+  `wanderer.confirmGear.short` i `wanderer.confirmGearBound.short`, cała linia w `Details`),
+  `BlacksmithWindow/Reroll` („Przemień wszystkie” bez liczby, linia pod nim z nowym `smith.reroll.all.have`),
+  `PremiumShop/Currency` (kafelek paczki startowej: liczba przy ikonie waluty).
+- Wiki: `lune run tools/wikidump.luau` po tekstach (`skills`, `items`, `cosmetics`, `recipes`, `premium`, `meta`,
+  `docs/PRZEDMIOTY.md`), `--check` mówi „up to date”.
+- Wybory: karty przełomów dalej zawijają tekst (teksty mają już najwyżej 48 znaków, a zawijanie chroni przed ucięciem na
+  wąskim telefonie); podpowiedź „Podwójny klik lub przytrzymanie: załóż/użyj” zostaje w pełnym tooltipie (skrócony widok
+  jej nie ma, a nic innego nie uczy skrótu); w przełomach Wiru Ostrzy i Gniewu Tytana odpadło „na 10. randze”, liczby
+  zostały („4 × 48%”); notka o Smoczej Walucie zostaje na końcu zakładki waluty. Stare specy krótkich tekstów
+  (`shorttext3`, `shopshort`, `socialshort`) przechodzą bez zmian.
+- **Po przeglądzie (2026-11-10):** linie węzłów Inwokacji i Strumienia Arkanów mówią zmianę („Kanał Inwokacji:
+  {archmage} s”, nie ujemny czas), Egzekucja premię, nie dobijanie, Koło Fortuny „wrogowie częściej chybiają”;
+  angielskie teksty węzłów piszą punkty procentowe jako „pt” (było „+1 points”), liczbę fal i promień bez liczby
+  mnogiej po liczbie, Pękająca Tarcza po angielsku leczy częścią tarczy, nie procentem życia; „Breakthroughs” zamiast
+  „Breakpoints”; pytanie zakupu Kupić „{name}”? (barwniki i tytuły mają w nazwie dwukropek); przełomy Rozdarcia i
+  Wyroku wzorem „Fala ciosu”, Strzału w Serce „Rozprysk”; „30 min” w (i) sklepu kamieni i w opisach wiecznych
+  kamieni; zakładka alchemika „Podróż” jak w sklepie areny. Nazwa zakładki błogosławieństw czeka na właściciela
+  (DECYZJE); nazwy sekcji w `docs/UI-ZASADY.md` §4 poprawi scalenie (plik pakietu F). Wiki przegenerowana (`skills`,
+  `items`, `recipes`, `meta`, `docs/PRZEDMIOTY.md`).
+- **Pliki:** `Data/Localization/pl|en`, `Screens/HuntShopWindow`, `Screens/WanderingMerchantWindow`,
+  `Screens/BlacksmithWindow/Reroll`, `Screens/PremiumShop/Currency`, `tests/fixtures/textcaps/D.luau`,
+  `wiki/src/data/*.json`, `docs/PRZEDMIOTY.md`, `docs/DESIGN.md` §23, `docs/DECYZJE.md`, `docs/PROGRESS.md`,
+  `docs/JAK-DODAC.md`.
+
+### Plan UI 2026-11-10, pakiet B: komunikaty w jednej kolejce (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Pakiet B (część kodu): wszystko, co wyskakuje, idzie przez jedną kolejkę i ma jedno miejsce, pas wiadomości
+  stoi pod pasmem celu, karty w rogu PC, zaproszenia w jednym stylu. Domyślne odpowiedzi pytań UI 1, 2, 4, 5 i 8
+  (DECYZJE). Teksty pakietu (lista `tests/fixtures/textcaps/B.luau`) to osobna część.
+- Kolejka: `Logic/NoticeQueue` (czysta, czas podaje wołający): rodzaje alarm, zaproszenie, karta, baner, toast,
+  kwestia NPC; drabina `ORDER` z planu (gotowość przed zaproszeniem do drużyny, nagroda bossa przed legendą i wynikiem
+  walki, lepszy przedmiot przed banerem); miejsca `CAPACITY` (PC: alarm, baner, 2 toasty, karta, zaproszenie i
+  kwestia NPC; tablet bez miejsca na kwestię, bierze miejsce toastu; telefon: linia i okienko). Wyższy wpis bierze
+  pełne miejsce niższemu, a ten czeka i potem stoi resztę swojego czasu (`left`; boss świata 15 s razem). `MERGE` 10 s
+  daje „×N”, `ERROR_GAP` 10 s jeden błąd; w walce `HOLD` (toast 10 s; ogłoszenie z innego serwera, kwestia NPC i
+  lepszy przedmiot 30 s), potem wpis przepada; `WAIT` to najdłuższe czekanie na miejsce; `windowWaits` (toast
+  osiągnięcia); tego, co już stoi, walka ani okno nie zdejmują. Banery strefy i obszaru oraz czerwone (mityk, boss
+  świata) idą pierwsze wśród banerów (`urgent`), więc toast osiągnięcia dalej czeka na banery strefy i obszaru.
+- Miejsca: `Logic/TopBand` rozszerzony, funkcje fazy 2 z tymi samymi podpisami: `zone` (pas z
+  `HudZones.messageZone`, na telefonie strefa M, w pikselach całego ekranu, co najmniej 8 pod paskiem Robloxa),
+  `slots` (od góry alarm, baner, toasty, zaproszenie; nad oknem, gdy cały się mieści, inaczej pod paskiem tytułu, bez
+  czekania; obok karty samouczka przez `toastShift`, inaczej pod nią; `holdTop`; karta PC w `HudZones.cardSlot`,
+  kwestia NPC w `barkSlot`, każda tylko poza oknem i kartą samouczka), `bossBar`, `phoneZone`. `UI/HudCover.Rects`:
+  prostokąty otwartych okien.
+- Klient: `UI/Notify` (jedyne drzwi: `push`, `close`, `alert`, `card`, `details`, `flash`, `mount`; sygnał walki to
+  spadek HP albo atak z `TargetController.IsAttacking`, przekazany przez `NotificationController`, przez 6 s;
+  przełącznik `HOLD_ALL`), `Components/Prompt` (ikona, linia, ✓, ✕, pasek czasu, „Więcej ▸”), `Toast.push` i
+  `Announcement.push` z tymi samymi podpisami, oba miękko wczytują `UI/Notify` (decyzja 2026-10-31 o module, którego
+  Rojo jeszcze nie zsynchronizował). Przez kolejkę idą: toasty i ogłoszenia (`NotificationController`, ogłoszenie z
+  innego serwera rozpoznane po kluczu `*Global`), toast osiągnięcia (`AchievementController`), banery strefy i
+  obszaru, kwestie NPC, ostrzeżenie `BossCastBar` i komunikaty walki z bossem lochu (linia alarmu), karty `FightCard`,
+  lepszego przedmiotu, `BossReward` i `LegendReveal` (podsumowanie i „Szczegóły”), zaproszenia drużyny, pojedynku,
+  handlu, gildii i znajomych, oferta meczu areny, zaproszenie turnieju i gotowość. Pasek bossa lochu stoi w paśmie
+  celu (`TopBand.bossBar`, na telefonie wiersze złożone do 64). Błysk ekranu przy legendzie rysuje `Notify.flash`.
+  `TopBandState` trzyma tylko kartę samouczka (`Keep`); flagi banerów i `ToastTop` odeszły, bo decyduje kolejka.
+- Testy: nowy `noticequeue.spec` (najwyżej 2 toasty na PC i 1 komunikat na telefonie, 15 s bossa świata mimo
+  wywłaszczenia, „×N”, błąd raz na 10 s, walka wstrzymuje i upuszcza, błędy i alarmy nigdy, drabina z gotowością
+  przed lepszym przedmiotem; miejsca na ekranach PC, tabletach i telefonach przy pasku Robloxa 0, 36 i 58, w stanach
+  `HudZones` i z oknami 560×520, 900×620 i 1080×700 na środku i u góry oraz z pełnym oknem telefonu: nic na stałym
+  elemencie HUD, oknie ani pasku tytułu, wszystko co najmniej 8 pod paskiem, karta samouczka nigdy zasłonięta),
+  rozszerzony `topband.spec` (stare gwarancje: pod każdym banerem, najwyżej dwa toasty, toast osiągnięcia czeka na
+  banery strefy i obszaru, bez skoków; `messageZone.top = targetBand.bottom + 8`; pasek bossa lochu; sprawdzenie
+  kodu: nic poza plikami B nie wstawia do warstwy Toasts ani nie tworzy `ScreenGui` komunikatu).
+- Odstępstwa od planu:
+  - pytanie UI 8: wygrywa decyzja z 2026-10-31 (DESIGN §23, UI-ZASADY §6): komunikat nad oknem, gdy cały się tam
+    mieści, inaczej pod paskiem tytułu, bez czekania; napis w pasku tytułu (`WindowManager.Notice`) i baner
+    wstrzymany do 30 s przy otwartym oknie nie weszły. Na zamknięcie okna czeka tylko toast osiągnięcia (ta sama
+    decyzja);
+  - karta i kwestia NPC na PC czekają, gdy okno albo karta samouczka zasłania ich miejsce, zamiast stać na oknie;
+  - karta lepszego przedmiotu ma „Załóż” i ✕ zamiast „Szczegóły” (szczegóły daje tooltip slotu na karcie);
+  - okno odsłonięcia legendy otwiera się z karty, a nie samo po podniesieniu (DESIGN §5.5), zgodnie z pytaniem UI 1;
+  - strefę M telefonu liczy `TopBand.phoneZone` z miejsc `PhoneHud` (4 pod ramką celu, do 114, 8 od poczty i prawej
+    kolumny), bo `HudZones` jej nie ma; po scaleniu z pakietem A może czytać `PhoneHud.mZone`;
+  - pasek bossa lochu na telefonie ma szerokość z planu, min(720, szerokość − 16), więc na telefonach zachodzi na rząd
+    pod portretem i brzeg minimapy (dziś stoi u góry i zasłania jeszcze więcej); do przeglądu po A i B;
+  - zaproszenia różnych rodzajów czekają w kolejce jedno po drugim (stare okienko pokazywało tylko najnowsze), a
+    gotowość, zaproszenie do drużyny i oferta areny mają ✓ i ✕ zamiast napisów, więc klucze `dungeon.ready.yes/no`,
+    `party.accept/decline`, `friends.party.accept/decline` i `arena.offer.accept/decline` nie są już czytane (zostają w
+    lokalizacji; linia `friends.party.accept` zeszła z listy B, bo skan już jej nie widzi);
+  - ze `topband.spec` zeszły sprawdzenia miejsc banerów w ich plikach i flag `TopBandState` (miejsca daje kolejka);
+  - `Hud/init` (pakiet A) dalej montuje `ZoneBanner` i `AreaBanner`, które teraz tylko pilnują strefy i obszaru i
+    oddają pusty folder, więc pliku A nie trzeba było zmieniać.
+- **Pliki:** `Logic/NoticeQueue`, `Logic/TopBand`, `UI/Notify`, `UI/Components/Prompt`, `UI/Components/Toast`,
+  `UI/Components/Announcement`, `UI/HudCover`, `UI/TopBandState`, `Screens/ArenaOffer`, `Screens/ReadyCheck`,
+  `Screens/FightCard`, `Screens/BossReward`, `Screens/LegendReveal`, `Screens/Hud/AchievementToast|ZoneBanner|
+  AreaBanner|BarkToast`, `Vfx/BossCastBar`, `Controllers/Achievement|Arena|Bark|Dungeon|FightLog|LootComfort|Loot|
+  Notification|Party|SocialController`, `tests/noticequeue.spec.luau`, `tests/topband.spec.luau`,
+  `tests/fixtures/textcaps/B.luau`.
+
+### Plan UI 2026-11-10, pakiet B, teksty: krótkie komunikaty (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, zbyt szczegółowe opisy”. Pakiet B (część tekstów): każdy klucz, który
+  należy do B (`TextScan.owner`, 1103 klucze), mieści się w limicie swojej powierzchni po wstawieniu przykładowych
+  wartości, w pl i en: toast 60, baner 56, alarm 28, linia karty 40, zaproszenie 60, przycisk 18, przycisk modala 14,
+  treść modala 90. Lista `tests/fixtures/textcaps/B.luau` pusta (było 193), `textcaps.spec` bez wyjątków dla B.
+- Lokalizacja: 200 linii pl i 193 en zmienionych w miejscu, 4 nowe klucze przy swoich prefiksach
+  (`arena.offer.oppRating`, `dungeon.reward.runs`, `contract.ready.info`, `items.toast.legendRework.info`), te same
+  zmienne w pl i en. Bez sterowania, klawiszy i rad w toastach („w oknie Umiejętności (K)”, „Najedź na przedmiot”,
+  „Spróbuj ponownie / za chwilę”, „Wróć jutro”, „Możesz grać dalej”); półpauzy zamienione na dwukropki. Toast po
+  potwierdzeniu nie powtarza modala (`social.ignoredNow`). Wiki i `docs/PRZEDMIOTY.md` wygenerowane na nowo (premie,
+  fazy bossów).
+- Toast z „i”: `Toast.push(text, kind, duration, info)`; z `info` toast kończy się narysowanym „i” (koło z literą,
+  S68: nie znak ⓘ), stoi 6 s, a klik albo dotknięcie zamyka go i otwiera jego linię i całość w `Notify.details` (PC na
+  środku, telefon arkusz). `NotificationController` szuka `key .. ".info"` (`Locale.has`) i składa go z tymi samymi
+  argumentami; `Notify` mierzy wysokość takiego toastu bez szerokości „i” (`Spec.inset`). Klucze `.info` mają regułę
+  `infoTip` na liście B.
+- Banery: ogłoszenie z innego serwera (`*Global`) zaczyna się od 🌐 zamiast „(inny serwer)” i gubi drugorzędne
+  (punkty, poziom, przedmiot ulepszenia, boss wierzchowca); łup „⚜ gracz: przedmiot!”, ulepszenie bez przedmiotu,
+  Sala Sław, Krwawy Księżyc, boss świata (bez progu nagrody: ma go karta bossa i toast „za niski poziom”), wydarzenia,
+  turniej, arena, pojedynek, Radosław krócej. Wielki napis turnieju to „⚜ Nowy Czempion ⚜”, imię niesie baner obok.
+- Alarmy (28): ostrzeżenia ciosów i mechanik bossów bez imienia bossa i gracza (pasek rzucania i pasek bossa je
+  pokazują), fazy bossów lochów i Hrimvalda krótko, komunikaty lochu bez imienia bossa. `tests/bosscast.spec` (plik
+  bez właściciela) zmieniony w jednej linii: ostrzeżenie nie zawiera już `{name}`.
+- Zaproszenia: bez „({seconds} s)” (odlicza pasek czasu `Components/Prompt`); w propozycji meczu areny przeciwnik w
+  jednej linii, rating z progiem (Brąz … Mistrz) w drugiej (`Screens/ArenaOffer`, `arena.offer.oppRating`).
+- Karty (40): `Screens/BossReward` czyta własną linię prób dnia (`dungeon.reward.runs` zamiast
+  `worldmap.card.runsToday`, który zostaje oknu lochu) i `dungeon.reward.next` ze zmiennymi `legPct` / `mythPct`;
+  premie `bonus.*` (rodzina „Przeciw X”, po angielsku „Strong vs X”), Dar Fortuny, pula efektu w dymku, wkład w
+  nagrodzie bossa świata.
+- Odstępstwa od planu: przykład `contract.ready` z planu („Zlecenie wykonane: {n}× {monster}. Odbierz zapłatę.”) ma
+  69 znaków z przykładowymi wartościami, więc toast to „Zlecenie: {n}× {monster}. Odbierz zapłatę.”, a obszar i
+  miejsca odbioru są w „i”; `rework2.body.info` należy do pakietu C (zrobione tam).
+- **Pliki:** `Data/Localization/pl|en`, `UI/Components/Toast`, `UI/Notify`, `Controllers/NotificationController`,
+  `Screens/ArenaOffer`, `Screens/BossReward`, `tests/fixtures/textcaps/B.luau`, `tests/bosscast.spec.luau`,
+  `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|bosses|meta.json`.
+
+### Plan UI 2026-11-10, pakiet B: poprawki po przeglądzie (2026-11-10)
+- Przegląd pakietu B: 23 zgłoszenia i uwaga o kompletności, wszystkie prawdziwe; dwie części propozycji poprawek
+  odrzucone (niżej). Poprawki w kodzie mają notatki „Review 2026-11-10”.
+- Układ (e9b5bef9): pas liczy się w rozmiarze warstwy komunikatów (`TopBand.context`: rozmiar jej korzenia przez skalę,
+  pasek Robloxa przez skalę), więc na telefonie z wcięciami strefa M zgadza się z `PhoneHud.area`, a nie z całym ekranem
+  (na 844×390 linia zasłaniała minimapę i PvP, a karta albo zaproszenie pocztę i łuk umiejętności). Kontekst niesie
+  liczbę innych członków drużyny (`PhoneLayout.Others`, kwestia NPC na PC staje pod ramkami drużyny), powrót z areny
+  (`TopBand.arenaState`: pas pod panelem powrotu, póki `returnAt` trwa) i otwarte okienko potwierdzenia
+  (`HudCover.SetModal` z jednej linii w `WindowManager`, plik pakietu C; `HudCover.Modals`, `TopBand.slots` czeka z
+  komunikatem, który by na nie trafił). Pasek bossa lochu na telefonie to pasek 20 w szerokości M
+  (`TopBand.PHONE_BOSS_H`; `DungeonController`: nazwa, życie bez liczb, ⌛ z czasem), a M zaczyna się 4 pod nim;
+  komunikat telefonu nie jest wyższy niż M, a M ma co najmniej linię HUD (`TopBand.PHONE_M.line`).
+- Kolejka (be81579b): `Notify.alert` daje alarmowi termin (`deadline` = jego sekundy), więc odsunięty alarm przepada po
+  czasie; alarm `danger` (cios do uniknięcia) idzie przed innymi alarmami, ten sam alarm połączony w „×N” przedłuża
+  termin, a `DungeonController.showAnnouncement` zamyka swój poprzedni komunikat. Zaproszenie z `penalty` (propozycja
+  meczu areny, `Screens/ArenaOffer`) idzie przed innymi zaproszeniami (`NoticeQueue.effectiveRank`).
+- Widoki (e0da7740): grupa komunikatu (`CanvasGroup`) jest o 8 większa z każdej strony, a `UIPadding` oddaje widokowi
+  jego miejsce, bo grupa ucinała obrys rysowany na zewnątrz (brzegi toastów w kolorze rodzaju, ramka banera, brzeg
+  alarmu, kart i zaproszeń). Pełny widok stoi nad komunikatami (ZIndex 3 nad 2) i pod paskiem Robloxa; arkusz telefonu
+  jest wysoki jak jego treść (dotknięcie pod nim zamyka), a na PC widok stoi na środku pod paskiem. Zasłona jest jedna:
+  `LegendReveal.backdrop` (mityczny łup czerwony) idzie do `Notify.details`, a odsłonięcie oddaje sam panel. Wysokość i
+  wygląd banera biorą rozmiar z `Notify.bannerTextSize` (telefon Small, mityczny i boss świata Title, reszta Large + 2),
+  a tekst mierzy się w szerokości, w jakiej stoi; toast i baner, które się nie mieszczą, kończą się „…”. Na telefonie
+  zaproszenie i karta to jedna linia ze znakiem ▸ i ✕: dotknięcie otwiera arkusz (`Prompt` `sheetOf`: cała linia,
+  „Więcej ▸”, ✓ i ✕; karta: jej pełny widok albo `cardSheet` z tytułem, linią, polem `note` i „Załóż” lepszego
+  przedmiotu), a arkusz zaproszenia znika razem z nim. Zaproszenie na PC ma 520 szerokości (jak toast), bo przy Small
+  linia z „Więcej ▸” miała trzy linie. Napisy pasa mają rozmiar Small zamiast Caption (zaproszenie, karta, oferta areny,
+  gotowość, kwestia NPC, baner strefy, toast osiągnięcia).
+- Teksty (8622981b): `bonus.leg_lastStand` i `bonus.myth_lastStand` „-{v}% otrzymanych obrażeń (HP <30%)”,
+  `skills.error.resetNeedsScroll` z Nauczycielem (pl i en), `dungeon.reward.next` „Następne: …” (en z przecinkiem jak
+  pl), `items.toast.legendRework.info` bez powtórki linii toastu, `loot.announceLuck` „⚜ {player}: {item}!” (pl i en,
+  bez `{cleric}`; `LootService` dalej go podaje), `dungeon.reward.legendary` i `.mythic` „… czeka w worku!”,
+  `quest.dailyBonus` i `quest.weeklyBonus` z „+ ◆ {shards}”, zaproszenia z „Cię” i „Twoje”. Po angielsku
+  `bonus.res_elemental` to „Resistance to elementals/demons {v}%”, a nie proponowane „Elemental and demon resistance”,
+  bo dymek przedmiotu ma też „Fire resistance” i inne odporności na żywioły, więc „elemental resistance” czytałoby się
+  jak one. Wiki i `docs/PRZEDMIOTY.md` wygenerowane na nowo.
+- Odrzucone: krótkie warianty `.phone` zaproszeń („{name}: pojedynek”), bo linia telefonu ucina się na końcu, a
+  dotknięcie pokazuje całą linię w arkuszu, więc nic nie ginie; sprawdzanie szerokości telefonu dla zaproszeń i kart w
+  `Logic/TextCaps`, bo to pliki pakietu F, a linia telefonu ma się ucinać i otwierać w całości.
+- Testy: `noticequeue.spec` (kontekst klienta równy ekranom spec, telefony 844×390 i 932×430 z wcięciami, powrót z
+  areny, kwestia NPC przy 0 do 4 rzędach drużyny, telefony z paskiem bossa przy pasku Robloxa 0, 36 i 58, okienko
+  potwierdzenia, terminy alarmów i odliczanie 3, 2, 1, „Walcz!”, propozycja meczu przy zaproszeniu do drużyny i
+  gotowości na PC i telefonie), `topband.spec` (sprawdzenia źródeł: kontekst, pasek bossa, napisy co najmniej Small,
+  miejsce na obrys, jedna zasłona, rozmiar banera). Nieobejrzane w Studio.
+- Po scaleniu z pakietem A: `TopBand.phoneZone` liczy M z miejsc `PhoneHud` tak samo jak `PhoneHud.mZone` pakietu A,
+  więc po scaleniu powinien go czytać (na 667×375 M ma wtedy 286 szerokości).
+- Scalenie z `main` po pakietach C, E i D (2026-11-10): w lokalizacji konflikt był tylko tam, gdzie pakiety zmieniały
+  sąsiednie klucze, a każdy klucz wziął stronę pakietu, który go zmienił (B: `mount.got`, `contract.mailed`,
+  `leaderboard.week.won`, `skills.toast.unlocked`, `shop.error.locked`, `autoGrind.on`, `premium.pack.duplicate`,
+  `worldboss.rewardCard.share.short`; C: `rework2.title`, `rework2.body`; E: `keys.mount`, `contract.available`; D:
+  `shop.sellMarked`, `shop.sellHint`, `autoGrind.desc`, `premium.pack.passOwned`, `wardrobe.hint.short`);
+  `leaderboard.week.bracket` zniknęło razem z rankingami pakietu E. Końce `DECYZJE`, `SESJE`, `JAK-DODAC` i
+  `PROGRESS` mają wpisy obu stron (najpierw pakiety, które weszły wcześniej). Pakiet C dał oknu na telefonie pasek
+  tytułu 44, więc `HudCover.HeaderBottom` liczy tam 44; komunikaty pasa mierzą okna same (`HudCover.Rects` w
+  `UI/Notify`) i już liczyły 44. Linia `HudCover.SetModal` w `WindowManager` przetrwała scalenie, a nowy
+  `Components/Modal` dalej ma ramkę `Dialog`, którą mierzy `HudCover.Modals`. Bramka zielona: 10308 testów,
+  `wikidump --check` aktualny.
+- **Pliki:** `Logic/TopBand`, `Logic/NoticeQueue`, `UI/Notify`, `UI/HudCover`,
+  `UI/Components/Prompt|Toast|Announcement`, `Screens/ArenaOffer|ReadyCheck|LegendReveal`,
+  `Screens/Hud/AchievementToast|BarkToast|ZoneBanner`, `Controllers/Dungeon|Loot|LootComfortController`,
+  `Controllers/WindowManager` (jedna linia, pakiet C), `Data/Localization/pl|en`, `tests/noticequeue.spec.luau`,
+  `tests/topband.spec.luau`, `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|meta.json`.
+
+### Plan UI 2026-11-10, pakiet A: HUD bez nakładania, zwijana kolumna, siatka telefonu (2026-11-10)
+- Właściciel 2026-11-10: „niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się zwinąć”. Pakiet A planu
+  UI (HUD) na API pakietu F: część kodu (ta sekcja), a teksty pakietu A (limity, słownik, długie myślniki, lista A w
+  `tests/fixtures/textcaps`) robi druga część na tej samej gałęzi.
+- Strefy na PC i tablecie: `Hud/init` i pliki elementów biorą miejsca z mapy stref (`UI/HudSlots.Zones` =
+  `Logic/HudZones.pc` dla stanu HUD, `HudSlots.at` / `point` / `sizeOf`): portret, rząd efektów, menu, linia rzucania,
+  pasek akcji, pasek EXP, ramka celu, panel areny, cel pod paskiem bossa lochu, okienko „Auto”; telefon dalej z
+  `PhoneLayout`. Kolizje z planu: pasek rzucania i nazwa puli broni na jednej linii (`castLine`; w trakcie rzucania
+  nazwa czeka, `PoolLabel`), okienko „Auto” na prawo od przycisku (422..592 × 88..160 przy 1080p), rząd efektów
+  najwyżej 9 ikon (`HudZones.EFFECTS_CAP`, telefon 3) i „+N” z resztą w dymku (`EffectIcons` `Max`), miejsce na kwestię
+  NPC pod ostatnim rzędem drużyny (`barkSlot`, czyta je pakiet B), `ArenaTeams` w kolumnie jako „arena” (zwija się do
+  linii kropek), panel meczu i powrotu areny w paśmie celu (172..240), dodatek albo gracz jako cel pod paskiem bossa
+  lochu (142..234, `addFrame`); menu gracza na PC liczone od ramki celu. Czat Robloxa na PC zostaje w swoim miejscu,
+  ale `ChatDock` skraca jego wysokość (`HudStack.chatHeightScale`, najwyżej do połowy), żeby góra okna stała pod
+  miejscem kwestii NPC; na dotyku miejsce Robloxa i pełna wysokość.
+- Kolumna: `HudStack.place(items, column, fixed)` zwraca prostokąty, zwinięte id, ukryte id i plakietkę „+N”; nic nie
+  schodzi za podłogę (PC h − 192 bez zmian): najpierw `least` (tropiciel: nagłówek i dwie linie), potem `line` (panele
+  od najniższego, tropiciel ostatni, element przywrócony z listy po innych), potem zapasowa kolumna pod pasem
+  wiadomości, a na końcu najniższe za „+N”. `HudStack.ORDER` dostał „party” (pasek drużyny telefonu) i „guide” (pasek
+  prowadzenia telefonu bez miejsca w strefie M), a pod „arena” stoi też lista drużyn areny. `UI/HudSlots`: kilka
+  elementów pod jednym id (`join`: pigułka kolejki areny, lista drużyn, na telefonie panele meczu i powrotu), `forced`
+  (kolumna zwinęła panel), `Hidden`, `Chip`, `bring` (lista „+N” przywraca element); `Hud/StackChip`: plakietka i lista
+  ukrytych (`hud.stack.*`).
+- Panele: `Hud/PanelHeader` (▾/▸, nazwa, jedna wartość, „i” ze szczegółami; PC 32, tablet `MinTouch`, telefon 52;
+  cała linia zwija). Boss świata (linia: „♛ boss”, HP albo czas, miejsce na innej mapie w „i”), wydarzenie świata,
+  Krwawy Księżyc, turniej i arena zwijają się przez `Section.state` z id w `Data/Folds/Hud` (`hudWorldBoss`,
+  `hudWorldEvent`, `hudBloodMoon`, `hudTourney`, `hudArena` = `{ pc = true, phone = false }`); klik na panelu zwiniętym
+  przez kolumnę przywraca go (`HudSlots.bring`). Elity II zostają w `TrackerFold` „e2”. Tropiciel: nagłówek przez
+  `PanelHeader` w swoim rzędzie 28 px (z „≡”, prowadzeniem i zwijaniem jak dotąd), nagłówki grup jako `PanelHeader`
+  (grupy i domyślne zwinięcie bez zmian), cel questu jedna linia do 32 znaków (`QuestRows.short`, `LINE_MAX`), cały w
+  dymku. Klucz `hud.worldboss.collapsed` usunięty (zwinięty panel to nagłówek).
+- Telefon (`Logic/PhoneHud`, siatka mapy stref): `area(device, topBar)`, stos od y 153 do `stackBottom` =
+  min(H − 28, round(0,58·H) − 8) w liniach 52 px z „+N” 44×52 na końcu ostatniej (`stackLines`), jeden „Auto” na
+  początku rzędu pod portretem (okienko `AUTO_POPOVER` nad rzędem efektów), strefa M (`mZone`: efekty celu, linia
+  rzucania, pasek prowadzenia `NavBar` `Phone`, póki M sięga 218, inaczej linia stosu), „⋯” 44×44 obok ramki celu
+  zamiast rzędu akcji, minimapa 0,5 poniżej 420 (`minimapScale`), przełącznik PvP 52 px z sekundami w środku i bez
+  plakietki, szuflada menu na lewo od swojego przycisku (nie zasłania PvP), `PartyFrames` jako najwyżej 3 kafelki
+  po 52 i „+N”, `DeathScreen` na środku warstwy (zmniejsza się na niskiej). Bez zmian: atak, łuk, mikstury, sprint,
+  wierzchowiec, poczta. `PhoneLayout.Places` idzie za rozmiarem warstwy, `PhoneLayout.Pick` daje wartość telefonu albo
+  PC. `PhoneHud.problems` zwraca też trzecią listę: element w strefie kciuka i cel dotyku poniżej 44 (52 dla ataku,
+  umiejętności, menu, sprintu i wierzchowca).
+- Samouczek: `Logic/Tutorial.ANCHOR_NAMES` (zamrożone nazwy: QuestTracker, inventory, MenuToggle, PotionBar,
+  AttackButton, Skill1, MobileSkill1; `HudAnchors.NAMES` to ta sama tabela) i `Tutorial.DRAWER`, gałka z
+  `HudZones.thumb`, `Logic/TutorialTile` (`place` z `TutorialController`, `avoid`: pas wiadomości na PC i tablecie,
+  łuk z atakiem na telefonie, `width`: telefon 300; bez miejsca obok elementu miejsce domyślne zsunięte z tego, co
+  zasłania), `Tutorial.text(step, touch, away, phone, has)` bierze `.phone`, gdy klucz jest (`tutorial.backpack.phone`
+  pl i en).
+- `Logic/HudLayout.reserved` / `usable`: pasmo celu w najwyższym stanie, pas wiadomości, miejsce karty (PC), strefa M i
+  kciuka (telefon); `UI/HudDrag` stawia zapisany tam element w miejscu domyślnym, a upuszczony tam wraca bez zapisu;
+  `valid` bez zmian. `CombatFxController`: czerwony błysk przy ciosie DisplayOrder 3 (nad HUD 1, pod wskaźnikiem
+  samouczka 4 i oknami 5).
+- Testy: `hudzones.spec` (lista `KNOWN` bez par PC; 2000 losowych stanów na każdy ekran PC × pasek 0/36/58: w warstwie,
+  bez nakładania, pas wiadomości od swojej góry, kolumna nad podłogą, „+N” tylko z ukrytymi; czat pod miejscem kwestii
+  NPC; każdy element `ELEMENTS` czyta swoją strefę), `phonehud.spec` (3 telefony × pasek 0/36/58: `problems` puste,
+  cele dotyku, liczba linii stosu, jeden „Auto”, „⋯”, M, PvP, kafelki drużyny, ekran śmierci), `hudlayout.spec` (L4:
+  500 losowych kolumn, kolejność zwijania, „+N”; zastrzeżone miejsca), `tutorial.spec` (kotwice, karta na wszystkich
+  warstwach, teksty urządzeń), `hudreveal.spec` (element kroku widoczny w jego kroku), `hudmenu.spec` (BAR 6, TILES 15,
+  szuflada), `questrows.spec` (`short`), `sectionfold.spec` (id plików A w `Folds/Hud`).
+- Teksty (druga część pakietu A, ta sama gałąź): 56 przekroczeń z listy A w `tests/fixtures/textcaps` poprawione w pl
+  i en (te same znaczniki), lista `known` pusta. Krótka linia zostaje, dłuższa treść idzie do szczegółów dymka (czwarty
+  argument `Tooltip.attach` zwracany wprost z `scope:Computed`, więc `tests/TextScan` liczy go bez limitu) albo do „i”
+  nagłówka:
+  - PvP: kropka (`Hud/init`) pokazuje `pvp.dot.<stan>` albo nowy `pvp.dot.switchingIn` z sekundami, w szczegółach
+    `pvp.rules.<strefa>` (w żółtej z nowym `pvp.dot.toggle`); przełącznik na dotyku (`PvpToggle`) `pvp.state.on|off` i
+    zasady w szczegółach; `pvp.dot.click` usunięty (słowo sterowania).
+  - „Auto”: krótszy `hud.auto`; `hud.autoGrind` to sam stan, bank i dzisiejszy czas w nowym `hud.autoGrind.info`
+    (`AutoGrindButton`); `hud.lure` bez „pozostało”.
+  - Mikstury (`PotionBar`): dymek slotu to nazwa mikstury, pusty slot `potion.slot.<rodzaj>` bez klawisza i „prawy
+    klik”, Eliksir Pełni jedną linią: nazwa i `fullElixir.slot` (bez `{key}`, czas z nowego `fullElixir.wait` albo
+    `fullElixir.ready`); nowy `potion.pick.hint` w szczegółach tylko bez dotyku (`Device.Touch`).
+  - Ekran śmierci (`DeathScreen`): `death.respawn*` mówią miejsce, „[1] ” i „[2] ” dokleja `keyHint` tylko przy
+    `UserInputService.KeyboardEnabled`; krótsze `death.respawnNow`, `topUp`, `autoCity`, `vipRespawn`, `bloodMoonHint`.
+  - Pasek prowadzenia (`NavBar`): linia zawsze `nav.bar` (cel, odległość), mapa po drodze w dymku `nav.barVia`
+    (`{name}`, `{map}`, bez `{n}`), bez mapy po drodze dymek z nazwą celu.
+  - Arena (`ArenaPanel`): pigułka `arena.panel.queue` („⌛ 1v1 · 0:42”), w dymku nowe `arena.panel.waiting` albo
+    `arena.panel.window` (kolejka globalna); wynik meczu ze stałej mapy `RESULT3` zamiast szablonu
+    `arena.result3.{key}`.
+  - Wydarzenie świata (`WorldEventPanel`): Inwazja `hud.event.phase` (`{phase}/{total}`), w dymku linii nowy
+    `hud.event.count` (`{left}`, `{kills}`); krótszy `hud.event.mineNo`. Boss świata (`WorldBossPanel`): cała
+    `hud.worldboss.line` w `Info` nagłówka wpisanym wprost (powierzchnia „i”), bez zmiennej `lineInfo`.
+  - Reszta: `login.button*` z `{n}` zamiast `{day}`, `season.button` z `{total}` zamiast `{tiers}`,
+    `returning.tooltip` bez minut (`BlessingIcon`), `BlessingBadge` z nazwą statystyki z `Data/Stats` (`nameKey`),
+    `area.label` z `{range}` (`Minimap`), `hud.mail`, `hud.skillSlot`, `hud.bloodmoon.cityHint`, `tourney.*`,
+    `worldboss.noReward.*`, `companion.*`, `contract.toTake`, `contract.whereTurnIn.short`, `tutorial.skill.*`,
+    `tutorial.rewardMailed`, `tutorial.skipVeteran`, en `quest.side_fp_howl.title`; `e2timer.soon` usunięty (nikt go
+    nie czytał).
+  - Słownik (pytanie UI 3 w odpowiedzi domyślnej): `tracker.group.quests` „Questy”, `tutorial.done.*` „Questy
+    poprowadzą cię dalej.”, en `hud.stack.questTracker` „Objectives”. Wiki odświeżone (`wikidump`, tytuł questu).
+- Odstępstwa od planu:
+  - tablety zostają przy liście `KNOWN` i `THIN` w `hudzones.spec` (pasmo celu 720 szerokości i łuk dotyku na tablecie
+    1210–1280 potrzebują własnego układu), a losowe stany sprawdzają tylko ekrany PC, jak w kryteriach planu;
+  - „ChatDock zostaje”, a miejsce kwestii NPC ma być wolne: czat nie przesuwa się, tylko skraca (propozycja w DECYZJE);
+  - pas wiadomości pod wysokim pasmem celu (tablet z paskiem bossa i dodatkiem) zaczyna się pod pasmem, więc
+    zapasowa kolumna liczy jego dół (`HudStack.column(..., band)`);
+  - jedna linia w `tests/topband.spec` (pakiet B) czytała miejsca z plików A (`CastBar`, `TutorialTile`): sprawdza teraz
+    nowe źródło;
+  - długie myślniki w trzech liniach bossów (plan: pakiet A) to komunikaty pakietu B i stoją na liście B, więc A ich
+    nie zmienia;
+  - jedna linia w `Hud/AreaBanner` (plik pakietu B): baner obszaru podaje `range` zamiast `min` i `max`, bo
+    `area.label` ma teraz jeden zakres poziomów;
+  - po zmianach kodu innym pakietom przypadły klucze bez czytelnika w plikach A: `arena.result3.toast` i
+    `arena.result3.drawAnnounce` (B; `drawAnnounce` skrócony do limitu banera, żeby nie wszedł na listę B),
+    `arena.inQueue` (E, bez powierzchni) i `stat.*` (D; `BlessingBadge` bierze `nameKey` z `Data/Stats`).
+- Przegląd pakietu A (2026-11-10): 15 uwag, wszystkie poprawione nowymi commitami; obie uwagi o kompletności mówiły o
+  kolumnie, która w grze nie działała tak, jak w czystym modelu.
+  - Kolumna: pudełko panelu w `HudSlots.join` czytało zwinięcie przez kolumnę (`HudSlots.forced`), a `join` ustawia
+    `joined` w trakcie swojego `Observer`, więc Fusion przerywał pętlę („infinite loop”), zanim kolumna zobaczyła nową
+    wysokość: wydarzenie świata nie dostawało miejsca, a boss po starcie stał nad tropicielem. Pudełko mówi teraz
+    wysokość z wyboru gracza (`open`), kolumna sama zwija je do linii, a panel dalej rysuje się zwinięty za `forced`;
+    `UI/HudDrag` sprawdza zapisane miejsce tą samą wysokością. `tests/FusionGraph` ładuje moduły klienta pod Lune z
+    prawdziwym rdzeniem Fusion 0.3 z `Packages`, a `hudslots.spec` sprawdza start, wzrost, zwinięcie i ponowne otwarcie
+    przy 1920×1000 i 1920×760 (bez błędu Fusion, bez nakładania) oraz źródła: żadne pudełko nie czyta kolumny.
+  - Telefon: każdy element stosu ma najwyżej `PhoneHud.PANEL_WIDTH` 210 (pasek drużyny `PARTY_WIDTH` 209, tropiciel
+    `TRACKER_WIDTH` 210), więc staje obok „+N” w ostatniej linii (szersze chowały się za nim i wybór z listy nic nie
+    przywracał); lista „+N” (`HudStack.chipList`, `StackChip` jako `ScrollingFrame`) nie wychodzi nad warstwę i
+    przewija nadmiar; nagłówek tropiciela ma wysokość `PanelHeader` (tablet 44, telefon 52), więc zwinięty tropiciel to
+    jedna linia stosu.
+  - Arena na PC: panel meczu i powrotu biorą rozmiar strefy (`HudSlots.sizeOf`, 420×68): wynik po meczu stoi w miejscu
+    linii rundy, powrót to krótkie linie (wynik 3v3, żetony, odliczanie) obok „Wróć teraz” wysokości `MinTouch`, a
+    powód żetonów jest w szczegółach dymka wyniku; telefon ma swój panel powrotu w stosie (`ArenaReturnStack`).
+  - Okienko „Auto” ma rozmiar swojego miejsca (PC 170×72 z mapy stref, telefon `PhoneHud.AUTO_POPOVER` 188×68) i
+    węższe o każdą część, której konto nie ma; było 200×80 i na PC zachodziło na pasek bossa lochu.
+  - Przyciski HUD: przełącznik PvP na dotyku mówi stan z `UI/PvpState` (`pvp.dot.<stan>`, odliczanie
+    `pvp.dot.switchingIn`; nieużywane `pvp.state.on|off` usunięte); przytrzymanie dłuższe niż `PotionPress.TIP_HOLD`
+    (tyle czeka dymek, `Tooltip` `LONG_PRESS`) nie naciska przełącznika ani kropki PvP, Płaszcza, Łowów i Mikstur;
+    wstrzymany Płaszcz i Mikstury mówią nowe `hud.lure.paused` i `hud.autoPotion.paused` („wstrzymany”,
+    „wstrzymane”), a zdanie o blokadzie jest w szczegółach (było do 107 znaków z nazwą przedmiotu dwa razy).
+  - Tropiciel: `QuestRows.oneLine` zostawia licznik („0/12”) cały na końcu i skraca tylko część przed nim
+    („0/12” czytało się „0/1…”), a tropiciel rysuje licznik w osobnej etykiecie za nazwą, która skraca się też w
+    pikselach; obszar i cała linia są w dymku.
+  - Nagłówki paneli: `PanelHeader.showsValue`, wartość tylko w zwiniętym panelu (otwarty mówi ją w treści), a
+    `KeepValue` trzyma ją w grupach tropiciela i w turnieju na żywo.
+  - Teksty: en `hud.stack.tourney` „Tournament”; `pvp.dot.on` (en), `pvp.dot.forced` i `pvp.dot.switching` (pl, en)
+    bez kropki na końcu. `area.label` zostaje z jednym `{range}`, a linia A w `Hud/AreaBanner` podaje `range`; plik B
+    na gałęzi `ui-b` podaje `min` i `max`, więc przy scalaniu linia B musi podać `range`. Pilnuje tego
+    `tests/textargs.spec`: każde wywołanie `Text.get`, `Text.now`, `Text.T` i `Locale.T` w `src` z kluczem i tabelą
+    wpisanymi wprost (około 750) podaje każdy znacznik tekstu klucza w pl i en.
+  - Testy: nowe `hudslots.spec`, `hudtips.spec`, `panelheader.spec`, `textargs.spec`; `hudzones.spec` (arena w 68 px,
+    okienko „Auto”), `hudlayout.spec` (szerokości telefonu z plików, każda para z tropicielem, wybór z „+N”, nazwy
+    listy w pl i en), `phonehud.spec` (lista „+N” na trzech telefonach), `questrows.spec` (`oneLine` dla każdego celu
+    zabicia i zbierania questów głównych, pobocznych i bossów w pl i en).
+- Scalenie z `main` po pakietach C, E, D i B (2026-11-10), najpierw C, E i D, potem B: w lokalizacji konflikt był
+  tylko tam, gdzie pakiety zmieniały sąsiednie klucze, a każdy klucz wziął stronę pakietu, który go zmienił (A:
+  `death.vipRespawn`, `death.respawnEntrance`, `arena.result3.drawAnnounce`, `worldboss.noReward.*`,
+  `quest.side_fp_howl.title`; E: `e2timer.window`, `menu.vipRecall`, `quest.side_fp_howl.p1` i `p1b`; B:
+  `death.error.gold`, `arena.result3`, `worldboss.mailed`), a `e2timer.soon` zostaje usunięte. Końce `DECYZJE`,
+  `SESJE`, `JAK-DODAC` i `PROGRESS` mają wpisy obu stron (najpierw pakiety, które weszły wcześniej), DESIGN §23 ma linię
+  „Okna” z `main` i akapit HUD pakietu A, `sectionfold.spec` test A i test D, `topband.spec` sprawdzenia B z
+  komentarzem A, a `Hud/AreaBanner` wersję B (przez `UI/Notify`) z linią A, która podaje `range` do `area.label`.
+  Siatka telefonu A zmieniła nazwy miejsc, z których liczą pliki innych pakietów, więc dwa haki: `Logic/WorldLayout`
+  (pakiet E) zna `targetActions` i `castBar` (były `actions` i `pool`), a panel łowienia na telefonie kończy się nad
+  paskiem prowadzenia, który stoi teraz w strefie M i może się pokazać przy łowieniu (`FISHING_UNDER`: 166 z 170 px
+  przy pasku Robloxa 0, 36 i 58, podpowiedź dotyku kończy się na 160); `tests/topband.spec` (pakiet B) szuka przy
+  pasku bossa na telefonie miejsc `auto` i `effects` (był `lure`, który A złożył w jeden przycisk „Auto”).
+  `TopBand.phoneZone` daje po scaleniu ten sam prostokąt co `PhoneHud.mZone` (x 296..654, 296..556 i 296..730, y
+  104..218 na trzech telefonach), więc `TopBand` zostaje bez zmian. Dane wiki odświeżone po obu scaleniach. Bramka
+  zielona: 10343 testy, `wikidump --check` aktualny.
+- **Pliki:** `Logic/HudZones`, `HudStack`, `HudLayout`, `PhoneHud`, `QuestRows`, `Tutorial`, `TutorialTile` (nowy),
+  `Data/Folds/Hud`, `Data/Localization/pl|en` (`hud.stack.*`, `tutorial.backpack.phone`, bez
+  `hud.worldboss.collapsed`), `UI/HudSlots`, `HudAnchors`, `HudDrag`, `PhoneLayout`, `Screens/Hud/init`, `ArenaPanel`,
+  `ArenaTeams`, `AutoGroup`, `BloodMoonPanel`, `CastBar`, `ChatDock`, `DeathScreen`, `EffectIcons`, `NavBar`,
+  `PanelHeader` (nowy), `PoolLabel`, `PvpToggle`, `QuestTracker`, `StackChip` (nowy), `TargetFrame`, `TourneyPanel`,
+  `WorldBossPanel`, `WorldEventPanel`, `Screens/PartyFrames`, `Controllers/TutorialController`, `CombatFxController`,
+  `tests/hudzones|phonehud|hudlayout|hudmenu|hudreveal|tutorial|questrows|sectionfold|topband.spec.luau`,
+  `tests/fixtures/textcaps/A.luau`; teksty: `Data/Localization/pl|en`, `Screens/Hud/init`, `ArenaPanel`, `AutoGroup`,
+  `AutoGrindButton`, `BlessingBadge`, `BlessingIcon`, `DeathScreen`, `LoginButton`, `LureButton`, `Minimap`, `NavBar`,
+  `PotionBar`, `PvpToggle`, `SeasonButton`, `WorldBossPanel`, `WorldEventPanel`, `AreaBanner` (jedna linia),
+  `tests/fixtures/textcaps/A.luau`, wiki (`docs/PRZEDMIOTY.md`, `wiki/src/data`); przegląd: `UI/HudDrag`, `HudSlots`,
+  `Screens/Hud/ArenaPanel`, `ArenaTeams`, `AutoGroup`, `AutoGrindButton`, `AutoPotionButton`, `BloodMoonPanel`,
+  `LureButton`, `PanelHeader`, `PvpToggle`, `QuestTracker`, `StackChip`, `TourneyPanel`, `WorldBossPanel`,
+  `WorldEventPanel`, `init`, `Screens/PartyFrames`, `Logic/HudStack`, `HudZones`, `PhoneHud`, `QuestRows`,
+  `Data/Localization/pl|en`, `tests/FusionGraph.luau` (nowy),
+  `tests/hudslots|hudtips|panelheader|textargs|hudzones|hudlayout|phonehud|questrows.spec.luau`.

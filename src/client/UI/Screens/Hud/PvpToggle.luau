@@ -4,6 +4,14 @@
 -- shown only in yellow and red zones and while a switch counts down (Logic/PvpRules.toggleShown); the dot on the
 -- portrait tells the state everywhere. UI plan phase 2: a touch screen's only; on PC the dot on the portrait is the
 -- switch (the same request, UI/PvpSwitch).
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): on a phone the toggle is a 52 px round button
+-- (Logic/PhoneHud `pvp`) with the countdown's seconds inside it and no badge under it (the badge reached the M zone
+-- and the open drawer covered it; the drawer now opens left of its button, Hud/init).
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the tooltip says the state; the zone's rules are its details
+-- (a longer press).
+-- Package A review (owner 2026-11-10): the state is the real one (UI/PvpState, the portrait dot's words: "Red zone: PvP
+-- is always on"), not the player's own switch, which said "OFF" in a red zone where anyone may attack; and a press held
+-- for the tooltip (Logic/PotionPress.TIP_HOLD) was reading it, so its release does not start a switch.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -15,7 +23,9 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local PotionPress = require(ReplicatedStorage.Shared.Logic.PotionPress)
 local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
+local PvpState = require(script.Parent.Parent.Parent.PvpState)
 local PvpSwitch = require(script.Parent.Parent.Parent.PvpSwitch)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -71,7 +81,17 @@ local function PvpToggle(scope: Scope): Instance
 		return nil
 	end)
 
+	-- a touch's start, so a release after the tooltip's hold does nothing
+	local pressedAt: number? = nil
+	local function press(input: InputObject)
+		pressedAt = if input.UserInputType == Enum.UserInputType.Touch then os.clock() else nil
+	end
 	local function click()
+		local heldFor = if pressedAt then os.clock() - pressedAt else 0
+		pressedAt = nil
+		if heldFor >= PotionPress.TIP_HOLD then
+			return
+		end
 		PvpSwitch.request() -- UI plan phase 2: the same request as the portrait's dot (UI/PvpSwitch)
 	end
 
@@ -87,7 +107,7 @@ local function PvpToggle(scope: Scope): Instance
 		-- W29: under the menu drawer button left of the minimap on a phone in landscape (Logic/PhoneHud)
 		AnchorPoint = PhoneLayout.Anchor(scope, "pvp", Vector2.new(1, 1)),
 		Position = PhoneLayout.Position(scope, "pvp", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
-		Size = UDim2.fromOffset(SIZE, SIZE),
+		Size = PhoneLayout.Size(scope, "pvp", UDim2.fromOffset(SIZE, SIZE)),
 		-- UI plan phase 2: a touch screen's only (PC clicks the dot on the portrait, Hud/init)
 		Visible = scope:Computed(function(use): boolean
 			local state = use(pvp)
@@ -114,6 +134,7 @@ local function PvpToggle(scope: Scope): Instance
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Title,
 		TextColor3 = glyphColor,
+		[OnEvent("InputBegan")] = press,
 		[OnEvent("Activated")] = click,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
@@ -134,7 +155,26 @@ local function PvpToggle(scope: Scope): Instance
 					return if use(isOn) then Theme.Zone.Red else Theme.Iron.Rule
 				end),
 			}),
-			-- Countdown / "forced" badge under the button.
+			-- package A: a phone's countdown inside the button, over its picture
+			scope:New("TextLabel")({
+				Name = "Countdown",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = 0.15,
+				ZIndex = 3,
+				Visible = scope:Computed(function(use): boolean
+					return use(PhoneLayout.Compact) and use(remaining) ~= nil
+				end),
+				Text = scope:Computed(function(use): string
+					local left = use(remaining)
+					return if left then tostring(math.ceil(left)) else ""
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Title,
+				TextColor3 = Theme.Iron.Text,
+				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+			}),
+			-- Countdown / "forced" badge under the button (PC and a tablet; package A: not on a phone).
 			scope:New("TextLabel")({
 				Name = "Badge",
 				-- W29: under the button, as wide as it, on a phone in landscape (above it the drawer button)
@@ -149,7 +189,7 @@ local function PvpToggle(scope: Scope): Instance
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
 				Visible = scope:Computed(function(use): boolean
-					return use(remaining) ~= nil or use(zoneType) == "red"
+					return not use(PhoneLayout.Compact) and (use(remaining) ~= nil or use(zoneType) == "red")
 				end),
 				Text = scope:Computed(function(use): string
 					local left = use(remaining)
@@ -182,13 +222,19 @@ local function PvpToggle(scope: Scope): Instance
 	if badge and badge:IsA("GuiObject") then
 		HudSlots.corner(scope, badge)
 	end
+	local indicator = PvpState.indicator(scope)
 	Tooltip.attach(
 		scope,
 		button :: GuiObject,
 		scope:Computed(function(use): string
-			local z = use(zoneType)
-			local stateKey = if use(enabled) then "pvp.state.on" else "pvp.state.off"
-			return `{Text.get(use, `pvp.rules.{z}`)}\n{Text.get(use, stateKey)}`
+			local left = use(remaining)
+			if left then
+				return Text.get(use, "pvp.dot.switchingIn", { seconds = math.ceil(left) })
+			end
+			return Text.get(use, `pvp.dot.{use(indicator)}`)
+		end),
+		scope:Computed(function(use): string
+			return Text.get(use, `pvp.rules.{use(zoneType)}`)
 		end)
 	)
 	return button

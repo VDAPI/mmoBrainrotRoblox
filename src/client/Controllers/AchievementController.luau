@@ -10,6 +10,9 @@
 -- S151c: a bestiary tier ({ bestiary, tier, points }) is a notice too ("View" opens the bestiary tab on the entry:
 -- focus "best:<id>"); anything earned lights the "!" (UI plan phase 1: the game menu's tile and the HUD's ☰,
 -- MenuAttention.Achievements) until the window opens.
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): the notices go into
+-- UI/Notify's queue as banners (one banner at a time in the band under the target, a phone's M zone one row); each
+-- waits while a window is open (docs/UI-ZASADY.md §6) and does not drop while it waits.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -20,16 +23,15 @@ local AchievementToast = require(script.Parent.Parent.UI.Screens.Hud.Achievement
 local AchievementsWindow = require(script.Parent.Parent.UI.Screens.AchievementsWindow)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local HudCover = require(script.Parent.Parent.UI.HudCover)
 local MenuAttention = require(script.Parent.Parent.UI.MenuAttention)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.UI.Notify)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
-local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
-local TopBandState = require(script.Parent.Parent.UI.TopBandState)
 
 local AchievementController = {
 	Name = "AchievementController",
@@ -43,13 +45,10 @@ local SfxController: any
 local WindowManager: any
 -- S151b: the achievement the window shows (the toast's "View", the tracker); nil when it opens normally
 local focus = scope:Value(nil :: string?)
-local toast: AchievementToast.Api? = nil
 
 local MAX_QUEUE = 8
-
-local queue: { AchievementToast.View } = {}
-local showing = false
-local BAND_RETRY = 0.5 -- seconds between looks at the top band while a banner shows
+-- the notices in UI/Notify's queue, oldest first (the setting turned off takes them all out)
+local pending: { Notify.Handle } = {}
 
 local function num(value: any): number?
 	return if type(value) == "number" and value == value and value > 0 and value < 1e9 then math.floor(value) else nil
@@ -130,39 +129,40 @@ local function viewOf(payload: any): AchievementToast.View?
 	}
 end
 
-local waiting = false
-
-local function pump()
-	if showing or not toast then
-		return
-	end
-	if #queue == 0 then
-		return
-	end
-	-- UI plan phase 2 (one band of messages, Logic/TopBand): not over the zone or the area banner; again once they fade.
-	-- Studio check 2026-10-31: nor over an open window's title bar (it waits until the window closes)
-	if TopBand.achievementWaits(Fusion.peek(TopBandState.Shown)) or Fusion.peek(HudCover.HeaderBottom) ~= nil then
-		if not waiting then
-			waiting = true
-			task.delay(BAND_RETRY, function()
-				waiting = false
-				pump()
-			end)
+local function show(view: AchievementToast.View)
+	for i = #pending, 1, -1 do
+		if not pending[i].alive() then
+			table.remove(pending, i)
 		end
-		return
 	end
-	local nextView = table.remove(queue, 1)
-	if not nextView then
-		return
+	local oldest = if #pending >= MAX_QUEUE then table.remove(pending, 1) else nil
+	if oldest then
+		oldest.close()
 	end
-	showing = true
-	if SfxController then
-		SfxController.Ui("ui.achievement")
+	local size = if Fusion.peek(Device.Touch) then AchievementToast.SIZE.touch else AchievementToast.SIZE.pc
+	local handle = Notify.push({
+		class = "banner",
+		tone = "achievement",
+		text = view.name,
+		seconds = Config.Achievements.toastSeconds,
+		windowWaits = true,
+		wait = math.huge,
+		w = size.X,
+		height = function(phone: boolean): number
+			return if phone then AchievementToast.PHONE_H else size.Y
+		end,
+		build = AchievementToast.build(view, function(id: string)
+			AchievementController.Open(id)
+		end),
+		shown = function()
+			if SfxController then
+				SfxController.Ui("ui.achievement")
+			end
+		end,
+	})
+	if handle then
+		table.insert(pending, handle)
 	end
-	toast.show(nextView, function()
-		showing = false
-		pump()
-	end)
 end
 
 local function onDone(payload: any)
@@ -178,11 +178,7 @@ local function onDone(payload: any)
 		NotificationController.System(Text.now("ach.chat", { text = line }))
 		return
 	end
-	if #queue >= MAX_QUEUE then
-		table.remove(queue, 1)
-	end
-	table.insert(queue, view)
-	pump()
+	show(view)
 end
 
 -- S151b: opens the achievements window, on `id` when given (its category, selected; the sheet on a phone).
@@ -238,11 +234,6 @@ function AchievementController.Init(registry)
 	NotificationController = registry.Get("NotificationController")
 	SfxController = registry.Get("SfxController")
 	WindowManager = registry.Get("WindowManager")
-	local api = AchievementToast.new(scope, function(id: string)
-		AchievementController.Open(id)
-	end)
-	api.frame.Parent = registry.Get("UIController").GetLayer("Toasts")
-	toast = api
 	WindowManager.Register({
 		id = "achievements",
 		titleKey = "window.achievements.title",
@@ -278,10 +269,10 @@ function AchievementController.Start()
 	end)
 	scope:Observer(State.Value({ "account", "settings", "achToasts" })):onChange(function()
 		if State.Get({ "account", "settings", "achToasts" }) == false then
-			table.clear(queue)
-			if toast then
-				toast.hide()
+			for _, handle in pending do
+				handle.close()
 			end
+			table.clear(pending)
 		end
 	end)
 end

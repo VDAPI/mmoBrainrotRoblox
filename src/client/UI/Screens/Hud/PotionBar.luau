@@ -7,6 +7,9 @@
 -- Owner 2026-11-10 (a potion drunk at full is used up): only a plain tap or click drinks. The release of a long press
 -- (tooltip, picker) and of the press that dropped a potion here does not, and a tap or click (however slow) on a slot
 -- whose picker is open closes it (Logic/PotionPress).
+-- Owner 2026-11-10 ("too much text"; UI plan package A, no keys or mouse buttons in a HUD line): the tooltip names the
+-- potion (an empty slot its kind; the elixir in one line "Elixir of Wholeness · in 2:30 · today 3/10"); the key is on
+-- the slot's plaque, and on PC the right button's picker is the tooltip's details.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,6 +17,7 @@ local Workspace = game:GetService("Workspace")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local FullElixir = require(ReplicatedStorage.Shared.Logic.FullElixir)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -282,19 +286,23 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			scope:Computed(function(use): string
 				local id = use(assigned)
 				if id and use(isElixir) then
-					-- S122: key, cooldown and uses left today
+					-- S122: cooldown and uses left today, on the name's line (a HUD tooltip is one line)
 					local state = use(elixir)
 					local t = use(now)
 					local wait = FullElixir.readyIn(state, t)
-					return Text.get(use, "fullElixir.slot", {
-						key = Keybinds.label(`potion_{entry.kind}`),
-						time = if wait > 0 then Time.format(wait) else Text.get(use, "fullElixir.ready"),
+					local time = if wait > 0
+						then Text.get(use, "fullElixir.wait", { time = Time.format(wait) })
+						else Text.get(use, "fullElixir.ready")
+					return `{ItemText.get(use, id)} · {Text.get(use, "fullElixir.slot", {
+						time = time,
 						left = FullElixir.leftToday(state, t),
 						max = Config.FullElixir.dailyLimit,
-					})
+					})}`
 				end
-				local head = Text.get(use, `potion.slot.{entry.kind}`)
-				return if id then `{ItemText.get(use, id)}\n{head}` else head
+				return if id then ItemText.get(use, id) else Text.get(use, `potion.slot.{entry.kind}`)
+			end),
+			scope:Computed(function(use): string
+				return if use(Device.Touch) then "" else Text.get(use, "potion.pick.hint")
 			end)
 		)
 		table.insert(slots, slot)

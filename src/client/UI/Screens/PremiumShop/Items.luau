@@ -11,7 +11,10 @@
 -- cards (the same purchase rule, Logic/Premium.canBuy with the account's autoPotion branch).
 -- 2026-10-21 (owner: too many detailed descriptions): a card shows the short line premium.shop.<key>.short (with the
 -- limits used today when the entry has them) and the full premium.shop.<key>.desc behind an "i" after the title; the
--- service cards (Cloak, Auto Potions, Auto Hunt) put their rules there too (the card tooltip stays for the mouse).
+-- service cards (Cloak, Auto Potions, Auto Hunt) put their rules there too.
+-- Owner 2026-11-10 ("bardzo dużo napisów", UI plan: one home per thing): a card's hover never repeats its (i): a buy
+-- card's hover is the price, the balance after the purchase and the reason of a disabled button
+-- (PremiumConfirm.describe "tooltip"); the service cards have no hover, their rules are behind the (i).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -289,8 +292,8 @@ local function lureCard(scope: Scope, order: number, lure: Fusion.Value<any>, no
 				end)
 			end,
 		}),
+		-- owner 2026-11-10 (one home per thing): the rules sit behind the (i) only, the card's hover does not repeat them
 		info = Text.T(scope, "lure.desc"),
-		tooltip = Text.T(scope, "lure.desc"),
 	})
 end
 
@@ -313,8 +316,7 @@ local function autoPotionCard(scope: Scope, order: number, b: Branches, now: Fus
 			end
 			return Text.get(use, "premium.lure.left", { time = lureTime(use, seconds) })
 		end),
-		info = Text.T(scope, "autoPotion.desc"),
-		tooltip = Text.T(scope, "autoPotion.desc"),
+		info = Text.T(scope, "autoPotion.desc"), -- the (i) only (owner 2026-11-10: one home per thing)
 	})
 end
 
@@ -335,10 +337,7 @@ local function autoGrindCard(scope: Scope, order: number, now: Fusion.Value<numb
 				today = lureTime(use, AutoGrind.todayLeft(s, t)),
 			})
 		end),
-		info = Text.T(scope, "autoGrind.desc", AutoGrind.descArgs()),
-		tooltip = scope:Computed(function(use): string
-			return Text.get(use, "autoGrind.desc", AutoGrind.descArgs())
-		end),
+		info = Text.T(scope, "autoGrind.desc", AutoGrind.descArgs()), -- the (i) only (owner 2026-11-10)
 	})
 end
 

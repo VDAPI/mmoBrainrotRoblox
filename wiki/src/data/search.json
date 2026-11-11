@@ -1299,7 +1299,7 @@
     {"id":"side_ash_mirror","key":"tarcza przy jamie the shield at the pit","level":67,"name":{"en":"The Shield at the Pit","pl":"Tarcza przy jamie"},"type":"quest"},
     {"id":"side_fp_flask","key":"buklak od halvara halvar s flask","level":70,"name":{"en":"Halvar's Flask","pl":"Bukłak od Halvara"},"type":"quest"},
     {"id":"side_fp_ribbons","key":"zerwane wstazki torn ribbons","level":71,"name":{"en":"Torn Ribbons","pl":"Zerwane wstążki"},"type":"quest"},
-    {"id":"side_fp_howl","key":"ofiara pod wyjaca skala an offering at the howling rock","level":73,"name":{"en":"An Offering at the Howling Rock","pl":"Ofiara pod Wyjącą Skałą"},"type":"quest"},
+    {"id":"side_fp_howl","key":"ofiara pod wyjaca skala offering at the howling rock","level":73,"name":{"en":"Offering at the Howling Rock","pl":"Ofiara pod Wyjącą Skałą"},"type":"quest"},
     {"id":"side_fp_snares","key":"wnyki traperow the trappers snares","level":74,"name":{"en":"The Trappers' Snares","pl":"Wnyki traperów"},"type":"quest"},
     {"id":"side_fp_ledge","key":"noz arnego arne s knife","level":76,"name":{"en":"Arne's Knife","pl":"Nóż Arnego"},"type":"quest"},
     {"id":"side_fp_sledge","key":"sanie na dol the sledge down","level":78,"name":{"en":"The Sledge Down","pl":"Sanie na dół"},"type":"quest"},

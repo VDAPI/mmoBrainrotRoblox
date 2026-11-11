@@ -4,6 +4,7 @@
 -- phase 1 (owner 2026-10-31, too much on one screen): shown only while a reward waits, with the "!" badge and a slowly
 -- pulsing gold frame; the tooltip names the streak day. Opens the login window (LoginRewardController); the game
 -- menu's tile opens it at any time.
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): "Daily reward: day 3/7".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -45,7 +46,7 @@ local function LoginButton(scope: Scope, props: Props): Instance
 		if not status then
 			return Text.get(use, "login.title")
 		end
-		return Text.get(use, if status.claimedToday then "login.buttonDone" else "login.button", { day = status.day })
+		return Text.get(use, if status.claimedToday then "login.buttonDone" else "login.button", { n = status.day })
 	end)
 	return scope:New("Frame")({
 		Name = "LoginReward",

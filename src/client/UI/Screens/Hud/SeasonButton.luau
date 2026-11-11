@@ -4,6 +4,7 @@
 -- screen): shown only while a reward waits (Logic/SeasonView.claimCount, also in an ended season's grace days), with
 -- the "!" badge and a slowly pulsing brass frame; the tooltip names the tier with the points of the current tier. Opens
 -- the season pass window (SeasonController); C and the game menu's tile open it at any time.
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): "<season> · 12/30".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -54,7 +55,7 @@ local function SeasonButton(scope: Scope, props: Props): Instance
 			return Text.get(use, "season.window.title")
 		end
 		local lines = {
-			Text.get(use, "season.button", { season = Text.get(use, def.nameKey), tier = v.tier, tiers = def.tiers }),
+			Text.get(use, "season.button", { season = Text.get(use, def.nameKey), tier = v.tier, total = def.tiers }),
 		}
 		if v.mode == "running" and not v.maxed then
 			table.insert(

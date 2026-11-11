@@ -654,9 +654,14 @@ end
 export type Fishing = { panel: Rect, bar: number, compact: boolean }
 
 WorldLayout.FISHING = table.freeze({ width = 680, height = 190, bottom = 230, compactHeight = 170, margin = 8 })
--- PhoneHud's places of the middle band (the target frame and what hangs under it).
-WorldLayout.FISHING_FREE =
-	table.freeze({ target = true, targetEffects = true, castBar = true, actions = true, pool = true })
+-- PhoneHud's places of the middle band (the target frame and what hangs under it). Package A's phone grid (owner
+-- 2026-11-10, "things covering each other"): the player menu is the target's "⋯" (`targetActions`, was the Actions
+-- row), and the weapon pool's name shares the cast line (`castBar`, was `pool`).
+WorldLayout.FISHING_FREE = table.freeze({ target = true, targetActions = true, targetEffects = true, castBar = true })
+-- PhoneHud's places under the middle band: package A's guide bar stands in the M zone under the cast line (`navBar`,
+-- it was in the right column) and may show while fishing, so the panel ends over it (166 of its 170 px; the touch
+-- hint ends at 160) instead of covering the guide's top.
+WorldLayout.FISHING_UNDER = table.freeze({ navBar = true })
 
 -- PhoneHud's places as rectangles in a layer `layer` whose HUD starts `topBar` down (the stack to the bottom gap).
 function WorldLayout.phonePlaces(layer: Size, topBar: number): { [string]: Rect }
@@ -684,7 +689,13 @@ function WorldLayout.fishing(layer: Size, topBar: number, compact: boolean): Fis
 	end
 	local places = WorldLayout.phonePlaces(layer, topBar)
 	local left, right = 0, layer.w
+	local top = topBar + F.margin
+	local bottom = top + F.compactHeight
 	for name, r in places do
+		if WorldLayout.FISHING_UNDER[name] then
+			bottom = math.min(bottom, r.top)
+			continue
+		end
 		if WorldLayout.FISHING_FREE[name] or r.top >= layer.h / 2 then
 			continue
 		end
@@ -699,9 +710,8 @@ function WorldLayout.fishing(layer: Size, topBar: number, compact: boolean): Fis
 	right -= F.margin
 	local width = math.min(F.width, right - left)
 	local x = left + ((right - left) - width) / 2
-	local top = topBar + F.margin
 	return {
-		panel = { left = x, top = top, right = x + width, bottom = top + F.compactHeight },
+		panel = { left = x, top = top, right = x + width, bottom = bottom },
 		bar = width - 24,
 		compact = true,
 	}

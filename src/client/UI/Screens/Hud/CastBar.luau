@@ -3,12 +3,16 @@
 -- teleport stones (state `travel`), gathering (state `gather`) and quest interactions (S27, state `questUse`). Fills
 -- over the channel time; disappears when done or interrupted. S76: aiming (castTime, `kind = "castTime"`) reads
 -- "Aiming: <skill>" in the danger colour. S96: mounting (state `mountCast` = { endsAt, duration, label }).
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): it stands in the zone map's cast line
+-- (Logic/HudZones `castLine` on PC and a tablet, Logic/PhoneHud `castBar` on a phone), which it shares with the weapon
+-- pool's name (Hud/PoolLabel): while a cast runs the bar wins and the name waits.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.Parent.State)
@@ -93,9 +97,9 @@ local function CastBar(scope: Scope): Instance
 	return scope:New("Frame")({
 		Name = "CastBar",
 		-- W29: under the target frame on a phone in landscape (Logic/PhoneHud)
-		AnchorPoint = PhoneLayout.Anchor(scope, "castBar", Vector2.new(0.5, 1)),
-		Position = PhoneLayout.Position(scope, "castBar", UDim2.new(0.5, 0, 1, -100)),
-		Size = PhoneLayout.Size(scope, "castBar", UDim2.fromOffset(360, 26)),
+		AnchorPoint = PhoneLayout.Anchor(scope, "castBar", Vector2.zero),
+		Position = PhoneLayout.Position(scope, "castBar", HudSlots.at(scope, "castLine")),
+		Size = PhoneLayout.Size(scope, "castBar", HudSlots.sizeOf(scope, "castLine")),
 		BackgroundColor3 = Theme.Resource.Track,
 		Visible = scope:Computed(function(use): boolean
 			local c = use(channel)

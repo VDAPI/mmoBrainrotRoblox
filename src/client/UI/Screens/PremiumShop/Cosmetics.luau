@@ -255,11 +255,14 @@ local function offerCard(
 							return kindText(use, def)
 						end),
 					}),
+					-- owner 2026-11-10 (one home per thing): the price once, here (with the old one struck through); the
+					-- button below says "Kup", or "Posiadasz" once bought (then this line goes)
 					line(4, 22, {
 						RichText = true,
-						Text = if isOwned then Text.T(scope, "premium.owned") else priceText(def, price),
+						Text = priceText(def, price),
 						FontFace = Theme.Fonts.BodyBold,
-						TextColor3 = if isOwned then Theme.Paper.Success else Theme.Paper.Link,
+						TextColor3 = Theme.Paper.Link,
+						Visible = not isOwned,
 					}),
 					Button(scope, {
 						LayoutOrder = 5,
@@ -276,7 +279,7 @@ local function offerCard(
 						Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
 						Variant = "primary",
 						TextSize = Theme.TextSize.Small,
-						Text = if isOwned then Text.T(scope, "premium.owned") else `◆ {Format.number(price)}`,
+						Text = if isOwned then Text.T(scope, "premium.owned") else Text.T(scope, "shop.buy"),
 						Disabled = scope:Computed(function(use): boolean
 							return isOwned or (use(shards) or 0) < price
 						end),

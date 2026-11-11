@@ -7,4 +7,14 @@ return table.freeze({
 	-- the title fold to one line (the active set and the worn title).
 	charStats = true,
 	charSets = false,
+	-- Owner 2026-11-10 (UI plan, "nothing folds"): the 37 derived statistics in four groups (Data/Stats.groups,
+	-- CharacterWindow/DerivedList): the attack ones open, the rest folded to their header.
+	charOffense = true,
+	charDefense = false,
+	charResources = false,
+	charOther = false,
+	-- The skills window's details (SkillsWindow/Details): "Koszt i odnowienie" folds to its one line (the cost and the
+	-- cooldown; the shape, the element and the rank table under it), the breakpoints fold to their header.
+	skillCost = false,
+	skillBreakpoints = false,
 } :: { [string]: boolean | { pc: boolean, phone: boolean } })

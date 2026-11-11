@@ -4,11 +4,15 @@
 -- tracker, the event panels, the arena pill, the Elite II timers, the mail, PvP and attack buttons never overlap.
 -- UI plan phase 1 (owner 2026-10-31): one row of menu buttons, so the PC column starts under the minimap's area line
 -- (under the guide bar while one shows), and the chat window in the lower left corner ends left of the action bar.
+-- UI plan package A (owner 2026-11-10: "things covering each other, nothing folds"): nothing of the column passes its
+-- floor; with no room the tracker keeps its header and two lines, the lowest panels fold to their line, then the
+-- lowest elements hide behind a '+N' chip at the floor (L4: 500 random columns, the fold order, the '+N' count).
 
 local fs = require("@lune/fs")
 
 local HudLayout = require("../src/shared/Logic/HudLayout")
 local HudStack = require("../src/shared/Logic/HudStack")
+local Locale = require("../src/shared/Util/Locale")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
 local UiScale = require("../src/shared/Logic/UiScale")
@@ -42,6 +46,36 @@ T.describe("HUD layout (S156)", function()
 		T.expect(HudLayout.valid(HudLayout.with({ junk = 1 }, "questTracker", e))).toBe(true)
 		T.expect(HudLayout.with({ questTracker = e }, "questTracker", nil)).toEqual({})
 	end)
+	T.it("UI plan package A: a saved place in a reserved zone falls back, valid() is unchanged", function()
+		-- PC 1920 x 1022: the target band at its tallest, the message zone under it and the card slot
+		local w, h = 1920, 1022
+		local pc = HudLayout.reserved(w, h, false, false)
+		T.expect(pc.band ~= nil and pc.messages ~= nil and pc.card ~= nil).toBe(true)
+		-- a tracker dropped on the target frame, among the toasts or on the card slot; then in its column
+		T.expect(HudLayout.usable({ left = 800, top = 30, right = 1100, bottom = 200 }, w, h, false, false)).toBe(false)
+		T.expect(HudLayout.usable({ left = 700, top = 300, right = 1000, bottom = 380 }, w, h, false, false))
+			.toBe(false)
+		T.expect(HudLayout.usable({ left = 1600, top = 850, right = 1890, bottom = 900 }, w, h, false, false))
+			.toBe(false)
+		T.expect(HudLayout.usable({ left = 1598, top = 460, right = 1898, bottom = 700 }, w, h, false, false))
+			.toBe(true)
+		-- a tablet's touch buttons stand where PC's card slot is: no card slot of its own
+		T.expect(HudLayout.reserved(1280, 720, true, false).card).toBeNil()
+		-- a phone: the target with the M zone under it and the thumb zone
+		local pw, ph = PhoneHud.area(PhoneHud.DEVICES[1])
+		local phone = HudLayout.reserved(pw, ph, true, true)
+		T.expect(HudLayout.usable(phone.thumb, pw, ph, true, true)).toBe(false)
+		T.expect(HudLayout.usable(phone.messages, pw, ph, true, true)).toBe(false)
+		T.expect(HudLayout.usable({ left = 8, top = 153, right = 268, bottom = 200 }, pw, ph, true, true)).toBe(true)
+		-- old saves still read (valid() does not know the screen); UI/HudDrag shows the built-in place for such a
+		-- save and keeps the old place when a drag ends on a reserved one
+		T.expect(HudLayout.valid({ questTracker = { x = 0.45, y = 0.02 } })).toBe(true)
+		local drag = fs.readFile("src/client/UI/HudDrag.luau")
+		T.expect(string.find(drag, "HudLayout.usable(rect, screen.X, screen.Y,", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(drag, "if not free and use(live) == nil then", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(drag, "local _, free = placed(Fusion.peek, now)", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("moves and scales the event panels (owner 2026-10-21)", function()
 		for _, id in { "worldEvent", "worldBoss", "bloodMoon", "tourney" } do
 			T.expect(HudLayout.valid({ [id] = { x = 0.1, y = 0.6 } })).toBe(true)
@@ -88,8 +122,9 @@ local PC = {
 -- 1024 x 768 at the touch floor (1210 x 907), a 1024 x 600 tablet (1210 x 709), an iPad Pro (1280 x 960).
 local TABLET = { { 1280, 720 }, { 1280, 800 }, { 1210, 907 }, { 1210, 709 }, { 1280, 960 } }
 
-local function box(w: number, h: number, custom: Rect?): Box
-	return { shown = true, w = w, h = h, custom = custom }
+-- An element of the column; `line` its folded line (UI plan package A: a panel's header, the tracker's header).
+local function box(w: number, h: number, custom: Rect?, line: number?): Box
+	return { shown = true, w = w, h = h, custom = custom, line = line }
 end
 
 -- The column's elements of a scenario on a w x h screen (panel widths per device; heights: the world boss panel at
@@ -100,27 +135,32 @@ local function scenario(name: string, touch: boolean, w: number): { [string]: Bo
 	local pill = if touch then 44 else 36
 	local boss = if touch then 130 else 211
 	local event = if touch then 120 else 160
-	local tracker = box(HudStack.TRACKER, HudStack.TRACKER_MIN)
+	local line = if touch then HudStack.LINE_TOUCH else HudStack.LINE_PC
+	local tracker = box(HudStack.TRACKER, HudStack.TRACKER_MIN, nil, HudStack.TRACKER_LEAST)
 	local top = if touch then HudStack.TOUCH_TOP else HudStack.RIGHT_TOP
 	if name == "tracker" then
 		return { questTracker = tracker }
 	elseif name == "bossLine" then
-		return { worldBoss = box(panel, 40), questTracker = tracker }
+		return { worldBoss = box(panel, 40, nil, line), questTracker = tracker }
 	elseif name == "bossAndEvent" then
-		return { worldBoss = box(panel, boss), worldEvent = box(panel, event), questTracker = tracker }
+		return {
+			worldBoss = box(panel, boss, nil, line),
+			worldEvent = box(panel, event, nil, line),
+			questTracker = tracker,
+		}
 	elseif name == "busy" then
 		if touch then
 			return {
 				arena = box(HudStack.ARENA_PILL, pill),
-				worldBoss = box(panel, 40),
-				elite = box(HudStack.ELITE, 32 + 44),
+				worldBoss = box(panel, 40, nil, line),
+				elite = box(HudStack.ELITE, 32 + 44, nil, line),
 				questTracker = tracker,
 			}
 		end
 		return {
 			arena = box(HudStack.ARENA_PILL, pill),
-			worldBoss = box(panel, 40),
-			worldEvent = box(panel, event),
+			worldBoss = box(panel, 40, nil, line),
+			worldEvent = box(panel, event, nil, line),
 			elite = box(HudStack.ELITE, 32 + 3 * 44),
 			questTracker = tracker,
 		}
@@ -131,11 +171,15 @@ local function scenario(name: string, touch: boolean, w: number): { [string]: Bo
 		-- 24 px higher, so 324 instead of 300 keeps the bottom where it was)
 		local tall = if touch then 120 else 324
 		local moved = { left = left, top = top, right = left + HudStack.TRACKER, bottom = top + tall }
-		return { worldBoss = box(panel, boss), questTracker = box(HudStack.TRACKER, tall, moved) }
+		return { worldBoss = box(panel, boss, nil, line), questTracker = box(HudStack.TRACKER, tall, moved) }
 	elseif name == "movedBoss" then
 		local left = if touch then HudStack.MARGIN else w - HudStack.MARGIN - panel
 		local moved = { left = left, top = top, right = left + panel, bottom = top + 120 }
-		return { worldBoss = box(panel, 120, moved), worldEvent = box(panel, 160), questTracker = tracker }
+		return {
+			worldBoss = box(panel, 120, moved),
+			worldEvent = box(panel, 160, nil, line),
+			questTracker = tracker,
+		}
 	end
 	error(name)
 end
@@ -267,16 +311,26 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 							error(`{where}: {id} {show(r)} leaves the screen`)
 						end
 					end
-					-- every shown element has a place of its full height (the tracker: at least its header) above the
-					-- column's floor (PC the corner, a touch screen the sprint row)
+					-- every shown element has a place above the column's floor (PC the corner, a touch screen the sprint
+					-- row) of its full height (the tracker: at least its header), its folded line, or stands behind the
+					-- '+N' chip (UI plan package A: nothing passes the floor)
 					local floor = HudStack.column(touch, false, w, h, 0).floor
+					local placed = HudStack.arrange(touch, false, w, h, 0, boxes, nil, guide, waiting)
 					for id, b in boxes do
 						local r = all[id]
+						if table.find(placed.hidden, id) then
+							T.expect(r == nil and placed.chip ~= nil).toBe(true)
+							continue
+						end
 						if not r then
 							error(`{where}: {id} has no place`)
 						end
-						local least = if id == "questTracker" then HudStack.TRACKER_LEAST else b.h
-						if not b.custom and (r.bottom - r.top < least - 1e-6 or r.bottom > floor) then
+						local folded = table.find(placed.folded, id) ~= nil
+						local least = if folded
+							then b.line or b.h
+							elseif id == "questTracker" then HudStack.TRACKER_LEAST
+							else b.h
+						if not b.custom and (r.bottom - r.top < least - 1e-6 or r.bottom > floor + 1e-6) then
 							error(`{where}: {id} {show(r)} is shorter than {least} or under the floor {floor}`)
 						end
 					end
@@ -308,9 +362,20 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(places.questTracker).toBe(nil)
 		local custom = boxes.questTracker.custom :: Rect
 		T.expect(HudStack.overlaps(places.worldBoss, custom)).toBe(false)
-		-- under the tracker it has no room left, so the spare column beside it, from the top
-		T.expect(places.worldBoss.top).toBe(HudStack.RIGHT_TOP)
-		T.expect(places.worldBoss.right <= custom.left - HudStack.GAP).toBe(true)
+		-- under the tracker it has no room left for the whole panel: UI plan package A folds it to its line there
+		T.expect(places.worldBoss.top).toBe(custom.bottom + HudStack.GAP)
+		T.expect(places.worldBoss.bottom - places.worldBoss.top).toBe(HudStack.LINE_PC)
+		T.expect(places.worldBoss.right).toBe(w - HudStack.MARGIN)
+		-- a tracker so tall that not even the line fits under it: the spare column beside it, from its top (GAP under
+		-- the message zone, which it never covers)
+		local taller = { left = custom.left, top = custom.top, right = custom.right, bottom = custom.top + 504 }
+		local aside = HudStack.layout(false, false, w, h, 0, {
+			worldBoss = box(HudStack.PANEL_PC, 211, nil, HudStack.LINE_PC),
+			questTracker = box(HudStack.TRACKER, 504, taller),
+		})
+		T.expect(aside.worldBoss.top).toBe(HudStack.column(false, false, w, h, 0).spareTop)
+		T.expect(aside.worldBoss.top).toBe(h * HudStack.MESSAGE_BOTTOM + HudStack.GAP)
+		T.expect(aside.worldBoss.right <= custom.left - HudStack.GAP).toBe(true)
 		-- a shorter moved tracker leaves it room under it
 		local short = { left = custom.left, top = custom.top, right = custom.right, bottom = custom.top + 120 }
 		boxes.questTracker = box(HudStack.TRACKER, 120, short)
@@ -337,31 +402,120 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 					T.expect(tracker.left).toBe(HudStack.MARGIN)
 					T.expect(tracker.top).toBe(top)
 				end
-				T.expect(tracker.bottom <= floor).toBe(true)
+				-- UI plan package A: at least its header always finds a place on these tablets
+				T.expect(tracker ~= nil and tracker.bottom <= floor).toBe(true)
 			end
 		end
 	end)
 
 	T.it("a phone stacks the column in its left stack, clear of every other place", function()
-		local tracker = box(PhoneHud.TRACKER_WIDTH, HudStack.TRACKER_MIN)
+		-- UI plan package A: 52-px lines from PhoneHud.STACK_TOP down to the thumb zone, the party strip one of them, the
+		-- rest behind the '+N' chip at the stack's right end. Package A review (owner 2026-11-10): with the widths a phone
+		-- draws (Logic/PhoneHud: the party's strip, the panels, the arena's pill, the guide line and the tracker) every
+		-- element stands beside the chip, so the stack never shows '+N' alone, and one picked from the '+N' list (`keep`,
+		-- UI/HudSlots.bring) shows.
+		local line = PhoneHud.LINE
+		local panel = PhoneHud.PANEL_WIDTH
+		local tracker = box(PhoneHud.TRACKER_WIDTH, HudStack.TRACKER_MIN, nil, line)
+		local party = box(PhoneHud.PARTY_WIDTH, line, nil, line)
+		local every: { [string]: Box } = {
+			party = party,
+			arena = box(panel, line, nil, line), -- the queue's pill
+			worldBoss = box(panel, 120, nil, line),
+			worldEvent = box(panel, 120, nil, line),
+			bloodMoon = box(panel, 140, nil, line),
+			tourney = box(panel, 120, nil, line),
+			guide = box(panel, line, nil, line),
+			questTracker = tracker,
+		}
+		local scenarios: { { [string]: Box } } = {
+			{ questTracker = tracker },
+			{ worldBoss = box(panel, 120, nil, line), questTracker = tracker },
+			{ party = party, worldBoss = box(panel, 120, nil, line), questTracker = tracker },
+			every,
+		}
+		for id, b in every do
+			if id ~= "questTracker" then
+				table.insert(scenarios, { [id] = b, questTracker = tracker })
+			end
+		end
+		local function check(d: any, bar: number, boxes: { [string]: Box }, w: number, h: number): HudStack.Placed
+			local places = PhoneHud.places(w, h)
+			local placed = HudStack.arrange(true, true, w, h, 0, boxes)
+			local all = table.clone(placed.rects)
+			if placed.chip then
+				all["+N"] = placed.chip
+			end
+			for id, r in all do
+				T.expect(r.left >= places.stack.x).toBe(true)
+				T.expect(r.right <= places.stack.x + PhoneHud.STACK_WIDTH).toBe(true)
+				T.expect(r.top >= PhoneHud.STACK_TOP).toBe(true)
+				T.expect(r.bottom <= PhoneHud.stackBottom(h) + 1e-6).toBe(true)
+				for name, place in places do
+					if name ~= "stack" and HudStack.overlaps(r, PhoneHud.rect(place, w, h)) then
+						error(`{d.name} bar {bar}: {id} {show(r)} / {name}`)
+					end
+				end
+				for other, o in all do
+					if other ~= id and HudStack.overlaps(r, o) then
+						error(`{d.name} bar {bar}: {id} {show(r)} / {other} {show(o)}`)
+					end
+				end
+			end
+			-- one line or more always shows something: the first element, beside the chip while one hides
+			local shown = 0
+			for _ in placed.rects do
+				shown += 1
+			end
+			if shown < 1 then
+				error(`{d.name} bar {bar}: only '+N' ({table.concat(placed.hidden, ", ")})`)
+			end
+			T.expect(#placed.hidden > 0).toBe(placed.chip ~= nil)
+			return placed
+		end
 		for _, d in PhoneHud.DEVICES do
-			local w, h = PhoneHud.area(d)
-			for _, boxes in
-				{ { questTracker = tracker }, { worldBoss = box(PhoneHud.PANEL_WIDTH, 40), questTracker = tracker } }
-			do
-				local places = HudStack.layout(true, true, w, h, 0, boxes)
-				for id, r in places do
-					T.expect(r.left).toBe(PhoneHud.PLACES.stack.x)
-					T.expect(r.top >= PhoneHud.STACK_TOP).toBe(true)
-					T.expect(r.bottom <= h - PhoneHud.STACK_BOTTOM).toBe(true)
-					for name, place in PhoneHud.PLACES do
-						if name ~= "stack" and HudStack.overlaps(r, PhoneHud.rect(place, w, h)) then
-							error(`{d.name}: {id} {show(r)} / {name}`)
+			for _, bar in { 0, 36, 58 } do
+				local w, h = PhoneHud.area(d, bar)
+				for _, boxes in scenarios do
+					local placed = check(d, bar, boxes, w, h)
+					-- the player picks a hidden one from the '+N' list: it stands in the stack, the others give way
+					for _, id in placed.hidden do
+						local brought = table.clone(boxes)
+						brought[id] = table.clone(boxes[id])
+						brought[id].keep = true
+						local again = check(d, bar, brought, w, h)
+						if not again.rects[id] then
+							error(`{d.name} bar {bar}: {id} picked from '+N' stays hidden`)
 						end
 					end
 				end
 			end
 		end
+	end)
+
+	T.it("a phone's stack elements draw the widths of Logic/PhoneHud", function()
+		-- package A review (owner 2026-11-10): the model above holds only while the files draw these widths
+		local hud = "src/client/UI/Screens/Hud/"
+		for file, width in
+			{
+				["src/client/UI/Screens/PartyFrames.luau"] = "PhoneHud.PARTY_WIDTH",
+				[hud .. "QuestTracker.luau"] = "PhoneHud.TRACKER_WIDTH",
+				[hud .. "WorldBossPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "WorldEventPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "BloodMoonPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "TourneyPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "ArenaPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "ArenaTeams.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "NavBar.luau"] = "PhoneHud.PANEL_WIDTH",
+			}
+		do
+			if not string.find(fs.readFile(file), width, 1, true) then
+				error(`{file} does not draw {width} on a phone`)
+			end
+		end
+		T.expect(PhoneHud.PARTY_WIDTH <= PhoneHud.PANEL_WIDTH).toBe(true)
+		T.expect(PhoneHud.TRACKER_WIDTH <= PhoneHud.PANEL_WIDTH).toBe(true)
+		T.expect(PhoneHud.PANEL_WIDTH + 6 + PhoneHud.CHIP.w <= PhoneHud.STACK_WIDTH).toBe(true)
 	end)
 
 	T.it("Studio and browser viewports: the column stops above the PvP toggle, its badge and the mail", function()
@@ -699,10 +853,12 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 			T.expect({ path, string.find(fs.readFile(path), "use(Scale.HudSize)", 1, true) ~= nil })
 				.toEqual({ path, true })
 		end
-		-- the tutorial's tile left of a menu button keeps clear of the whole menu (the minimap under the row)
+		-- the tutorial's tile left of a menu button keeps clear of the whole menu (the minimap under the row): the
+		-- controller passes the menu as measured, Logic/TutorialTile (UI plan package A) goes left of it
 		local tutorial = fs.readFile("src/client/Controllers/TutorialController.luau")
 		T.expect(string.find(tutorial, "Fusion.peek(HudSlots.Menu)", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(tutorial, "edge = math.min(edge, menu.left)", 1, true) ~= nil).toBe(true)
+		local tile = fs.readFile("src/shared/Logic/TutorialTile.luau")
+		T.expect(string.find(tile, "edge = math.min(edge, menu.left)", 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it("Studio check of phase 4: a moved element ends MARGIN inside the screen like the built-in column", function()
@@ -729,6 +885,206 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		local f = HudStack.fixed(false, 1920, 1080)
 		T.expect(f.pvpBadge.right).toBe(f.pvp.right)
 		T.expect(f.pvpBadge.right <= 1920).toBe(true)
+	end)
+end)
+
+T.describe("HUD column folds (UI plan package A, owner 2026-11-10)", function()
+	-- a seeded random generator (Lune's math.random is not seeded the same everywhere)
+	local function lcg(seed: number): (number, number) -> number
+		local state = seed
+		return function(low: number, high: number): number
+			state = (state * 1103515245 + 12345) % 2147483648
+			return low + state % (high - low + 1)
+		end
+	end
+
+	T.it(
+		"L4: 500 random columns never pass the floor; folded and hidden ids are returned, the chip counts them",
+		function()
+			local rand = lcg(20261110)
+			for case = 1, 500 do
+				local right = rand(0, 1) == 1
+				local top = rand(40, 400)
+				local floor = top + rand(60, 700)
+				local column: HudStack.Column = {
+					x = if right then 1898 else 22,
+					right = right,
+					top = top,
+					floor = floor,
+					width = 300,
+					chip = if rand(0, 1) == 1 then HudStack.CHIP else PhoneHud.CHIP,
+					spares = if rand(0, 2) == 0 then { if right then 1590 else 330 } else nil,
+					spareTop = top + rand(0, 80),
+				}
+				local items: { HudStack.Item } = {}
+				local count = rand(1, 7)
+				for i = 1, count do
+					local tracker = i == count and rand(0, 3) > 0
+					local h = rand(32, 260)
+					table.insert(items, {
+						id = `e{i}`,
+						w = if tracker then 300 else rand(200, 280),
+						h = h,
+						grow = tracker,
+						least = if tracker then math.min(h, HudStack.TRACKER_MIN) else nil,
+						line = if rand(0, 4) > 0
+							then math.min(h, if tracker then HudStack.TRACKER_LEAST else 32)
+							else nil,
+						keep = rand(0, 9) == 0,
+					})
+				end
+				local fixed: { Rect } = {}
+				if rand(0, 2) == 0 then
+					-- a moved element in the lane
+					local y = rand(top, floor)
+					local x = if right then 1898 - 300 else 22
+					table.insert(fixed, { left = x, top = y, right = x + 300, bottom = y + rand(20, 200) })
+				end
+				local placed = HudStack.place(items, column, fixed)
+				local where = `case {case}`
+				local seen: { [string]: boolean } = {}
+				local others: { Rect } = table.clone(fixed)
+				if placed.chip then
+					table.insert(others, placed.chip)
+				end
+				for _, item in items do
+					local r = placed.rects[item.id]
+					local hidden = table.find(placed.hidden, item.id) ~= nil
+					T.expect({ where, item.id, r == nil }).toEqual({ where, item.id, hidden })
+					if r then
+						seen[item.id] = true
+						if r.bottom > floor + 1e-6 or r.top < math.min(top, column.spareTop or top) - 1e-6 then
+							error(`{where}: {item.id} {show(r)} leaves the column {top}..{floor}`)
+						end
+						local folded = table.find(placed.folded, item.id) ~= nil
+						local least = if folded then item.line or item.h else math.min(item.h, item.least or item.h)
+						T.expect({ where, item.id, r.bottom - r.top >= least - 1e-6 }).toEqual({ where, item.id, true })
+						for _, o in others do
+							if HudStack.overlaps(r, o) then
+								error(`{where}: {item.id} {show(r)} meets {show(o)}`)
+							end
+						end
+						table.insert(others, r)
+					end
+				end
+				-- the '+N' chip shows exactly while something is hidden, inside the column
+				T.expect({ where, placed.chip ~= nil }).toEqual({ where, #placed.hidden > 0 })
+				local chip = placed.chip
+				if chip and floor - top >= (column.chip :: HudStack.Size).h then
+					T.expect({ where, chip.bottom <= floor + 1e-6, chip.top >= top - 1e-6 })
+						.toEqual({ where, true, true })
+				end
+			end
+		end
+	)
+
+	T.it(
+		"the fold order: least height, the lowest panel's line, the tracker's header, then '+N' from the lowest",
+		function()
+			local column: HudStack.Column =
+				{ x = 1898, right = true, top = 356, floor = 830, width = 300, chip = HudStack.CHIP }
+			local function items(): { HudStack.Item }
+				return {
+					{ id = "worldBoss", w = 280, h = 211, line = 32 },
+					{ id = "worldEvent", w = 280, h = 160, line = 32 },
+					{ id = "bloodMoon", w = 280, h = 120, line = 32 },
+					{ id = "questTracker", w = 300, h = 200, grow = true, least = HudStack.TRACKER_MIN, line = 45 },
+				}
+			end
+			-- 516 px: the tracker keeps its header and two lines, the lowest panel folds, the others stay open
+			column.floor = 356 + 211 + 160 + 32 + HudStack.TRACKER_MIN + 3 * HudStack.GAP
+			local placed = HudStack.place(items(), column, {})
+			T.expect(placed.folded).toEqual({ "bloodMoon" })
+			T.expect(placed.hidden).toEqual({})
+			T.expect(placed.rects.bloodMoon.bottom - placed.rects.bloodMoon.top).toBe(32)
+			T.expect(placed.rects.questTracker.bottom).toBe(column.floor)
+			-- 300 px: every panel folds, the tracker keeps its header and two lines
+			column.floor = 356 + 300
+			placed = HudStack.place(items(), column, {})
+			T.expect(placed.folded).toEqual({ "worldBoss", "worldEvent", "bloodMoon" })
+			T.expect(placed.hidden).toEqual({})
+			T.expect(placed.rects.questTracker.bottom - placed.rects.questTracker.top >= HudStack.TRACKER_MIN)
+				.toBe(true)
+			-- 160 px: the tracker folds to its header after the panels, then the lowest go behind '+N' (the chip at the floor)
+			column.floor = 356 + 160
+			placed = HudStack.place(items(), column, {})
+			T.expect(#placed.hidden > 0).toBe(true)
+			T.expect(placed.hidden[#placed.hidden]).toBe("questTracker")
+			local chip = assert(placed.chip, "a '+N' chip")
+			T.expect(chip.bottom).toBe(column.floor)
+			T.expect(chip.right).toBe(column.x)
+			for _, id in placed.hidden do
+				T.expect(placed.rects[id]).toBeNil()
+			end
+			-- the first panel stays (folded) above the chip
+			T.expect(placed.rects.worldBoss ~= nil).toBe(true)
+			T.expect(placed.rects.worldBoss.bottom <= chip.top - HudStack.GAP).toBe(true)
+			-- an element the player took from the '+N' list folds and hides after the others
+			local kept = items()
+			kept[4].keep = true
+			placed = HudStack.place(kept, column, {})
+			T.expect(placed.rects.questTracker ~= nil).toBe(true)
+			T.expect(placed.hidden).toEqual({ "worldEvent", "bloodMoon" })
+		end
+	)
+
+	T.it("the '+N' list names every element of the column in pl and en, with the game's own words", function()
+		for _, id in HudStack.ORDER do
+			for _, lang in { "pl", "en" } do
+				local key = `hud.stack.{id}`
+				T.expect({ key = key, lang = lang, has = Locale.has(key, lang) }).toEqual({
+					key = key,
+					lang = lang,
+					has = true,
+				})
+			end
+			-- package A review: the English list said "Tourney", a word the game uses nowhere else
+			local en = Locale.T(`hud.stack.{id}`, nil, "en")
+			T.expect({ id = id, tourney = string.find(en, "Tourney", 1, true) ~= nil }).toEqual({
+				id = id,
+				tourney = false,
+			})
+		end
+		T.expect(Locale.T("hud.stack.tourney", nil, "en")).toBe("Tournament")
+	end)
+
+	T.it("1280 x 720 with every panel, the guide and the waiting row: panels fold, then '+N'; Z6 stays free", function()
+		local w, h = UiScale.hud(1280, 720, false, UiScale.TOP_BAR)
+		local panel = HudStack.PANEL_PC
+		local line = HudStack.LINE_PC
+		local boxes: { [string]: Box } = {
+			arena = box(HudStack.ARENA_PILL, 36),
+			worldBoss = box(panel, 211, nil, line),
+			worldEvent = box(panel, 160, nil, line),
+			bloodMoon = box(panel, 120, nil, line),
+			tourney = box(panel, 140, nil, line),
+			elite = box(HudStack.ELITE, 32 + 3 * 44),
+			questTracker = box(HudStack.TRACKER, HudStack.TRACKER_MIN, nil, HudStack.TRACKER_LEAST),
+		}
+		local placed = HudStack.arrange(false, false, w, h, 0, boxes, nil, true, true)
+		local column = HudStack.column(false, false, w, h, 0, true, true)
+		T.expect(#placed.folded > 0).toBe(true)
+		local corner = HudStack.cornerTop(false, w, h)
+		for id, r in placed.rects do
+			T.expect({ id, r.bottom <= column.floor + 1e-6 }).toEqual({ id, true })
+			-- the PC corner under the floor (the card slot, Logic/HudZones Z6) keeps clear
+			T.expect({ id, r.bottom <= corner - HudStack.GAP + 1e-6 }).toEqual({ id, true })
+			-- the spare columns start under the message zone
+			if r.right <= column.x - HudStack.TRACKER then
+				T.expect({ id, r.top >= h * HudStack.MESSAGE_BOTTOM }).toEqual({ id, true })
+			end
+		end
+		local chip = placed.chip
+		if chip then
+			T.expect(chip.bottom <= column.floor + 1e-6).toBe(true)
+		end
+		-- every panel is still there: open, folded to its line, or listed behind '+N'
+		for id in boxes do
+			if id ~= "elite" then
+				local listed = table.find(placed.hidden, id) ~= nil
+				T.expect({ id, placed.rects[id] ~= nil or listed }).toEqual({ id, true })
+			end
+		end
 	end)
 end)
 
