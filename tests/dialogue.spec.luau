@@ -1567,8 +1567,9 @@ end)
 -- An objective is a line of the HUD tracker on every device (UI-ZASADY §3: no control words, no "(K)" key hints), and
 -- the text scan never sees it, since QuestText.rows builds its key as `quest.obj.{type}`. A quest's text and its pages
 -- are read on a phone too. The tutorial tile (package A) teaches each control in the device's own words.
--- UI pass package E, adoption (owner 2026-11-10): E's toasts that sent the player to a window by its PC key ("(K)",
--- "(U)", "(J)", "(G)") name the window or the ☰ menu only, the same words on a phone.
+-- UI pass package E, adoption (owner 2026-11-10): the unlock toasts and the guild chat line lost their PC keys ("(U)",
+-- "(J)", "(G)"). A toast keeps UI-ZASADY §3: no key and no window name; the HUD shows the way (☰, "!" on a button).
+-- Review 2026-11-11: skills.toast.many and bp.toast.many had no reader since S137 and are deleted.
 
 local TextScan = require("./TextScan")
 
@@ -1641,12 +1642,26 @@ describe("Quest lines teach no controls (review 2026-11-10)", function()
 		expect(controlIn("Kliknij królika.", true)).toBe("kliknij")
 	end)
 
-	it("E's toasts that point at a window have no key hint in pl and en", function()
+	-- A window named in a toast ("w oknie Umiejętności", "the Skills window"): nil when none.
+	local function windowIn(text: string): string?
+		return string.match(text, "okn%a* %u%S*") or string.match(text, "%u%a* window")
+	end
+
+	it("E's unlock toasts have no key hint and name no window, the guild goal line has no key hint", function()
 		local problems: { string } = {}
-		for _, key in { "skills.toast.many", "bp.toast.many", "unlock.arena", "unlock.mounts", "guild.sys.goalDone" } do
+		local keys: { string } = { "guild.sys.goalDone" }
+		for key in pl :: any do
+			if string.sub(key, 1, 7) == "unlock." then
+				table.insert(keys, key)
+			end
+		end
+		expect(#keys >= 4).toBe(true)
+		for _, key in keys do
 			for lang, tbl in { pl = pl :: any, en = en :: any } do
 				local text = tbl[key]
-				local found = if type(text) == "string" then controlIn(text, false) else "missing"
+				local found = if type(text) ~= "string"
+					then "missing"
+					else controlIn(text, false) or (if key ~= "guild.sys.goalDone" then windowIn(text) else nil)
 				if found then
 					table.insert(problems, `{lang} {key}: {found}`)
 				end
@@ -1655,5 +1670,8 @@ describe("Quest lines teach no controls (review 2026-11-10)", function()
 		table.sort(problems)
 		expect(problems).toEqual({})
 		expect(controlIn("Zajrzyj do okna Umiejętności (K).", false)).toBe("(K)")
+		expect(windowIn("Zajrzyj do okna Umiejętności.")).toBe("okna Umiejętności.")
+		expect(windowIn("Check the Skills window.")).toBe("Skills window")
+		expect(windowIn("Stajnia w mieście, okno pod ☰.")).toBeNil()
 	end)
 end)

@@ -23,6 +23,8 @@ return {
 		-- the arena's 3v3 queue button: ArenaWindow's team3 picks the key at run time (review 2026-11-10)
 		{ pattern = "^arena%.queue3%.solo$", surface = "button" },
 		{ pattern = "^arena%.queue3%.team$", surface = "button" },
+		-- the unlock toasts: Logic/Unlocks builds the key `unlock.<id>` at run time (UnlockController, review 2026-11-11)
+		{ pattern = "^unlock%.", surface = "toast" },
 		{ pattern = "%.short$", surface = "line" },
 		{ pattern = "%.info$", surface = "infoTip" },
 	},
