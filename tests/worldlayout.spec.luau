@@ -23,6 +23,7 @@ local Cutscenes = require("../src/shared/Logic/Cutscenes")
 local Folds = require("../src/shared/Data/Folds")
 local Leaderboards = require("../src/shared/Data/Leaderboards")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
+local Rarities = require("../src/shared/Data/Rarities")
 local Seasons = require("../src/shared/Data/Seasons")
 local SectionFold = require("../src/shared/Logic/SectionFold")
 local T = require("./Test")
@@ -831,6 +832,45 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 					if not WorldLayout.FISHING_FREE[name] and overlaps(f.panel, r) then
 						table.insert(problems, `{screen.name}: the panel covers {name}`)
 					end
+				end
+			end
+		end
+		T.expect(problems).toEqual({})
+	end)
+
+	-- Review 2026-11-11 ("Od znajomych…", "Moje i otrzy…" on the settings' cycling buttons): a cycling button with its
+	-- values' keys is as wide as the longest of them in pl and en (GameMenu's cycleWidth), each a button's 18
+	-- characters at most; the two loot rows keep 150 px, so their rarity names fit it.
+	T.it("settings: every cycling button shows its whole value", function()
+		local src = fs.readFile("src/client/UI/Screens/GameMenu.luau")
+		local min = constant("src/client/UI/Screens/GameMenu.luau", "local CYCLE_MIN = (%d+)")
+		local pad = constant("src/client/UI/Screens/GameMenu.luau", "local CYCLE_PAD = (%d+)")
+		local problems: { string } = {}
+		local lists = 0
+		for keys in string.gmatch(src, "end, (%b{})%)") do
+			lists += 1
+			for key in string.gmatch(keys, '"([%w%.]+)"') do
+				for lang, texts in { pl = pl, en = en } do
+					local text = assert(texts[key], key)
+					if utf8.len(text) > TextCaps.SURFACES.button.chars then
+						table.insert(problems, `{lang} {key}: "{text}" over a button's characters`)
+					end
+				end
+			end
+		end
+		-- quality, decor, camera, whispers, who may join
+		T.expect(lists).toBe(5)
+		T.expect(string.find(src, "Size = UDim2.fromOffset(cycleWidth(keys), 44),", 1, true) ~= nil).toBe(true)
+		-- the loot filters (no keys: CYCLE_MIN wide): "Wył.", "Wszystko" and the rarity names
+		local loot = { "menu.off", "menu.all" }
+		for _, id in { Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC } do
+			table.insert(loot, Rarities.get(id).nameKey)
+		end
+		for _, key in loot do
+			for lang, texts in { pl = pl, en = en } do
+				local width = TextCaps.width(assert(texts[key], key), WorldLayout.BODY) + pad
+				if width > min then
+					table.insert(problems, `{lang} {key}: {width} px of {min}`)
 				end
 			end
 		end

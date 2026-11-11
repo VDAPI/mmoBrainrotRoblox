@@ -33,6 +33,7 @@ local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local ListRow = require(script.Parent.Parent.Components.ListRow)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Motion = require(script.Parent.Parent.Motion)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -41,6 +42,7 @@ local Section = require(script.Parent.Parent.Components.Section)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
+local TextCaps = require(ReplicatedStorage.Shared.Logic.TextCaps)
 local TextInput = require(script.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
@@ -88,20 +90,38 @@ local function row(scope: Scope, order: number, labelKey: string, control: Insta
 	})
 end
 
+-- Review 2026-11-11 ("Od znajomych…", "Moje i otrzy…"): a cycling button is as wide as its longest value in any
+-- language (Body 20 and the button's padding), at least CYCLE_MIN; measured once, as `row` reads the width when it is
+-- built. `keys` are the values' locale keys.
+local CYCLE_MIN = 150
+local CYCLE_PAD = 28
+local function cycleWidth(keys: { string }): number
+	local width = CYCLE_MIN
+	for _, key in keys do
+		for lang in Locale.tables() do
+			local text = Locale.T(key, nil, lang)
+			width = math.max(width, math.ceil(TextCaps.width(text, Theme.TextSize.Body) + CYCLE_PAD))
+		end
+	end
+	return width
+end
+
 -- Two-state switch bound to a boolean setting (`default` when unset).
--- Button cycling a setting through `values` (S20), labelled by `label(value)`.
+-- Button cycling a setting through `values` (S20), labelled by `label(value)`; `keys` (the values' locale keys) size
+-- it to its longest value.
 local function cycle(
 	scope: Scope,
 	name: string,
 	default: any,
 	values: { any },
-	label: (use: Fusion.Use, value: any) -> string
+	label: (use: Fusion.Use, value: any) -> string,
+	keys: { string }?
 ): Instance
 	local value = State.Value({ "account", "settings", name })
 	return Button(scope, {
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.fromScale(1, 0),
-		Size = UDim2.fromOffset(150, 44),
+		Size = UDim2.fromOffset(if keys then cycleWidth(keys) else CYCLE_MIN, 44),
 		Text = scope:Computed(function(use): string
 			local current = use(value)
 			return label(use, if current == nil then default else current)
@@ -156,10 +176,14 @@ local function damageNumbers(scope: Scope): Instance
 	local mode = scope:Computed(function(use): string
 		return DamageText.mode({ dmgMode = use(modeValue), dmgNumbers = use(oldSwitch) })
 	end)
+	local keys: { string } = {}
+	for _, id in DamageNumbers.modes do
+		table.insert(keys, `menu.damageNumbers.{id}`)
+	end
 	return Button(scope, {
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.fromScale(1, 0),
-		Size = UDim2.fromOffset(150, 44),
+		Size = UDim2.fromOffset(cycleWidth(keys), 44),
 		Text = scope:Computed(function(use): string
 			return Text.get(use, `menu.damageNumbers.{use(mode)}`)
 		end),
@@ -770,7 +794,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 								"menu.quality",
 								cycle(scope, "quality", "high", { "low", "medium", "high" }, function(use, value)
 									return Text.get(use, `menu.quality.{value}`)
-								end)
+								end, { "menu.quality.low", "menu.quality.medium", "menu.quality.high" })
 							),
 							row(
 								scope,
@@ -778,7 +802,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 								"menu.decor",
 								cycle(scope, "decor", "mid", { "low", "mid", "high" }, function(use, value)
 									return Text.get(use, `menu.decor.{value}`)
-								end)
+								end, { "menu.decor.low", "menu.decor.mid", "menu.decor.high" })
 							),
 							row(
 								scope,
@@ -786,7 +810,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 								"menu.cameraMode",
 								cycle(scope, "cameraMode", "free", { "free", "top" }, function(use, value)
 									return Text.get(use, `menu.cameraMode.{value}`)
-								end)
+								end, { "menu.cameraMode.free", "menu.cameraMode.top" })
 							),
 							row(scope, 4, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
 							row(scope, 5, "menu.shake", stepper(scope, "shake", 1, 0.1, 0, 1), "menu.shake.info"),
@@ -889,7 +913,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 								"menu.whispers",
 								cycle(scope, "whispers", "all", { "all", "friends" }, function(use, value)
 									return Text.get(use, `menu.whispers.{value}`)
-								end)
+								end, { "menu.whispers.all", "menu.whispers.friends" })
 							),
 							row(scope, 2, "menu.friendAlerts", toggle(scope, "friendAlerts", true)),
 							-- S150: appear offline and who may join my server (FriendService writes the presence entry by them)
@@ -906,7 +930,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 								"menu.friendJoin",
 								cycle(scope, "friendJoin", "friends", { "friends", "none" }, function(use, value)
 									return Text.get(use, `menu.friendJoin.{value}`)
-								end)
+								end, { "menu.friendJoin.friends", "menu.friendJoin.none" })
 							),
 							-- S132: the server writes the setting and changes the look
 							row(
