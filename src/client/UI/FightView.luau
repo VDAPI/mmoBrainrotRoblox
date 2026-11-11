@@ -133,9 +133,11 @@ function FightView.place(raw: any): Place?
 	return { n = n, of = of, pct = math.clamp(pct or 0, 0, 1) }
 end
 
--- S149b: "Place 3 of 14 · share 9.5 %".
+-- S149b: "Place 3 of 14 · share 9.5%", in Polish "udział 9,5%" (format.decimal, UI-ZASADY §3).
 function FightView.placeLine(use: Fusion.Use, place: Place): string
-	return Text.get(use, "fight.place", { n = place.n, of = place.of, pct = math.floor(place.pct * 1000 + 0.5) / 10 })
+	local pct = math.floor(place.pct * 1000 + 0.5) / 10
+	local text = string.gsub(tostring(pct), "%.", Text.get(use, "format.decimal"))
+	return Text.get(use, "fight.place", { n = place.n, of = place.of, pct = text })
 end
 
 function FightView.summary(raw: any): Summary?
