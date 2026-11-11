@@ -8,6 +8,8 @@
 -- Adoption stage (UI package D after C, 2026-11-10): "Odbierz wszystko" stands in the window's Footer (pinned under
 -- the content, outside its scroll) under the queue, and the orders are list rows (Components/ListRow `Tall`: the name
 -- over the time left, a progress line along the bottom) instead of 84-px cards, so a phone shows two of them.
+-- Review 2026-11-11: the orders' names are Small 17 again (ListRow `Dense`; at Body 20 every blessing read
+-- "Błogosławieństw…") in a queue 300 px wide where the recipes keep their room (Logic/GearLayout.alchemy).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -248,6 +250,7 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): ({ Instan
 						LayoutOrder = index,
 						Index = index,
 						Tall = true,
+						Dense = true,
 						Inset = ICON + 4,
 						RichText = true,
 						Text = ItemText.get(use, recipe.result.id),
@@ -288,6 +291,7 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): ({ Instan
 						LayoutOrder = index,
 						Index = index,
 						Tall = true,
+						Dense = true,
 						Muted = true,
 						Text = Text.get(use, "alchemy.emptySlot"),
 					})

@@ -337,13 +337,18 @@ end
 -- The alchemist's window: the recipes (tabs and a scrolling list) and the brewing queue on the right: its title and
 -- the orders as list rows (Components/ListRow `Tall`: the name over the time left, a progress line under them),
 -- scrolling; "Odbierz wszystko" in the window's footer under the queue (`collect`, in the footer row).
+-- Review 2026-11-11: the orders' names are Small 17 (ListRow `Dense`; at Body 20 every blessing read
+-- "Błogosławieństw…"), and the queue is `wide` where the recipes keep `recipes` px beside it (their group tabs whole
+-- and every ingredients line in two lines: PC and the 932-px phone), so every name reads apart there ("Eliksir
+-- Odporności na Truciznę" and "... na Błyskawice" need 224 px of text); the narrower phones keep `queue` and leave
+-- the recipes their width, and there the blessings still read apart ("Błogosławieństwo W…", "Błogosławieństwo S…").
 export type Alchemy = { recipes: Rect, title: Rect, queue: Rect, collect: Rect, rows: number }
 
-GearLayout.ALCHEMY = table.freeze({ queue = 270, gutter = 16, title = 36, gap = 6 })
+GearLayout.ALCHEMY = table.freeze({ queue = 270, wide = 300, recipes = 570, gutter = 16, title = 36, gap = 6 })
 
 function GearLayout.alchemy(area: Size): Alchemy
 	local A = GearLayout.ALCHEMY
-	local x = area.w - A.queue
+	local x = area.w - (if area.w - A.wide - A.gutter >= A.recipes then A.wide else A.queue)
 	local queue = rect(x, A.title + 4, area.w, area.h)
 	return {
 		recipes = rect(0, 0, x - A.gutter, area.h),

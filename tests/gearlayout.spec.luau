@@ -22,6 +22,7 @@ local ItemName = require("../src/shared/Logic/ItemName")
 local Locale = require("../src/shared/Util/Locale")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local Rarities = require("../src/shared/Data/Rarities")
+local Recipes = require("../src/shared/Data/Recipes")
 local Reroll = require("../src/shared/Logic/Reroll")
 local SkillData = require("../src/shared/Data/Skills")
 local Skills = require("../src/shared/Logic/Skills")
@@ -747,6 +748,103 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 				local queueH = a.queue.bottom - a.queue.top
 				T.expect({ case.name, a.rows * GearLayout.ROW_TALL + (a.rows - 1) * GearLayout.ALCHEMY.gap <= queueH })
 					.toEqual({ case.name, true })
+			end
+		end
+	)
+
+	T.it(
+		"the alchemist's queue: the orders' names read apart, a wide one leaves the recipes their two lines",
+		function()
+			-- review 2026-11-11: at Body 20 in the 270-px queue every blessing read "Błogosławieństw…"
+			local A = GearLayout.ALCHEMY
+			local padding = theme("Theme.Padding")
+			-- what a one-line label (TextTruncate.AtEnd) shows of `text`: the longest start that fits with "…"
+			local function shown(text: string, size: number, width: number): string
+				if TextCaps.width(text, size) <= width then
+					return text
+				end
+				local out, used = "", TextCaps.width("…", size)
+				for _, code in utf8.codes(text) do
+					local ch = utf8.char(code)
+					used += TextCaps.width(ch, size)
+					if used > width then
+						break
+					end
+					out ..= ch
+				end
+				return out .. "…"
+			end
+			-- a recipe row's line under its name: the ingredients (counts up to 99), the gold and the time
+			local function ingredients(lang: string, recipe: Recipes.Recipe): string
+				local parts: { string } = {}
+				for _, ingredient in recipe.ingredients do
+					table.insert(parts, `{ItemName.get(lang, ingredient.id)} 99/{ingredient.n}`)
+				end
+				table.insert(parts, `◉ {Format.number(recipe.gold)}`)
+				table.insert(parts, "⌛ 59 min")
+				return table.concat(parts, "  ")
+			end
+			for _, case in cases("alchemy", nil, true) do
+				local a = GearLayout.alchemy(case.area)
+				local queue = a.queue.right - a.queue.left
+				local wide = queue == A.wide
+				T.expect({ case.name, wide or queue == A.queue }).toEqual({ case.name, true })
+				if not case.touch then
+					T.expect({ case.name, wide }).toEqual({ case.name, true })
+				end
+				-- an order's name: the queue's 8 px for its scroll bar, the row's inset (the 44-px icon and 4, ListRow's
+				-- padding and bar) and ListRow's right padding
+				local text = queue - 8 - (44 + 4 + padding.Small + 4) - padding.Small
+				for _, lang in { "pl", "en" } do
+					local seen: { [string]: string } = {}
+					for _, recipe in Recipes.list do
+						-- every name reads apart in a wide queue, the blessings in each
+						if wide or recipe.group == "blessing" then
+							local name = ItemName.get(lang, recipe.result.id)
+							local v = shown(name, 17, text)
+							T.expect({ case.name, lang, name, (seen[v] or name) == name })
+								.toEqual({ case.name, lang, name, true })
+							seen[v] = name
+						end
+					end
+				end
+				-- the recipes' line (Small 17, two lines in its 40-px label; 220 px of the row are the item and "Zamów", 10
+				-- the list's scroll bar) keeps its two lines beside a wide queue
+				if wide then
+					local recipes = a.recipes.right - a.recipes.left - 10 - 220
+					for _, lang in { "pl", "en" } do
+						for _, recipe in Recipes.list do
+							local line = ingredients(lang, recipe)
+							T.expect({ case.name, line, TextCaps.lines(line, 17, recipes) <= 2 })
+								.toEqual({ case.name, line, true })
+						end
+					end
+				end
+			end
+			local source = fs.readFile("src/client/UI/Screens/AlchemyWindow.luau")
+			local _, dense = string.gsub(source, "Tall = true,%s+Dense = true,", "")
+			T.expect(dense).toBe(2)
+			for _, needle in
+				{
+					"local ICON = 44",
+					"Inset = ICON + 4,",
+					"Size = UDim2.new(1, -220, 0, 40),",
+					'scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),',
+					'scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),',
+				}
+			do
+				T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
+			local row = fs.readFile("src/client/UI/Components/ListRow.luau")
+			for _, needle in
+				{
+					"local BAR = 4",
+					"local inset = (props.Inset or 0) + Theme.Padding.Small + BAR",
+					"local rightInset = (props.RightInset or 0) + Theme.Padding.Small",
+					"TextSize = if props.Dense then Theme.TextSize.Small else Theme.TextSize.Body,",
+				}
+			do
+				T.expect({ needle, string.find(row, needle, 1, true) ~= nil }).toEqual({ needle, true })
 			end
 		end
 	)
