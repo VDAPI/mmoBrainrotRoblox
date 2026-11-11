@@ -11,6 +11,7 @@ local GearLayout = require("../src/shared/Logic/GearLayout")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local Progression = require("../src/shared/Data/Progression")
 local SectionFold = require("../src/shared/Logic/SectionFold")
+local Stats = require("../src/shared/Data/Stats")
 
 local pl = require("../src/shared/Data/Localization/pl") :: any
 local en = require("../src/shared/Data/Localization/en") :: any
@@ -240,6 +241,52 @@ T.describe("Backpack window sections", function()
 			T.expect(L.pad).toBe(large)
 			T.expect(L.gutter).toBe(large)
 			T.expect(L.narrowGutter).toBe(medium)
+		end
+	)
+
+	T.it(
+		"a derived statistic and its breakdown take the language's decimal mark (final UI review 2026-11-11)",
+		function()
+			-- the rows read '5.3%' and '1.25', the breakdown '+2.5%' and the cap 'Limit: 60.0%' in Polish, where the item
+			-- tooltip in the same window writes '5,3%' (format.decimal)
+			T.expect({ pl = pl["format.decimal"], en = en["format.decimal"] }).toEqual({ pl = ",", en = "." })
+			local crit = assert(Stats.get("critChance"))
+			T.expect(crit.format).toBe("pct")
+			T.expect(crit.decimals).toBe(1)
+			T.expect(CharacterSections.statValue(crit, 5.3, ",")).toBe("5,3%")
+			T.expect(CharacterSections.statValue(crit, 5.3, ".")).toBe("5.3%")
+			T.expect(CharacterSections.statValue(crit, crit.cap or 0, ",")).toBe("60,0%")
+			local found = 0
+			for _, def in Stats.list do
+				if def.decimals > 0 then
+					found += 1
+					local pl1 = CharacterSections.statValue(def, 1.25, ",")
+					local en1 = CharacterSections.statValue(def, 1.25, ".")
+					T.expect({ def.id, string.find(pl1, ".", 1, true) }).toEqual({ def.id, nil })
+					T.expect({ def.id, (string.gsub(pl1, ",", ".")) }).toEqual({ def.id, en1 })
+					if def.cap then
+						local cap = CharacterSections.statValue(def, def.cap, ",")
+						T.expect({ def.id, string.find(cap, ".", 1, true) }).toEqual({ def.id, nil })
+					end
+				end
+			end
+			T.expect(found > 0).toBe(true)
+			-- a breakdown part: at most two decimals, a whole number bare, the sign always
+			T.expect(CharacterSections.statPart(2.5, true, ",")).toBe("+2,5%")
+			T.expect(CharacterSections.statPart(2.5, true, ".")).toBe("+2.5%")
+			T.expect(CharacterSections.statPart(-0.333, false, ",")).toBe("-0,33")
+			T.expect(CharacterSections.statPart(12, false, ",")).toBe("+12")
+			T.expect(CharacterSections.statPart(0.004, true, ",")).toBe("+0%")
+			-- the list writes its rows, its green preview, its breakdown and its cap through them, with the mark it reads
+			local list = read("src/client/UI/Screens/CharacterWindow/DerivedList.luau")
+			local _, values = string.gsub(list, "CharacterSections%.statValue%(", "")
+			T.expect(values).toBe(3)
+			T.expect(string.find(list, "CharacterSections.statPart(part.value, part.pct, mark)", 1, true) ~= nil)
+				.toBe(true)
+			local _, marks = string.gsub(list, 'Text%.get%(use, "format%.decimal"%)', "")
+			T.expect(marks).toBe(2)
+			T.expect(string.find(list, "string.format(", 1, true)).toBeNil()
+			T.expect(string.find(list, "tostring(", 1, true)).toBeNil()
 		end
 	)
 end)

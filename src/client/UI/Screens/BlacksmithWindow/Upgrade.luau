@@ -75,7 +75,10 @@ local function statLines(use: Fusion.Use, item: Types.ItemInstance, up: number):
 		local def = Stats.get(aliases[stat] or stat)
 		local name = Text.get(use, `stat.{aliases[stat] or stat}`)
 		local value = stats.base[key]
-		local text = if value % 1 == 0 then tostring(value) else string.format("%.1f", value)
+		-- "2,5%" in Polish (format.decimal), as the item tooltip writes the same stat
+		local text = if value % 1 == 0
+			then tostring(value)
+			else (string.gsub(string.format("%.1f", value), "%.", Text.get(use, "format.decimal")))
 		if isPct or (def and def.format == "pct") then
 			text ..= "%"
 		end

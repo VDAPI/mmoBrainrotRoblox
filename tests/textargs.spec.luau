@@ -240,4 +240,51 @@ T.describe("Localized text calls (package A review, owner 2026-11-10)", function
 		end
 		walk("src/client/UI/Screens/Hud")
 	end)
+
+	T.it(
+		"the windows' decimals take the language's mark too: '2,5 s', 'K/D 1,50' (final UI review 2026-11-11)",
+		function()
+			-- the boss's channel bar read 'Przerwijcie zaklęcie · 2.5 s', the smith's Ulepsz preview 'Szansa na krytyk:
+			-- 2.5%' and a profile 'K/D 1.50' where the item tooltip says '2,5%' (the derived list: charactersections.spec)
+			local sites = {
+				["src/client/UI/Components/ChannelBar.luau"] = 1,
+				["src/client/UI/Screens/BlacksmithWindow/Upgrade.luau"] = 1,
+				["src/client/UI/Screens/ProfileWindow.luau"] = 1,
+				["src/client/UI/Screens/CharacterWindow/DerivedList.luau"] = 2,
+			}
+			for path, least in sites do
+				local _, marks = string.gsub(fs.readFile(path), '"format%.decimal"', "")
+				T.expect({ path, marks >= least }).toEqual({ path, true })
+			end
+			-- every window and component that writes a decimal with string.format reads the mark too; not the developer's
+			-- window (its numbers are for the team) or the map preview's timing (a console line)
+			local skip = {
+				["src/client/UI/Screens/Hud"] = true, -- the HUD's own test above
+				["src/client/UI/Components/Prompt"] = true, -- the HUD lane's prompts
+				["src/client/UI/Screens/DevWindow"] = true,
+				["src/client/UI/Screens/WorldMap/Preview.luau"] = true,
+			}
+			local checked = 0
+			local function walk(dir: string)
+				for _, name in fs.readDir(dir) do
+					local path = `{dir}/{name}`
+					if skip[path] then
+						continue
+					elseif fs.isDir(path) then
+						walk(path)
+					elseif string.sub(name, -5) == ".luau" then
+						local raw = fs.readFile(path)
+						if string.find(raw, '"%%%.%d+f"') and string.find(code(raw), "string.format", 1, true) then
+							checked += 1
+							T.expect({ path, string.find(raw, '"format.decimal"', 1, true) ~= nil })
+								.toEqual({ path, true })
+						end
+					end
+				end
+			end
+			walk("src/client/UI/Screens")
+			walk("src/client/UI/Components")
+			T.expect(checked >= 3).toBe(true)
+		end
+	)
 end)

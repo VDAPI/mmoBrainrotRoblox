@@ -12,6 +12,7 @@
 -- one is unlocked (UI plan phase 3, Studio review 2026-10-31).
 
 local Progression = require("../Data/Progression")
+local Stats = require("../Data/Stats")
 
 local CharacterSections = {}
 
@@ -114,6 +115,21 @@ end
 -- "Spend as the path suggests" and its plan line: only with free points to spend and a plan to follow.
 function CharacterSections.suggestShown(statPoints: number?, hasPlan: boolean): boolean
 	return hasPlan and (statPoints or 0) > 0
+end
+
+-- Final UI review 2026-11-11: a derived statistic as its row writes it (`def.decimals` places, "5,3%" in Polish) and a
+-- part of its breakdown ("+2,5%": at most two decimals, a whole number without any), with the language's decimal
+-- mark (`mark`: format.decimal), as the item tooltip writes the same stat (TooltipModel.decimal).
+function CharacterSections.statValue(def: Stats.StatDef, value: number, mark: string): string
+	local text = string.gsub(string.format(`%.{def.decimals}f`, value), "%.", mark)
+	return if def.format == "pct" then text .. "%" else text
+end
+
+function CharacterSections.statPart(value: number, pct: boolean?, mark: string): string
+	local sign = if value >= 0 then "+" else ""
+	local rounded = math.floor(value * 100 + 0.5) / 100
+	local text = if rounded == math.floor(rounded) then string.format("%d", rounded) else tostring(rounded)
+	return sign .. (string.gsub(text, "%.", mark)) .. (if pct then "%" else "")
 end
 
 return CharacterSections

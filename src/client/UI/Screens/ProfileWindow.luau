@@ -123,8 +123,9 @@ local function ProfileWindow(scope: Scope, data: Fusion.Value<any>, props: Props
 		end
 		local class = Classes.get(p.class)
 		local pvp = p.pvp or {}
+		local mark = Text.get(use, "format.decimal") -- "K/D 1,50" in Polish
 		local ratio = if (pvp.deaths or 0) > 0
-			then string.format("%.2f", (pvp.kills or 0) / pvp.deaths)
+			then (string.gsub(string.format("%.2f", (pvp.kills or 0) / pvp.deaths), "%.", mark))
 			else tostring(pvp.kills or 0)
 		local slots = {}
 		for i, slot in SLOTS do

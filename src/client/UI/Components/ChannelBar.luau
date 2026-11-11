@@ -60,7 +60,9 @@ local function ChannelBar(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 						return ""
 					end
 					local left = Time.remaining(tonumber(c.endsAt) or 0, use(props.Now))
-					return Text.get(use, "boss.mechanic.channel.bar", { time = string.format("%.1f", left) })
+					-- "2,5 s" in Polish (format.decimal), as the skill bar's cooldowns
+					local seconds = string.gsub(string.format("%.1f", left), "%.", Text.get(use, "format.decimal"))
+					return Text.get(use, "boss.mechanic.channel.bar", { time = seconds })
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,

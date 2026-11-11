@@ -9,6 +9,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CharacterSections = require(ReplicatedStorage.Shared.Logic.CharacterSections)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Section = require(script.Parent.Parent.Parent.Components.Section)
 local StatCalc = require(ReplicatedStorage.Shared.Logic.StatCalc)
@@ -37,18 +38,6 @@ local SECTIONS: { [string]: string } = {
 	resources = "charResources",
 	other = "charOther",
 }
-
-local function formatValue(def: Stats.StatDef, value: number): string
-	local text = string.format(`%.{def.decimals}f`, value)
-	return if def.format == "pct" then text .. "%" else text
-end
-
-local function formatPart(value: number, pct: boolean?): string
-	local sign = if value >= 0 then "+" else ""
-	local rounded = math.floor(value * 100 + 0.5) / 100
-	local text = if rounded == math.floor(rounded) then string.format("%d", rounded) else tostring(rounded)
-	return sign .. text .. (if pct then "%" else "")
-end
 
 local function DerivedList(scope: Scope, props: Props): { Instance }
 	local derived = State.Value({ "derived" })
@@ -127,9 +116,11 @@ local function DerivedList(scope: Scope, props: Props): { Instance }
 						Text = scope:Computed(function(use): string
 							local current = use(value)
 							local p = use(preview)
-							local text = formatValue(def, current)
+							local mark = Text.get(use, "format.decimal") -- "5,3%" in Polish
+							local text = CharacterSections.statValue(def, current, mark)
 							if p and p[def.id] and math.abs(p[def.id] - current) > 1e-6 then
-								return `<font color="{Theme.hex(Theme.Paper.Success)}">{formatValue(def, p[def.id])}</font>`
+								local after = CharacterSections.statValue(def, p[def.id], mark)
+								return `<font color="{Theme.hex(Theme.Paper.Success)}">{after}</font>`
 							end
 							return text
 						end),
@@ -145,17 +136,20 @@ local function DerivedList(scope: Scope, props: Props): { Instance }
 				row :: GuiObject,
 				scope:Computed(function(use): string
 					local d = use(derived)
+					local mark = Text.get(use, "format.decimal")
 					local lines = { Text.get(use, def.nameKey) }
 					local parts = if type(d) == "table" then d.breakdown[def.id] else nil
 					if parts then
 						for _, part in parts do
 							if part.value ~= 0 then
-								table.insert(lines, `{Text.get(use, part.key)}: {formatPart(part.value, part.pct)}`)
+								local amount = CharacterSections.statPart(part.value, part.pct, mark)
+								table.insert(lines, `{Text.get(use, part.key)}: {amount}`)
 							end
 						end
 					end
 					if def.cap then
-						table.insert(lines, Text.get(use, "character.cap", { cap = formatValue(def, def.cap) }))
+						local cap = CharacterSections.statValue(def, def.cap, mark)
+						table.insert(lines, Text.get(use, "character.cap", { cap = cap }))
 					end
 					return table.concat(lines, "\n")
 				end)
