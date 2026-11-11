@@ -636,13 +636,15 @@ local function items(device: TopBand.Device): { TopBand.Item }
 	}
 end
 
--- The persistent places of the HUD in the whole screen's pixels (PC and tablet: HudZones; phone: PhoneHud's places
--- but those M shows over: the target's effects, the cast line, the pool's name, the guide and the target's actions).
-local UNDER_M = { targetEffects = true, castBar = true, pool = true, navBar = true, actions = true }
+-- The persistent places of the HUD in the whole screen's pixels (PC and tablet: HudZones; phone: the layer's own
+-- PhoneHud places but those M shows over: the target's effects, the cast line and the guide bar). Final UI review
+-- 2026-11-10: the names follow PhoneHud's (the player menu's '⋯', `targetActions`, stands beside the target, over M,
+-- so it stays checked), and the places are the layer's own (the reference phone's could not show M's drift).
+local UNDER_M = { targetEffects = true, castBar = true, navBar = true }
 local function persistent(s: Screen, state: HudZones.State): { { name: string, rect: Rect } }
 	local out = {}
 	if s.device == "phone" then
-		for name, place in PhoneHud.PLACES do
+		for name, place in PhoneHud.places(s.hudW, s.hudH) do
 			if not UNDER_M[name] and place.h > 0 then
 				local r = PhoneHud.rect(place, s.hudW, s.hudH)
 				table.insert(out, {

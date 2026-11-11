@@ -203,12 +203,11 @@ TopBand.ALERT_W = 640
 TopBand.BANNER = table.freeze({ w = 900, h = 64 })
 TopBand.BANNER_BIG = table.freeze({ w = 980, h = 84 })
 TopBand.PROMPT = table.freeze({ w = 520, h = 64 })
--- A phone's M zone (UI plan zone map): 4 under the target frame, at most 114 tall (to the guide bar's bottom), never
--- closer than GAP to the mail button or the right column (minimap, ☰, PvP). `line`: a message there is never taller
--- than M (review 2026-11-10: the first one reached 30 px past M onto the mail button and the skill arc; its text is
--- cut at the end and opens whole with a tap), and M is never shorter than one HUD line (Theme.Size.HudLine).
-TopBand.PHONE_M = table.freeze({ gap = 4, h = 114, line = 52 })
-local RIGHT_COLUMN = { "minimap", "menuToggle", "pvp", "pvpBadge" }
+-- A phone's M zone (UI plan zone map; Logic/PhoneHud.mZone): `gap` under the target frame (the boss strip's place, M
+-- under the strip). `line`: a message there is never taller than M (review 2026-11-10: the first one reached 30 px past
+-- M onto the mail button and the skill arc; its text is cut at the end and opens whole with a tap), and M is never
+-- shorter than one HUD line (Theme.Size.HudLine).
+TopBand.PHONE_M = table.freeze({ gap = 4, line = 52 })
 
 local function meets(a: Rect, b: Rect): boolean
 	return a.left < b.right and b.left < a.right and a.top < b.bottom and b.top < a.bottom
@@ -220,31 +219,12 @@ local function down(r: Rect, dy: number): Rect
 end
 
 -- A phone's M zone on its HUD layer (w x h virtual pixels): one message at a time, over the target's effects, the cast
--- line and the guide bar (they stand in it), from Logic/PhoneHud's places.
+-- line and the guide bar (they stand in it). Final UI review 2026-11-10 (known item 1): Logic/PhoneHud.mZone's own; it
+-- worked M out from the reference phone's places (the minimap at 0.6), 26 px narrower than the HUD's M on layers under
+-- 420 high, so the messages and the boss strip were cut sooner.
 function TopBand.phoneZone(w: number, h: number): Rect
-	local function at(name: string): Rect?
-		local place = PhoneHud.place(name)
-		if not place then
-			return nil
-		end
-		local r = PhoneHud.rect(place, w, h)
-		return { left = r.left, top = r.top, right = r.right, bottom = r.bottom }
-	end
-	local target = at("target") or { left = TopBand.EDGE, top = 0, right = w / 2, bottom = TopBand.EDGE }
-	local top = target.bottom + TopBand.PHONE_M.gap
-	local bottom = top + TopBand.PHONE_M.h
-	local mail = at("mail")
-	if mail then
-		bottom = math.min(bottom, mail.top - TopBand.GAP)
-	end
-	local right = w - TopBand.GAP
-	for _, name in RIGHT_COLUMN do
-		local r = at(name)
-		if r and r.top < bottom and r.bottom > top then
-			right = math.min(right, r.left - TopBand.GAP)
-		end
-	end
-	return { left = target.left, top = top, right = math.max(target.left, right), bottom = math.max(top, bottom) }
+	local left, top, right, bottom = PhoneHud.mZone(w, h)
+	return { left = left, top = top, right = math.max(left, right), bottom = math.max(top, bottom) }
 end
 
 -- The HUD's state on this device (a tablet takes the PC zones with its touch corner).

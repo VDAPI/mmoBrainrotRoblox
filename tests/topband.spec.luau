@@ -462,11 +462,17 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 				-- review 2026-11-10: a strip PHONE_BOSS_H tall across M's width (the centre column), never over the
 				-- portrait, the toggles, the minimap, ☰ or PvP
 				local r = TopBand.bossBar("phone", s.hudW, s.hudH)
-				local place = PhoneHud.place("target")
+				local place = PhoneHud.place("target", s.hudW, s.hudH)
 				local target = PhoneHud.rect(assert(place, "PhoneHud has no target place"), s.hudW, s.hudH)
 				local m = TopBand.phoneZone(s.hudW, s.hudH)
 				if math.abs(r.left - m.left) > EPS or math.abs(r.right - m.right) > EPS then
 					table.insert(problems, `{s.name}: the boss bar is not as wide as M`)
+				end
+				-- final UI review 2026-11-10 (known item 1): the band's M is the HUD's (Logic/PhoneHud.mZone) on every
+				-- layer; it was 26 px narrower under 420 high
+				local left, top, right, bottom = PhoneHud.mZone(s.hudW, s.hudH)
+				if m.left ~= left or m.top ~= top or m.right ~= right or m.bottom ~= bottom then
+					table.insert(problems, `{s.name}: M {m.left}..{m.right} x {m.top}..{m.bottom} is not the HUD's`)
 				end
 				if r.top ~= target.bottom + TopBand.PHONE_M.gap or r.bottom - r.top ~= TopBand.PHONE_BOSS_H then
 					table.insert(problems, `{s.name}: the boss bar is not a strip under the target row`)
@@ -474,7 +480,7 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 				-- package A's phone grid: one Auto button (Lure, Auto Hunt, Auto Potion in its popover) and the
 				-- effects in the row under the portrait
 				for _, name in { "portrait", "auto", "effects", "minimap", "menuToggle", "pvp" } do
-					local other = PhoneHud.rect(assert(PhoneHud.place(name), name), s.hudW, s.hudH)
+					local other = PhoneHud.rect(assert(PhoneHud.place(name, s.hudW, s.hudH), name), s.hudW, s.hudH)
 					if TopBand.meets(r, other) then
 						table.insert(problems, `{s.name}: the boss bar meets {name}`)
 					end
