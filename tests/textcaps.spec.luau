@@ -337,6 +337,36 @@ describe("textcaps T2: universal rules", function()
 		end
 		expect(string.find(pl["login.button"], pl["menu.tile.login"], 1, true) ~= nil).toBe(true)
 	end)
+
+	it("C, D and E buttons and tabs use the words of what they show", function()
+		for lang, texts in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+			-- the merchant's button opens the window titled "Sklep" (the player trade is "Handel")
+			expect({ lang, texts["npc.service.shop"] }).toEqual({ lang, texts["window.shop.title"] })
+			-- the scroll is sold in one shop, named as the menu names it
+			local hint = texts["smith.reroll.all.hint"]
+			expect({ lang, string.find(hint, texts["window.shop.premium"], 1, true) ~= nil }).toEqual({ lang, true })
+			-- the directions tab counts its points like the pools' tabs
+			expect({ lang, texts["skills.tab.talents"] }).toEqual({ lang, texts["skills.tab.free"] })
+			-- the HUD layout's (i) names the panel the player drags by its header
+			local info = texts["menu.hudLayout.info"]
+			expect({ lang, string.find(info, texts["tracker.title"], 1, true) ~= nil }).toEqual({ lang, true })
+			-- a claimed contract's button is a state like the season pass's, not the journal's "(odebrane)"
+			expect({ lang, string.match(texts["quest.claimedButton"], "^✓ %u") ~= nil }).toEqual({ lang, true })
+		end
+		expect(pl["quest.claimedButton"]).toBe(pl["season.cell.claimed"])
+	end)
+
+	it("the character select calls a character's place miejsce, never slot", function()
+		local found = {}
+		for key, text in pl do
+			local words = string.lower((string.gsub(text, "{%w+}", ""))) -- not the {slot} placeholder
+			if string.sub(key, 1, 11) == "charSelect." and string.find(words, "slot", 1, true) then
+				table.insert(found, `{key}: {text}`)
+			end
+		end
+		table.sort(found)
+		expect(found).toEqual({})
+	end)
 end)
 
 describe("textcaps T1-T3: caps and the per-package lists", function()

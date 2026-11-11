@@ -267,7 +267,8 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 				Position = if c.reroll and not beside then UDim2.new(1, -10, 1, -8) else UDim2.new(1, -10, 0.5, -4),
 				Size = UDim2.fromOffset(CLAIM, if c.reroll then Theme.Size.MinTouch else 50),
 				Variant = "primary",
-				Text = Text.get(use, if c.claimed then "quest.claimed" else "quest.claim"),
+				-- "✓ Odebrano" like the season pass; quest.claimed stays the journal's bracketed "(odebrane)"
+				Text = Text.get(use, if c.claimed then "quest.claimedButton" else "quest.claim"),
 				Disabled = c.claimed or not c.done,
 				OnClick = function()
 					act(c.claim)

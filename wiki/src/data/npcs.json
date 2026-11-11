@@ -85,7 +85,7 @@
     "mounts": {"en":"Mounts","pl":"Wierzchowce"},
     "portalshop": {"en":"Teleport stones","pl":"Kamienie teleportu"},
     "quests": {"en":"Notices","pl":"Zlecenia"},
-    "shop": {"en":"Trade","pl":"Handel"},
+    "shop": {"en":"Shop","pl":"Sklep"},
     "story": {"en":"Quest","pl":"Quest"},
     "talk": {"en":"Talk","pl":"Rozmowa"},
     "vendors": {"en":"Where to buy gear?","pl":"Gdzie po sprzęt?"}
