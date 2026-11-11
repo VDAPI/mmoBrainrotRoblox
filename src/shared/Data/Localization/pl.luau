@@ -5294,7 +5294,7 @@ return {
 	["wardrobe.obtain.hunt"] = "Sklep Łowczego: {price} Znaków Łowcy",
 	["wardrobe.obtain.contracts"] = "Oddaj wszystkie 99 zleceń łowieckich",
 	-- S100: login reward
-	["window.login.title"] = "Nagroda za logowanie",
+	["window.login.title"] = "Nagroda dnia",
 	["login.title"] = "Nagroda za logowanie",
 	["login.streak"] = "Dzień {day} z 7",
 	["login.day"] = "Dzień {n}",
@@ -5314,7 +5314,7 @@ return {
 	["login.error.claimed"] = "Dzisiejsza nagroda jest już odebrana.",
 	["login.error.busy"] = "Chwila, nagroda jest w drodze.",
 	["login.error.mail"] = "Nie udało się wysłać nagrody: plecak i poczta są pełne.",
-	["mail.subject.login"] = "Nagroda za logowanie: dzień {day}",
+	["mail.subject.login"] = "Nagroda dnia: dzień {day}",
 	["admin.usage.login"] = "/login: stan serii nagrody za logowanie tego konta",
 	["admin.usage.loginset"] = "/loginset <dzień 0–7> [przerwa w dniach]: ustawia serię (np. /loginset 6 → dziś skrzynia)",
 	["admin.usage.loginnext"] = "/loginnext [dni]: symuluje upływ dni dla tego konta (1 = następny dzień serii, 2+ = przerwa)",

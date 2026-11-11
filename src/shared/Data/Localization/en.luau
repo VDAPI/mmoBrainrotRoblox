@@ -5296,7 +5296,7 @@ return {
 	["wardrobe.obtain.hunt"] = "Huntmaster's shop: {price} Hunter's Marks",
 	["wardrobe.obtain.contracts"] = "Hand in all 99 hunting contracts",
 	-- S100: login reward
-	["window.login.title"] = "Daily login reward",
+	["window.login.title"] = "Daily reward",
 	["login.title"] = "Daily login reward",
 	["login.streak"] = "Day {day} of 7",
 	["login.day"] = "Day {n}",
@@ -5316,7 +5316,7 @@ return {
 	["login.error.claimed"] = "Today's reward has already been claimed.",
 	["login.error.busy"] = "One moment, the reward is on its way.",
 	["login.error.mail"] = "The reward could not be sent: backpack and mail are full.",
-	["mail.subject.login"] = "Daily login reward: day {day}",
+	["mail.subject.login"] = "Daily reward: day {day}",
 	["admin.usage.login"] = "/login: this account's login reward streak",
 	["admin.usage.loginset"] = "/loginset <day 0–7> [gap in days]: sets the streak (e.g. /loginset 6 → the chest today)",
 	["admin.usage.loginnext"] = "/loginnext [days]: simulates days passing for this account (1 = next streak day, 2+ = a break)",

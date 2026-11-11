@@ -300,6 +300,17 @@ describe("textcaps T2: universal rules", function()
 		expect(pl["stat.armor"]).toBe("Pancerz")
 		expect(en["stat.armor"]).toBe("Armor")
 	end)
+
+	-- Final UI review 2026-11-11: the ☰ tile, the ✧ tooltip and the toast say "Nagroda dnia", the window they open said
+	-- "Nagroda za logowanie" and so did the reward's mail with a full backpack.
+	it("the daily reward has one name from the tile to its window and its mail", function()
+		for lang, texts in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+			local name = texts["menu.tile.login"]
+			expect({ lang, texts["window.login.title"] }).toEqual({ lang, name })
+			expect({ lang, string.sub(texts["mail.subject.login"], 1, #name) }).toEqual({ lang, name })
+		end
+		expect(string.find(pl["login.button"], pl["menu.tile.login"], 1, true) ~= nil).toBe(true)
+	end)
 end)
 
 describe("textcaps T1-T3: caps and the per-package lists", function()
