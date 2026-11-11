@@ -15653,6 +15653,19 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   mapy, `docs/PRZEDMIOTY.md`).
 - Bez zmian, już poprawione w ścieżkach: „Smocze Odłamki” w nagrodach osiągnięć i w liście, „zadanie” w tekstach okien,
   nagłówek okna nagrody dnia, przecinek w pasku zaklęcia bossa i w karcie nagrody bossa świata.
-- **Pliki:** `Controllers/NavController`, `LootController`, `UI/FightView`, `Data/Localization/pl|en`,
-  `tests/textcaps|textargs|noticequeue|panelheader.spec.luau`, `docs/UI-ZASADY.md`, `DESIGN.md`, `DECYZJE.md`, wiki
-  (`docs/PRZEDMIOTY.md`, `wiki/src/data`).
+- Po przeglądzie szwów: toast przed meczem areny dla gracza w grupie mówi „Opuszczasz grupę na czas meczu.” (było
+  „drużynę”, a drużyna to w 3 na 3 strona, z którą gracz idzie walczyć). Tabela walki (karta walki na PC, karta nagrody
+  bossa świata, dziennik walk) pisze obrażenia z przecinkiem: „245,3k (12%)” pod „udział 12,5%”. Przedmiot, który nazywa
+  karta legendy albo pierwszego cennego łupu, nie dostaje po niej karty „Lepszy przedmiot!”: czekała za nią, po
+  „Szczegóły” stawała pod odsłonięciem i proponowała „Załóż” przedmiotu już założonego (nowa postać widziała ją przy
+  każdym pierwszym łupie, bo heroiczna kopia broni zawsze jest ulepszeniem). Inne ulepszenie z tego worka dostaje kartę
+  jak dotąd. Karta lepszego przedmiotu słyszy podniesienie tylko przez `LootController.OnPicked`, po karcie i z jej
+  przedmiotem, bo dwa odbiorniki jednego zdarzenia nie mają ustalonej kolejności.
+- Testy po przeglądzie: `textcaps.spec` (tekst areny, którego angielski mówi tylko o party, nie mówi „drużyna”),
+  `textargs.spec` (`FightTable` czyta `format.decimal`), `format.spec` (`Format.short` ze znakiem dziesiętnym),
+  `noticequeue.spec` (karta lepszego przedmiotu po karcie legendy i bez jej przedmiotu; `LootPicked` słyszy na kliencie
+  tylko `LootController`).
+- **Pliki:** `Controllers/NavController`, `LootController`, `LootComfortController`, `UI/FightView`,
+  `UI/Components/FightTable`, `Util/Format`, `Data/Localization/pl|en`,
+  `tests/textcaps|textargs|noticequeue|panelheader|format.spec.luau`, `docs/UI-ZASADY.md`, `DESIGN.md`, `DECYZJE.md`,
+  wiki (`docs/PRZEDMIOTY.md`, `wiki/src/data`).

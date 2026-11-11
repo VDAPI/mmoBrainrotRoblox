@@ -18,8 +18,9 @@
   - „Szczegóły” na karcie: pełna tabela walki, wkład w bossa, pełne odkrycie przedmiotu (modal).
 - Zawsze na wierzchu: cena, ilość, stan (włączone, czas, postęp), błąd blokujący akcję, przycisk akcji.
 - Nic nie znika: tekst zdjęty z wierzchu ma swoje miejsce za jednym z tych wejść.
-- Jedna treść w jednym miejscu. Nie powtarzamy tego samego w (i) i w dymku karty, w tytule i w treści ani w modalu i
-  w toaście zaraz po nim.
+- Jedna treść w jednym miejscu. Nie powtarzamy tego samego w (i) i w dymku karty, w tytule i w treści, w modalu i
+  w toaście zaraz po nim ani na dwóch kartach po sobie (przedmiot z karty legendy nie ma toastu podniesienia ani karty
+  „Lepszy przedmiot!”).
 
 ## 2. Limity tekstu
 
