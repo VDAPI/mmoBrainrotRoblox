@@ -390,12 +390,24 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 					table.insert(problems, `{screen.name}: the open regions show {b.regions} px`)
 				end
 			end
-			local default = WorldLayout.bestiary(middle, screen.device, screen.device ~= "phone", regions).list
-			if WorldLayout.rows(default) < 2 then
-				table.insert(problems, `{screen.name}: {WorldLayout.rows(default)} bestiary rows < 2`)
+			-- review 2026-11-11 (PC's two-line entries left 2 under the open regions): one-line entries keep 3 under
+			-- the regions as Data/Folds/World opens them on PC and a tablet, 2 under a phone's folded header, and 5 on
+			-- PC with the regions folded
+			local open = SectionFold.default("bestiaryRegions", screen.compact)
+			local default = WorldLayout.rows(WorldLayout.bestiary(middle, screen.device, open, regions).list)
+			local want = if screen.device == "phone" then 2 else 3
+			if default < want then
+				table.insert(problems, `{screen.name} regions open {open}: {default} bestiary rows < {want}`)
+			end
+			local folded = WorldLayout.rows(WorldLayout.bestiary(middle, screen.device, false, regions).list)
+			if folded < wanted(screen.device, 2, 5) then
+				table.insert(problems, `{screen.name} regions folded: {folded} bestiary rows`)
 			end
 		end
 		T.expect(problems).toEqual({})
+		-- the entries are ListRow's one line on every device: their tiers and points are in the details
+		T.expect(WorldLayout.BESTIARY.entryRow).toBe(WorldLayout.ROW)
+		T.expect(string.find(bestiary, "Tall = ", 1, true)).toBe(nil)
 	end)
 
 	T.it("quest board: 2 cards under the hunting block (folded on a phone); the tabs and the set's line fit", function()

@@ -238,12 +238,12 @@ end
 -- The bestiary tab in the achievements list's place: the regions as a Section (bestiaryRegions, folded on a phone; the
 -- folded header names the chosen region and its tiers), the entries of the chosen region under it. Open on a screen
 -- too short for both, the region rows scroll in what is left and the entries keep the rest, never less than nothing.
--- UI package C's rows: a region is one line (ROW), an entry two (ROW_TALL: the name, the tiers and points), a phone's
--- entry one (ROW: the name and the bar; the tiers are in its sheet), so a phone keeps two entries under the header.
+-- UI package C's rows: a region and an entry are one line (ROW). An entry shows its name, kills and bar; its tiers and
+-- points are in the details (PC's panel, a touch screen's sheet). Review 2026-11-11: PC's two-line entries (ROW_TALL)
+-- left 2 under the open regions, one line leaves 3 (7 with the regions folded), and a phone keeps 2 under the header.
 WorldLayout.BESTIARY = table.freeze({
 	regionRow = WorldLayout.ROW,
-	entryRow = WorldLayout.ROW_TALL,
-	entryRowPhone = WorldLayout.ROW,
+	entryRow = WorldLayout.ROW,
 	gap = 6,
 })
 
@@ -264,10 +264,7 @@ function WorldLayout.bestiary(middle: Size, device: Device, regionsOpen: boolean
 		free = math.max(0, free - WorldLayout.SECTION.gap - shown)
 	end
 	local top = middle.h - free
-	return {
-		regions = shown,
-		list = { top = top, height = free, row = if device == "phone" then B.entryRowPhone else B.entryRow, gap = 0 },
-	}
+	return { regions = shown, list = { top = top, height = free, row = B.entryRow, gap = 0 } }
 end
 
 -- Quest board -------------------------------------------------------------------------------------------------------

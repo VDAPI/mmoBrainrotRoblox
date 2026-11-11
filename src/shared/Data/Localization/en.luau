@@ -10651,8 +10651,6 @@ return {
 	["best.head"] = "Bestiary points: {points} / {max}",
 	["best.region.tiers"] = "{done}/{max}",
 	["best.unknown"] = "???",
-	["best.unknownSub"] = "Not defeated yet",
-	["best.unknownBoss"] = "Boss, not defeated yet",
 	["best.points"] = "{n} pts",
 	["best.select"] = "Pick a monster from the list.",
 	["best.boss"] = "Boss",

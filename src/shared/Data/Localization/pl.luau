@@ -10649,8 +10649,6 @@ return {
 	["best.head"] = "Punkty bestiariusza: {points} / {max}",
 	["best.region.tiers"] = "{done}/{max}",
 	["best.unknown"] = "???",
-	["best.unknownSub"] = "Jeszcze nie pokonany",
-	["best.unknownBoss"] = "Boss, jeszcze nie pokonany",
 	["best.points"] = "{n} pkt",
 	["best.select"] = "Wybierz potwora z listy.",
 	["best.boss"] = "Boss",
