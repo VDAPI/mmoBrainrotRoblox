@@ -21,6 +21,9 @@
 -- (pure, tested in tests/tutorial.spec): next to its element and, besides, off the message zone on PC and a tablet
 -- (toasts and banners stand there) and off the attack button's skill arc on a phone. On a phone in landscape a step
 -- reads its `.phone` text when there is one (Logic/Tutorial.text: the backpack sits in the drawer behind "Menu").
+-- Final UI review 2026-11-10: on a phone in landscape the tile stands in the left column, off the thumbstick zone, the
+-- buttons round the attack button and the target's band (Logic/TutorialTile, `compact`), and its skip is a "✕" in the
+-- caption row (Hud/TutorialHint, Compact).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -395,7 +398,8 @@ local function tick()
 		{ w = size.X, h = size.Y },
 		touch,
 		Fusion.peek(HudSlots.Menu),
-		TutorialTile.avoid(size.X, size.Y, touch, compact)
+		TutorialTile.avoid(size.X, size.Y, touch, compact),
+		compact
 	)
 	local a: TutorialHint.Arrow? = if pointer
 		then { glyph = pointer.glyph, position = UDim2.fromOffset(pointer.x, pointer.y) }
@@ -439,6 +443,7 @@ function TutorialController.Init(registry)
 		Width = width,
 		Arrow = arrow,
 		Outline = outline,
+		Compact = PhoneLayout.Compact,
 		OnSkip = function()
 			skipSent = true
 			hide()

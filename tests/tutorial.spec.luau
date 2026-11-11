@@ -5,6 +5,8 @@
 -- the frozen anchor names (Tutorial.ANCHOR_NAMES) that Screens/Hud still builds, the tile's place (Logic/TutorialTile)
 -- inside the layer and off its element, the message zone and the phone's skill arc on every screen, and the texts per
 -- device (the phone's own `.phone` text where one exists).
+-- Final UI review 2026-11-10: a phone's tile also keeps off the thumbstick zone, the buttons round the arc and the
+-- target's band on every phone, top bar and step at every height its texts give it, and leaves M to the band.
 local fs = require("@lune/fs")
 
 local AdminCommands = require("../src/shared/Data/AdminCommands")
@@ -23,6 +25,7 @@ local Quests = require("../src/shared/Data/Quests")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
 local Titles = require("../src/shared/Data/Titles")
+local TopBand = require("../src/shared/Logic/TopBand")
 local Tutorial = require("../src/shared/Logic/Tutorial")
 local TutorialData = require("../src/shared/Data/Tutorial")
 local TutorialTile = require("../src/shared/Logic/TutorialTile")
@@ -405,6 +408,32 @@ local function anchorRect(anchor: string, device: string, w: number, h: number):
 	return nil
 end
 
+-- What a phone's tile keeps off by name: the thumbstick zone, the attack button and each skill of its arc, the buttons
+-- round them and the target's band.
+local function phoneKeepOff(w: number, h: number): { [string]: HudStack.Rect }
+	local places = PhoneHud.places(w, h)
+	local out: { [string]: HudStack.Rect } = {}
+	local thumb = PhoneHud.thumb(w, h)
+	out.thumb = { left = thumb.left, top = thumb.top, right = thumb.right, bottom = thumb.bottom }
+	local names = { "attack", "potions", "sprint", "mount", "page", "targetButton", "mail" }
+	for _, name in { "target", "targetActions", "targetEffects", "castBar" } do
+		table.insert(names, name)
+	end
+	for i = 1, #PhoneHud.ANGLES do
+		table.insert(names, `skill{i}`)
+	end
+	for _, name in names do
+		local r = PhoneHud.rect(places[name], w, h)
+		out[name] = { left = r.left, top = r.top, right = r.right, bottom = r.bottom }
+	end
+	return out
+end
+
+-- A phone's tile (Hud/TutorialHint, Compact): 10 px, the caption row of 26 with the skip "✕" in its corner and 8 over
+-- the text, 12 under it; at most PHONE_LINES lines of Small text (17 px, a line at most 20 px; checked below).
+local PHONE_LINES = 4
+local PHONE_TALLEST = 10 + 26 + 8 + PHONE_LINES * 20 + 12
+
 -- The menu over the minimap as UI/HudSlots.Menu measures it (PC and a tablet).
 local function menuRect(w: number, h: number, touch: boolean): HudStack.Rect
 	local zones = HudZones.pc(w, h, { touch = touch })
@@ -499,9 +528,12 @@ T.describe("Tutorial: pointers (UI plan package A)", function()
 			local avoid = TutorialTile.avoid(layer.w, layer.h, touch, compact)
 			local menu = if compact then nil else menuRect(layer.w, layer.h, touch)
 			local width = TutorialTile.width(touch, compact)
-			-- a short hint and the longest (80 characters in three or four lines, the skip button under them)
-			for _, tall in { 120, if touch then 210 else 180 } do
-				local tile = { w = width, h = tall, tall = tall }
+			-- a short hint and the longest (80 characters in three or four lines, the skip button under them); a
+			-- phone's: its caption row with the skip "✕" and one to four lines of Small text (PHONE_TALLEST)
+			local heights = if compact then { 90, 104, 124, PHONE_TALLEST } else { 120, if touch then 210 else 180 }
+			for _, tall in heights do
+				-- the controller's floor: the room for an arrow
+				local tile = { w = width, h = math.max(tall, 120), tall = tall }
 				local cases: { { name: string, anchor: TutorialTile.Anchor? } } = { { name = "default" } }
 				for _, s in Tutorial.STEPS do
 					local anchor = s.anchor
@@ -515,12 +547,28 @@ T.describe("Tutorial: pointers (UI plan package A)", function()
 				for _, case in cases do
 					local where = `{layer.name}, {case.name}, {tall} tall`
 					local x, y, arrow =
-						TutorialTile.place(case.anchor, tile, { w = layer.w, h = layer.h }, touch, menu, avoid)
+						TutorialTile.place(case.anchor, tile, { w = layer.w, h = layer.h }, touch, menu, avoid, compact)
 					local box = { left = x, top = y, right = x + width, bottom = y + tall }
 					local inside = x >= 0 and y >= 0 and box.right <= layer.w + 1e-6 and box.bottom <= layer.h + 1e-6
 					T.expect({ where, "inside", inside }).toEqual({ where, "inside", true })
 					for _, r in avoid do
 						T.expect({ where, "clear", meets(box, r) }).toEqual({ where, "clear", false })
+					end
+					if compact then
+						-- named here, not only through avoid: the thumbstick zone, the arc, the buttons round it and
+						-- the target's band; and M stays the band's (TopBand.slots keeps GAP from the tile)
+						for name, r in phoneKeepOff(layer.w, layer.h) do
+							T.expect({ where, name, meets(box, r) }).toEqual({ where, name, false })
+						end
+						T.expect({ where, "M", box.right <= PhoneHud.M_LEFT - TopBand.GAP + 1e-6 })
+							.toEqual({ where, "M", true })
+						-- the fight steps' tile stands in the left column without an arrow (the outline marks the
+						-- button); the tracker's above it, pointing down
+						if case.name == "potion" or case.name == "attack" or case.name == "skill" then
+							T.expect({ where, x, arrow == nil }).toEqual({ where, TutorialTile.MARGIN, true })
+						elseif case.name == "quest" then
+							T.expect({ where, arrow and arrow.glyph }).toEqual({ where, "▼" })
+						end
 					end
 					local a = case.anchor
 					if a then
@@ -540,9 +588,31 @@ T.describe("Tutorial: pointers (UI plan package A)", function()
 		-- the controller only measures and draws: the place is TutorialTile's
 		local controller = fs.readFile("src/client/Controllers/TutorialController.luau")
 		T.expect(string.find(controller, "TutorialTile.place(", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(controller, "TutorialTile.avoid(size.X, size.Y, touch, compact)", 1, true) ~= nil)
+		T.expect(string.find(controller, "TutorialTile.avoid(size.X, size.Y, touch, compact),", 1, true) ~= nil)
 			.toBe(true)
 		T.expect(string.find(controller, "local function place(", 1, true)).toBeNil()
+		T.expect(string.find(controller, "Compact = PhoneLayout.Compact,", 1, true) ~= nil).toBe(true)
+		-- every phone text fits the phone's tile: at most PHONE_LINES lines of Small text in its width less the padding
+		local hint = fs.readFile("src/client/UI/Screens/Hud/TutorialHint.luau")
+		T.expect(string.find(hint, "local PAD = 14", 1, true) ~= nil).toBe(true)
+		T.expect(
+			string.find(hint, "if use(compact) then Theme.TextSize.Small else Theme.TextSize.Body", 1, true) ~= nil
+		)
+			.toBe(true)
+		T.expect(string.find(hint, "return not use(finale) and not use(compact)", 1, true) ~= nil).toBe(true)
+		local function has(key: string): boolean
+			return pl[key] ~= nil and en[key] ~= nil
+		end
+		local textWidth = TutorialTile.WIDTH_PHONE - 2 * 14
+		for _, s in Tutorial.STEPS do
+			for _, away in { false, true } do
+				local key = Tutorial.text(s, true, away, true, has)
+				for _, lang in { pl, en } do
+					local lines = TextCaps.lines(TextCaps.plain(TextCaps.expand(lang[key])), 17, textWidth)
+					T.expect({ key, lines <= PHONE_LINES }).toEqual({ key, true })
+				end
+			end
+		end
 	end)
 
 	T.it("each device reads its own text, within the tile's cap", function()

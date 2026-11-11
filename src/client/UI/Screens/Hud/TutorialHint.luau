@@ -5,6 +5,10 @@
 -- tutorial" with a one-click confirmation ("Are you sure?" -> "Skip"). The closing "done" hint has no skip row and goes
 -- on a touch. Only its buttons take input: the tile and the outline let clicks through to the game. The controller
 -- (TutorialController) places it next to the element (UI/HudAnchors) and sets what it shows.
+-- Final UI review 2026-11-10 (a phone's skip row stood under the left thumb, and a thumb reaching for the stick skipped
+-- the tutorial): on a phone in landscape (`Compact`) the skip is a 44 px "✕" in the caption row's corner, which turns
+-- that row into "Are you sure?" and "Skip"; the text is Small, so the tile stays low enough for the left column
+-- (Logic/TutorialTile.column).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -34,12 +38,14 @@ export type Props = {
 	Outline: UsedAs<HudAnchors.Rect?>,
 	OnSkip: () -> (),
 	OnClose: () -> (), -- the closing hint was touched
+	Compact: UsedAs<boolean>?, -- a phone in landscape: the skip in the caption row, the text Small
 }
 
 export type Api = { frame: Instance, box: Frame }
 
 local PAD = 14
 local CONFIRM_SECONDS = 5 -- the "Are you sure?" state goes back by itself
+local SKIP_YES_COMPACT = 100 -- a phone's "Skip" in the caption row's corner
 
 local function TutorialHint(scope: Scope, props: Props): Api
 	local confirming = scope:Value(false)
@@ -51,6 +57,19 @@ local function TutorialHint(scope: Scope, props: Props): Api
 		local v = view(use)
 		return v ~= nil and v.finale
 	end)
+	local compact = scope:Computed(function(use): boolean
+		return props.Compact ~= nil and use(props.Compact) == true
+	end)
+	-- a phone's skip: "✕", then "Are you sure?" and "Skip" in the caption row
+	local compactSkip = scope:Computed(function(use): boolean
+		return use(compact) and not use(finale)
+	end)
+
+	local function confirmSkip()
+		token += 1
+		confirming:set(false)
+		props.OnSkip()
+	end
 
 	local function startConfirm()
 		token += 1
@@ -124,7 +143,15 @@ local function TutorialHint(scope: Scope, props: Props): Api
 						[Children] = {
 							scope:New("TextLabel")({
 								Name = "Caption",
-								Size = UDim2.new(1, -110, 1, 0),
+								Size = scope:Computed(function(use): UDim2
+									-- a phone: room for the "✕" in the corner (no key plaque on touch)
+									return if use(compact)
+										then UDim2.new(1, -(Theme.Size.MinTouch - PAD + Theme.Padding.Small), 1, 0)
+										else UDim2.new(1, -110, 1, 0)
+								end),
+								Visible = scope:Computed(function(use): boolean
+									return not (use(compactSkip) and use(confirming))
+								end),
 								BackgroundTransparency = 1,
 								Text = scope:Computed(function(use): string
 									local v = view(use)
@@ -169,6 +196,49 @@ local function TutorialHint(scope: Scope, props: Props): Api
 									}),
 								},
 							}),
+							-- a phone's skip in the tile's top right corner (out of the row up to the tile's edges)
+							Button(scope, {
+								Name = "SkipClose",
+								AnchorPoint = Vector2.new(1, 0),
+								Position = UDim2.new(1, PAD, 0, -(PAD - 4)),
+								Size = UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch),
+								Variant = "ghost",
+								Surface = "iron",
+								Text = "✕",
+								Visible = scope:Computed(function(use): boolean
+									return use(compactSkip) and not use(confirming)
+								end),
+								OnClick = startConfirm,
+							}),
+							scope:New("TextLabel")({
+								Name = "Sure",
+								Size = UDim2.new(1, -(SKIP_YES_COMPACT - PAD + Theme.Padding.Small), 1, 0),
+								BackgroundTransparency = 1,
+								Visible = scope:Computed(function(use): boolean
+									return use(compactSkip) and use(confirming)
+								end),
+								Text = Text.T(scope, "tutorial.skipConfirm"),
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = Theme.Iron.Heading,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								TextTruncate = Enum.TextTruncate.AtEnd,
+								ZIndex = 52,
+							}),
+							Button(scope, {
+								Name = "SkipYes",
+								AnchorPoint = Vector2.new(1, 0),
+								Position = UDim2.new(1, PAD, 0, -(PAD - 4)),
+								Size = UDim2.fromOffset(SKIP_YES_COMPACT, Theme.Size.MinTouch),
+								Variant = "danger",
+								Surface = "iron",
+								TextSize = Theme.TextSize.Small,
+								Text = Text.T(scope, "tutorial.skipYes"),
+								Visible = scope:Computed(function(use): boolean
+									return use(compactSkip) and use(confirming)
+								end),
+								OnClick = confirmSkip,
+							}),
 						},
 					}),
 					scope:New("TextLabel")({
@@ -183,13 +253,15 @@ local function TutorialHint(scope: Scope, props: Props): Api
 						end),
 						TextWrapped = true,
 						FontFace = Theme.Fonts.Body,
-						TextSize = Theme.TextSize.Body,
+						TextSize = scope:Computed(function(use): number
+							return if use(compact) then Theme.TextSize.Small else Theme.TextSize.Body
+						end),
 						TextColor3 = Theme.Iron.Text,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
 						ZIndex = 52,
 					}),
-					-- skip with a one-click confirmation (not on the closing hint)
+					-- skip with a one-click confirmation (not on the closing hint; a phone's is in the caption row)
 					scope:New("Frame")({
 						Name = "Skip",
 						LayoutOrder = 3,
@@ -198,7 +270,7 @@ local function TutorialHint(scope: Scope, props: Props): Api
 						Active = false,
 						ZIndex = 52,
 						Visible = scope:Computed(function(use): boolean
-							return not use(finale)
+							return not use(finale) and not use(compact)
 						end),
 						[Children] = {
 							Button(scope, {
@@ -241,11 +313,7 @@ local function TutorialHint(scope: Scope, props: Props): Api
 								TextSize = Theme.TextSize.Small,
 								Text = Text.T(scope, "tutorial.skipYes"),
 								Visible = confirming,
-								OnClick = function()
-									token += 1
-									confirming:set(false)
-									props.OnSkip()
-								end,
+								OnClick = confirmSkip,
 							}),
 						},
 					}),

@@ -5,9 +5,15 @@
 -- toasts and banners stand there) and off the skill arc on a phone (Logic/PhoneHud). It was
 -- Controllers/TutorialController's own `place`; the controller now only measures and draws. Pure; virtual pixels of
 -- the HUD's layer, measured from its top-left corner.
+-- Final UI review 2026-11-10 (a phone's tile stood in the thumbstick zone with its skip buttons under the left thumb,
+-- and the fight steps' tiles covered the potions, the sprint and the target's frame): on a phone the tile stands in the
+-- left column (TutorialTile.column), GAP left of the M zone, under the portrait and over the thumbstick zone, without an
+-- arrow (the outline marks the element); only the tracker's step gets it above the tracker with "▼". It keeps clear of
+-- the thumbstick zone, the attack button's arc, the buttons round it and the target's band (TutorialTile.avoid).
 
 local HudZones = require("./HudZones")
 local PhoneHud = require("./PhoneHud")
+local TopBand = require("./TopBand")
 
 local TutorialTile = {}
 
@@ -24,9 +30,9 @@ TutorialTile.GAP = 10 -- between the element and the arrow
 TutorialTile.ARROW = 24 -- the arrow's room between the tile and the element
 TutorialTile.WIDTH_PC = 440
 TutorialTile.WIDTH_TOUCH = 360
--- a phone in landscape: narrower, so the tile fits between the stack and the skill arc on the smallest phone (667 x
--- 375: from 278 to 580) when it has no room over or under them
-TutorialTile.WIDTH_PHONE = 300
+-- a phone in landscape: the left column up to GAP short of the M zone, so the band's messages keep their place there
+-- (Logic/TopBand.slots keeps GAP from the tile)
+TutorialTile.WIDTH_PHONE = PhoneHud.M_LEFT - TopBand.GAP - TutorialTile.MARGIN
 TutorialTile.TOUCH_CLUSTER = 150 -- kept free left of the phone's attack and skill buttons
 -- Studio check of phase 4 (the closing tile stood 114 screen px over the action bar): on PC the tile at the default
 -- place ends GAP over the cast line (Logic/HudZones.CAST_BAR), which stands right over the action bar
@@ -44,8 +50,24 @@ local function meets(a: Rect, b: Rect): boolean
 	return a.left < b.right and b.left < a.right and a.top < b.bottom and b.top < a.bottom
 end
 
--- What the tile keeps clear of on a w x h layer: the message zone (PC and a tablet: no target, its tallest place) or
--- the attack button with the skill arc round it (a phone, `compact`).
+-- The places a phone's tile keeps clear of besides the arc: the buttons round the arc and the target's band.
+TutorialTile.PHONE_AVOID = table.freeze({
+	"potions",
+	"sprint",
+	"mount",
+	"page",
+	"targetButton",
+	"mail",
+	"target",
+	"targetActions",
+	"targetEffects",
+	"castBar",
+})
+
+-- What the tile keeps clear of on a w x h layer: the message zone (PC and a tablet: no target, its tallest place) or,
+-- on a phone (`compact`), the attack button with the skill arc round it, the thumbstick zone (where nothing persistent
+-- belongs; the skip stood there under the left thumb), the buttons round the arc and the target's band (its frame, its
+-- "⋯", its effects and its cast line: the first fights need them).
 function TutorialTile.avoid(w: number, h: number, touch: boolean, compact: boolean): { Rect }
 	if compact then
 		local places = PhoneHud.places(w, h)
@@ -58,7 +80,17 @@ function TutorialTile.avoid(w: number, h: number, touch: boolean, compact: boole
 			box.right = math.max(box.right, r.right)
 			box.bottom = math.max(box.bottom, r.bottom)
 		end
-		return { box }
+		local thumb = PhoneHud.thumb(w, h)
+		local out: { Rect } =
+			{ box, { left = thumb.left, top = thumb.top, right = thumb.right, bottom = thumb.bottom } }
+		for _, name in TutorialTile.PHONE_AVOID do
+			local place = places[name]
+			if place then
+				local r = PhoneHud.rect(place, w, h)
+				table.insert(out, { left = r.left, top = r.top, right = r.right, bottom = r.bottom })
+			end
+		end
+		return out
 	end
 	local zone = HudZones.messageZone(w, h, { touch = touch })
 	if zone.bottom <= zone.top or zone.right <= zone.left then
@@ -67,31 +99,45 @@ function TutorialTile.avoid(w: number, h: number, touch: boolean, compact: boole
 	return { zone }
 end
 
+-- A phone's tile in the left column (`tall` its own height): from MARGIN, at the M zone's top beside it (under the
+-- portrait and its row) and ending over the thumbstick zone; higher when it is taller than that room, never over the
+-- layer's top.
+function TutorialTile.column(w: number, h: number, tall: number): (number, number)
+	local margin = TutorialTile.MARGIN
+	local thumb = PhoneHud.thumb(w, h)
+	local y = math.min(PhoneHud.M_TOP, thumb.top - tall)
+	return margin, math.clamp(y, margin, math.max(margin, h - tall - margin))
+end
+
 -- The tile's top-left corner and its arrow (nil: none) for an element at `anchor` (nil: the default place) on a
 -- `layer` (w x h): next to the element, the arrow pointing at it, never over it nor over `avoid` (TutorialTile.avoid);
 -- `menu` is the menu over the minimap as measured (UI/HudSlots.Menu), which a tile left of one of its buttons keeps
 -- clear of (Studio check 2026-10-31: the tile covered the minimap). With no room on any side the tile takes the default
--- place moved off the element, without an arrow (the outline still marks the element).
+-- place moved off the element, without an arrow (the outline still marks the element). A phone in landscape
+-- (`compact`) takes the left column's place (TutorialTile.column) without an arrow, unless that meets the element.
 function TutorialTile.place(
 	anchor: Anchor?,
 	tile: Size,
 	layer: { w: number, h: number },
 	touch: boolean,
 	menu: Rect?,
-	avoid: { Rect }?
+	avoid: { Rect }?,
+	compact: boolean?
 ): (number, number, Arrow?)
 	local w, h = layer.w, layer.h
 	local bw, bh = tile.w, tile.h
 	local margin, gap, arrowRoom = TutorialTile.MARGIN, TutorialTile.GAP, TutorialTile.ARROW
 	local keep: { Rect } = avoid or {}
+	-- the tile's own height: an arrowless place needs no room for the arrow
+	local tall = math.max(tile.tall or bh, 1)
 	local function clampX(x: number): number
 		return math.clamp(x, margin, math.max(margin, w - bw - margin))
 	end
 	local function clampY(y: number): number
 		return math.clamp(y, margin, math.max(margin, h - bh - margin))
 	end
-	local function free(x: number, y: number): boolean
-		local box = { left = x, top = y, right = x + bw, bottom = y + bh }
+	local function free(x: number, y: number, height: number?): boolean
+		local box = { left = x, top = y, right = x + bw, bottom = y + (height or bh) }
 		if anchor then
 			local own = { left = anchor.x, top = anchor.y, right = anchor.x + anchor.w, bottom = anchor.y + anchor.h }
 			if meets(box, own) then
@@ -105,13 +151,18 @@ function TutorialTile.place(
 		end
 		return true
 	end
-	-- the default place: PC over the action bar, a phone in the upper middle clear of the thumbstick and the arc
+	-- the default place: PC over the action bar, a tablet in the upper middle clear of the thumbstick and the arc, a
+	-- phone the left column
 	local function default(): (number, number)
-		local tall = math.max(tile.tall or bh, 1)
+		if compact then
+			return TutorialTile.column(w, h, tall)
+		end
 		return clampX((w - bw) / 2), clampY(if touch then h * 0.16 else h - TutorialTile.OVER_BAR - tall)
 	end
 	-- the default place, moved off what it must keep clear of and off the element (a short layer's may reach the arc,
 	-- the messages or a phone's stack): over what it meets when there is room there, else under it, else beside it
+	-- (a phone's arrowless tile by its own height)
+	local fh = if compact then tall else bh
 	local function fallback(): (number, number)
 		local x, y = default()
 		local rects = table.clone(keep)
@@ -122,21 +173,21 @@ function TutorialTile.place(
 			)
 		end
 		for _ = 1, #rects do
-			if free(x, y) then
+			if free(x, y, fh) then
 				break
 			end
 			for _, r in rects do
-				if meets({ left = x, top = y, right = x + bw, bottom = y + bh }, r) then
-					local up = r.top - gap - bh
+				if meets({ left = x, top = y, right = x + bw, bottom = y + fh }, r) then
+					local up = r.top - gap - fh
 					local down = r.bottom + gap
 					if up >= margin then
 						y = up
-					elseif down <= h - bh - margin then
+					elseif down <= h - fh - margin then
 						y = down
 					else
 						local toRight = clampX(r.right + gap)
 						local toLeft = clampX(r.left - gap - bw)
-						x = if free(toRight, y) or not free(toLeft, y) then toRight else toLeft
+						x = if free(toRight, y, fh) or not free(toLeft, y, fh) then toRight else toLeft
 					end
 				end
 			end
@@ -149,6 +200,14 @@ function TutorialTile.place(
 	end
 	local rect = anchor :: Anchor
 	local cx, cy = rect.x + rect.w / 2, rect.y + rect.h / 2
+	-- a phone: the left column without an arrow (the drawer's button, the potions, the attack button and its skills
+	-- stand on the right; the thumbstick zone under it) while that place is off the element
+	if compact then
+		local x, y = TutorialTile.column(w, h, tall)
+		if free(x, y, tall) then
+			return x, y, nil
+		end
+	end
 
 	-- left of the element (a button of the menu: left of the whole menu), the arrow "▶" at its middle; slid down past
 	-- what it meets while the arrow still reaches the element's side
@@ -237,9 +296,15 @@ function TutorialTile.place(
 		return x, y, { glyph = "▲", x = ax, y = y - arrowRoom / 2 - 2 }
 	end
 
-	-- the choices in order: a phone's attack and skill buttons get the tile left of their arc; an element in the lower
-	-- part gets it above; one on the right left of it; anything else below it; then the others in that order
+	-- the choices in order: a phone's element of the left column (the tracker) gets the tile above it; a tablet's
+	-- attack and skill buttons get it left of their arc; an element in the lower part gets it above; one on the right
+	-- left of it; anything else below it; then the others in that order
 	local tries: { () -> (number?, number?, Arrow?) } = {}
+	if compact then
+		table.insert(tries, function()
+			return vertical(true)
+		end)
+	end
 	if touch and cx > w * 0.6 and cy > h * 0.55 then
 		table.insert(tries, function()
 			return left(TutorialTile.TOUCH_CLUSTER)
