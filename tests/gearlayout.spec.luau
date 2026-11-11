@@ -221,16 +221,54 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 		function()
 			local source = fs.readFile("src/client/UI/Screens/TradeWindow.luau")
 			local column = assert(tonumber(string.match(source, "local COLUMN = (%d+)")), "COLUMN")
-			T.expect(string.find(source, "Position = UDim2.fromOffset(0, COLUMN + 6)", 1, true) ~= nil).toBe(true)
+			local stroke = assert(tonumber(string.match(source, "local STROKE = (%d+)")), "STROKE")
+			local slot = assert(tonumber(string.match(source, "local SLOT = (%d+)")), "SLOT")
 			T.expect(string.find(source, "Scroll = true", 1, true) ~= nil).toBe(true)
-			-- the warning is one 26-px line of Small 17 under the sides
+			-- review 2026-11-11: a side's frame line is drawn outside it and the window's Scroll clips at its edge, so
+			-- the sides stand the line's width in from the scroll's top and left, in a holder that ends past the
+			-- bottom line; the warning stands under that
+			for _, needle in
+				{
+					"Thickness = STROKE,",
+					'Text.T(scope, "trade.you"), UDim2.fromOffset(STROKE, STROKE), true)',
+					"UDim2.fromOffset(STROKE + width + 24, STROKE)",
+					"Size = UDim2.fromOffset(2 * width + 24 + 2 * STROKE, COLUMN + 2 * STROKE)",
+					"Position = UDim2.fromOffset(0, COLUMN + 2 * STROKE)",
+					"local width = 4 * (SLOT + 6) + 16",
+				}
+			do
+				T.expect({ needle, string.find(source, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
+			T.expect(stroke >= 3).toBe(true)
+			-- the sides and the warning (one 26-px line of Small 17) fit the PC body
 			local pc = GearLayout.area({ w = 1920, h = 1080 }, WINDOWS.trade, false, nil, nil, true)
-			T.expect(column + 6 + 26 <= pc.h).toBe(true)
+			T.expect(column + 2 * stroke + 26 <= pc.h).toBe(true)
+			T.expect(2 * (4 * (slot + 6) + 16) + 24 + 2 * stroke <= pc.w).toBe(true)
 			-- on a phone the body above the footer is lower than one side, so the sides scroll (and never reach the footer)
 			local device = PhoneHud.DEVICES[1]
 			local w, h = PhoneHud.area(device)
 			local phone = GearLayout.area({ w = w, h = h }, WINDOWS.trade, true, 58 / PhoneHud.SCALE, true, true)
 			T.expect(phone.h < column).toBe(true)
+			-- so on touch the warning stands in the footer left of the buttons (under the sides it was below the
+			-- fold while they stood pinned), at most two lines of Small 17 in the row
+			local at = assert(string.find(source, "\t\tFooter = {", 1, true))
+			local footer = string.sub(source, at)
+			for _, needle in { 'Name = "Warning"', "Visible = touch,", "Text = warning," } do
+				T.expect({ needle, string.find(footer, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
+			local accept, confirm = string.match(source, "local ACCEPT, CONFIRM = (%d+), (%d+)")
+			local buttons = assert(tonumber(accept)) + assert(tonumber(confirm)) + 2 * theme("Theme.Padding").Small
+			for _, case in cases("trade", nil, true) do
+				if case.touch then
+					for _, lang in { "pl", "en" } do
+						for _, key in { "trade.preview", "trade.warnEmpty", "trade.warnValue" } do
+							local text = Locale.T(key, nil, lang)
+							T.expect({ case.name, lang, key, TextCaps.lines(text, 17, case.area.w - buttons) <= 2 })
+								.toEqual({ case.name, lang, key, true })
+						end
+					end
+				end
+			end
 		end
 	)
 

@@ -6,12 +6,16 @@
 -- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): "Akceptuj" and
 -- "Potwierdź" stand in the window's Footer (Components/Window), pinned under the content outside its scroll. The two
 -- sides and the warning under them are one scroll (Window Scroll): 362 px fit the PC body (364), a phone scrolls them.
+-- Review 2026-11-11: the sides stand STROKE in from the scroll's edge, which clipped the top (and the left side's left)
+-- of their frame lines, the green "accepted" frame too. On touch the value warning stands in the footer next to the
+-- buttons: under the sides it was below the fold on every phone while "Akceptuj" and "Potwierdź" stood pinned.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
@@ -34,6 +38,10 @@ local SLOTS = 12
 local SLOT = 60
 -- one side: title, 3 rows of slots, gold, status; the value warning stands under both sides
 local COLUMN = 330
+-- a side's frame line: drawn outside the side, so the sides stand this far in from the scroll's edge, which clips
+local STROKE = 3
+-- the footer's buttons ("Akceptuj", "Potwierdź"); on touch the value warning takes the row's room left of them
+local ACCEPT, CONFIRM = 200, 220
 
 local function invoke(name: string, ...: any): boolean
 	local ok, err = Net.Invoke(name, ...)
@@ -129,7 +137,7 @@ local function column(
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({
-				Thickness = 3,
+				Thickness = STROKE,
 				Color = scope:Computed(function(use): Color3
 					return if use(accepted) then Theme.Paper.Success else Theme.Paper.Border
 				end),
@@ -231,42 +239,56 @@ local function TradeWindow(scope: Scope): Window.Parts
 	end)
 
 	local width = 4 * (SLOT + 6) + 16
+	local touch = Device.Touch
+	local warning = scope:Computed(function(use): string
+		local t = use(trade)
+		if type(t) ~= "table" then
+			return ""
+		end
+		if t.preview then
+			return Text.get(use, "trade.preview")
+		end
+		local mine, theirs = value(t.mine), value(t.theirs)
+		if #(t.theirs.items or {}) == 0 and (t.theirs.gold or 0) == 0 then
+			return Text.get(use, "trade.warnEmpty")
+		end
+		if mine > 0 and theirs < mine * 0.5 then
+			return Text.get(use, "trade.warnValue")
+		end
+		return ""
+	end)
 	local content = {
-		column(scope, "mine", Text.T(scope, "trade.you"), UDim2.fromOffset(0, 0), true),
-		column(
-			scope,
-			"theirs",
-			scope:Computed(function(use): string
-				local t = use(trade)
-				return if type(t) == "table" then t.partner else ""
-			end),
-			UDim2.fromOffset(width + 24, 0),
-			false
-		),
+		-- the two sides with room for their frame lines all round (the canvas reaches past the bottom one too)
+		scope:New("Frame")({
+			Name = "Sides",
+			Size = UDim2.fromOffset(2 * width + 24 + 2 * STROKE, COLUMN + 2 * STROKE),
+			BackgroundTransparency = 1,
+			[Children] = {
+				column(scope, "mine", Text.T(scope, "trade.you"), UDim2.fromOffset(STROKE, STROKE), true),
+				column(
+					scope,
+					"theirs",
+					scope:Computed(function(use): string
+						local t = use(trade)
+						return if type(t) == "table" then t.partner else ""
+					end),
+					UDim2.fromOffset(STROKE + width + 24, STROKE),
+					false
+				),
+			},
+		}),
 		scope:New("TextLabel")({
 			Name = "Warning",
-			-- one line under the sides (the longest warning is 50 characters of Small 17), not over the footer
-			Position = UDim2.fromOffset(0, COLUMN + 6),
+			-- PC: one line under the sides (the longest warning is 50 characters of Small 17), not over the footer;
+			-- on touch it stands in the footer
+			Position = UDim2.fromOffset(0, COLUMN + 2 * STROKE),
 			Size = UDim2.new(1, 0, 0, 26),
 			BackgroundTransparency = 1,
-			TextWrapped = true,
-			Text = scope:Computed(function(use): string
-				local t = use(trade)
-				if type(t) ~= "table" then
-					return ""
-				end
-				if t.preview then
-					return Text.get(use, "trade.preview")
-				end
-				local mine, theirs = value(t.mine), value(t.theirs)
-				if #(t.theirs.items or {}) == 0 and (t.theirs.gold or 0) == 0 then
-					return Text.get(use, "trade.warnEmpty")
-				end
-				if mine > 0 and theirs < mine * 0.5 then
-					return Text.get(use, "trade.warnValue")
-				end
-				return ""
+			Visible = scope:Computed(function(use): boolean
+				return not use(touch)
 			end),
+			TextWrapped = true,
+			Text = warning,
 			FontFace = Theme.Fonts.BodyBold,
 			TextSize = Theme.TextSize.Small,
 			TextColor3 = Theme.Paper.Warning,
@@ -275,11 +297,25 @@ local function TradeWindow(scope: Scope): Window.Parts
 	return {
 		Content = content,
 		Scroll = true,
-		-- the footer's row (right-aligned): accept, then confirm after the countdown
+		-- the footer's row (right-aligned): on touch the value warning (two lines of Small 17), accept, then confirm
+		-- after the countdown
 		Footer = {
+			scope:New("TextLabel")({
+				Name = "Warning",
+				LayoutOrder = 0,
+				Size = UDim2.new(1, -(ACCEPT + CONFIRM + 2 * Theme.Padding.Small), 1, 0),
+				BackgroundTransparency = 1,
+				Visible = touch,
+				TextWrapped = true,
+				Text = warning,
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Warning,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
 			Button(scope, {
 				LayoutOrder = 1,
-				Size = UDim2.new(0, 200, 1, 0),
+				Size = UDim2.new(0, ACCEPT, 1, 0),
 				Variant = scope:Computed(function(use): any
 					return if use(myAccepted) then "secondary" else "primary"
 				end),
@@ -292,7 +328,7 @@ local function TradeWindow(scope: Scope): Window.Parts
 			}),
 			Button(scope, {
 				LayoutOrder = 2,
-				Size = UDim2.new(0, 220, 1, 0),
+				Size = UDim2.new(0, CONFIRM, 1, 0),
 				Variant = "primary",
 				Text = scope:Computed(function(use): string
 					local t = use(trade)
