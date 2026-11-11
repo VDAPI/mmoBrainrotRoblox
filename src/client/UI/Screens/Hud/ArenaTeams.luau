@@ -8,12 +8,14 @@
 -- place over the column's panels), and on every device it folds to its line of dots (Hud/PanelHeader's height) with a
 -- click: the account's fold "hudArena" (Data/Folds/Hud: open on PC, folded on a phone; it replaced the touch screens'
 -- own fold), or the column's while it has no room (UI/HudSlots.forced).
+-- Final UI review 2026-11-10: out of sight while an open window covers it (UI/HudCover.bind), keeping its slot.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.Parent.HudCover)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local PanelHeader = require(script.Parent.PanelHeader)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
@@ -237,7 +239,7 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 		end)
 	)
 
-	return scope:New("TextButton")({
+	local root = scope:New("TextButton")({
 		Name = "ArenaTeams",
 		AutoButtonColor = false,
 		Text = "",
@@ -248,8 +250,6 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 		ClipsDescendants = true,
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
-		-- package A: not while it waits behind the column's '+N' chip
-		Visible = HudSlots.visible(scope, slot, shown),
 		[OnEvent("Activated")] = function()
 			if Fusion.peek(forced) then
 				-- the column folded it: it stays open in the column before the others
@@ -276,7 +276,11 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 				[Children] = body :: any,
 			}),
 		},
-	})
+	}) :: TextButton
+	-- package A: not while it waits behind the column's '+N' chip; final UI review 2026-11-10: nor while an open window
+	-- covers it
+	HudCover.bind(scope, root, HudSlots.visible(scope, slot, shown))
+	return root
 end
 
 return ArenaTeams

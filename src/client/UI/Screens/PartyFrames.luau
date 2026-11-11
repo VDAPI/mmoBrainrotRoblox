@@ -6,6 +6,8 @@
 -- the member, as on PC), then "+N" for the rest; the four rows of 58 px ran into the stack's panels. Package A review
 -- (owner 2026-11-10): the strip is PhoneHud.PARTY_WIDTH wide (tiles 3 px apart), so it stands beside the stack's
 -- '+N' chip; at 218 it met the chip and went behind it.
+-- Final UI review 2026-11-10 (a service window with its backpack left the rows' left 112 px in sight): the rows step out
+-- of sight while an open window covers them (UI/HudCover.bind).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.HudCover)
 local HudSlots = require(script.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
@@ -242,7 +245,7 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 		end)
 	)
 	local stripAt = HudSlots.position(scope, slot)
-	return scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Name = "PartyFrames",
 		Position = PhoneLayout.Pick(
 			scope,
@@ -252,9 +255,6 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 		),
 		Size = PhoneLayout.Pick(scope, UDim2.fromOffset(STRIP, TILE), UDim2.fromOffset(WIDTH, 4 * (HEIGHT + 6))),
 		BackgroundTransparency = 1,
-		Visible = scope:Computed(function(use): boolean
-			return not use(PhoneLayout.Compact) or use(slot) ~= nil
-		end),
 		[Children] = {
 			scope:New("UIListLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -263,7 +263,15 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 			}),
 			frames :: any,
 		},
-	})
+	}) :: Frame
+	HudCover.bind(
+		scope,
+		root,
+		scope:Computed(function(use): boolean
+			return not use(PhoneLayout.Compact) or use(slot) ~= nil
+		end)
+	)
+	return root
 end
 
 return PartyFrames

@@ -785,6 +785,14 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		-- the tracker steps out of sight under any open window (the backpack stood beside it)
 		local source = fs.readFile("src/client/UI/Screens/Hud/QuestTracker.luau")
 		T.expect(string.find(source, "use(HudCover.Open)", 1, true) ~= nil).toBe(true)
+		-- final UI review 2026-11-10 (a service window with its backpack left the column's panels and the party rows
+		-- half in sight beside it): the event panels, the arena's teams and the party rows step out of sight under a
+		-- window that covers them and keep their slots
+		T.expect(string.find(drag, "HudCover.bind(scope, frame, props.Visible)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(drag, "Visible = props.Visible", 1, true)).toBeNil()
+		for _, path in { "src/client/UI/Screens/Hud/ArenaTeams.luau", "src/client/UI/Screens/PartyFrames.luau" } do
+			T.expect(string.find(fs.readFile(path), "HudCover%.bind%(%s*scope,%s*root,") ~= nil).toBe(true)
+		end
 		-- the travel screen switches itself off when its fade ends (it stayed on, drawn over every window)
 		local world = fs.readFile("src/client/Controllers/WorldController.luau")
 		T.expect(string.find(world, "fade.Completed:Connect", 1, true) ~= nil).toBe(true)

@@ -6,6 +6,9 @@
 -- (Logic/HudStack.covers). Used by the quest tracker (any open window hides it, `Open`), the menu bar, the minimap's
 -- caption and the row of "something waits" buttons; never by the action bar, the portrait's bars or the chat. A hidden part keeps the rectangle where it
 -- last showed, so hiding it never changes the answer.
+-- Final UI review 2026-11-10 (a service window with its backpack left the column's panels and the party rows half in
+-- sight beside it): the column's event panels (UI/HudDrag.frame), the arena's teams and the party rows hide too
+-- (HudCover.bind); each keeps its slot, so the column does not move under the window.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -203,6 +206,17 @@ function HudCover.covered(s: Scope, item: GuiObject): Fusion.Computed<boolean>
 			end
 		end
 		return false
+	end)
+end
+
+-- Shows `item` while `shown` and no open window covers it (for the life of `s`); a covered item keeps its slot.
+function HudCover.bind(s: Scope, item: GuiObject, shown: Fusion.UsedAs<boolean>)
+	local over = HudCover.covered(s, item)
+	local visible = s:Computed(function(use): boolean
+		return use(shown) == true and not use(over)
+	end)
+	s:Observer(visible):onBind(function()
+		item.Visible = Fusion.peek(visible)
 	end)
 end
 

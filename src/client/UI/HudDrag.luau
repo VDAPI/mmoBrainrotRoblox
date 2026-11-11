@@ -10,12 +10,14 @@
 -- its M zone and the thumb zone on a phone). A saved place there (saved on another screen, or before this rule) falls
 -- back to the built-in place, and a drop there keeps the place the element had (HudLayout.valid() is unchanged: old
 -- saves still read). While a drag runs the element follows the pointer anywhere, so the player sees what they do.
+-- Final UI review 2026-11-10: an event panel steps out of sight while an open window covers it (UI/HudCover.bind).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Device = require(script.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.HudCover)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
 local HudSlots = require(script.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
@@ -258,7 +260,6 @@ function HudDrag.frame(scope: Scope, handle: Handle, props: FrameProps): Instanc
 		end),
 		Size = props.Size,
 		BackgroundTransparency = 1,
-		Visible = props.Visible,
 		[Children] = {
 			scope:New("UIScale")({ Scale = handle.scale }),
 			props.Content,
@@ -309,6 +310,8 @@ function HudDrag.frame(scope: Scope, handle: Handle, props: FrameProps): Instanc
 		},
 	}) :: Frame
 	handle.bind(frame)
+	-- final UI review 2026-11-10: out of sight while an open window covers it, keeping its slot in the column
+	HudCover.bind(scope, frame, props.Visible)
 	return frame
 end
 
